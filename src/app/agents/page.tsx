@@ -1,3 +1,4 @@
+
 "use client";
 
 import { AppShell } from '@/components/app-shell';
@@ -25,6 +26,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
+const AGENTS_STORAGE_KEY = 'gastrack-agents';
+
 export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
@@ -33,10 +36,38 @@ export default function AgentsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
-
   useEffect(() => {
-    getAgentsData().then(setAgents);
+    const fetchAgents = async () => {
+      try {
+        const savedAgents = window.localStorage.getItem(AGENTS_STORAGE_KEY);
+        if (savedAgents) {
+          const parsedAgents = JSON.parse(savedAgents).map((a: any) => ({
+            ...a,
+            createdAt: new Date(a.createdAt),
+          }));
+          setAgents(parsedAgents);
+        } else {
+          const data = await getAgentsData();
+          setAgents(data);
+          window.localStorage.setItem(AGENTS_STORAGE_KEY, JSON.stringify(data));
+        }
+      } catch (error) {
+        console.error("Failed to load agents from localStorage", error);
+        const data = await getAgentsData();
+        setAgents(data);
+      }
+    };
+    fetchAgents();
   }, []);
+
+  const updateAgentsStateAndStorage = (newAgents: Agent[]) => {
+    setAgents(newAgents);
+    try {
+      window.localStorage.setItem(AGENTS_STORAGE_KEY, JSON.stringify(newAgents));
+    } catch (error) {
+      console.error("Failed to save agents to localStorage", error);
+    }
+  };
 
   const handleEdit = (agent: Agent) => {
     setSelectedAgent(agent);
@@ -49,7 +80,8 @@ export default function AgentsPage() {
   };
   
   const handleAgentUpdate = (updatedAgent: Agent) => {
-    setAgents(prev => prev.map(a => a.id === updatedAgent.id ? updatedAgent : a));
+    const newAgents = agents.map(a => a.id === updatedAgent.id ? updatedAgent : a);
+    updateAgentsStateAndStorage(newAgents);
     toast({
       title: 'Agent Updated',
       description: `${updatedAgent.name}'s details have been successfully updated.`,
@@ -65,7 +97,8 @@ export default function AgentsPage() {
       createdAt: new Date(),
       status: 'Offline',
     }
-    setAgents(prev => [...prev, agentToAdd]);
+    const newAgents = [...agents, agentToAdd];
+    updateAgentsStateAndStorage(newAgents);
      toast({
       title: 'Agent Added',
       description: `${agentToAdd.name} has been successfully added.`,
@@ -75,7 +108,8 @@ export default function AgentsPage() {
 
   const confirmDelete = () => {
     if (selectedAgent) {
-      setAgents(agents.filter(a => a.id !== selectedAgent.id));
+      const newAgents = agents.filter(a => a.id !== selectedAgent.id);
+      updateAgentsStateAndStorage(newAgents);
       toast({
         title: 'Agent Deleted',
         description: `${selectedAgent.name} has been deleted.`,

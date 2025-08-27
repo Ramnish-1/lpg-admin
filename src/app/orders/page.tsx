@@ -1,3 +1,4 @@
+
 "use client";
 
 import { AppShell } from '@/components/app-shell';
@@ -25,6 +26,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
+
+const ORDERS_STORAGE_KEY = 'gastrack-orders';
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   'Delivered': 'default',
@@ -108,9 +111,40 @@ export default function OrdersPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    getOrdersData().then(setOrders);
+    const fetchOrders = async () => {
+        try {
+            const savedOrders = window.localStorage.getItem(ORDERS_STORAGE_KEY);
+            if (savedOrders) {
+                const parsedOrders = JSON.parse(savedOrders).map((o: any) => ({
+                    ...o,
+                    createdAt: new Date(o.createdAt),
+                }));
+                setOrders(parsedOrders);
+            } else {
+                const data = await getOrdersData();
+                setOrders(data);
+                window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(data));
+            }
+        } catch (error) {
+            console.error("Failed to load orders from localStorage", error);
+            const data = await getOrdersData();
+            setOrders(data);
+        }
+    };
+
+    fetchOrders();
     getAgentsData().then(setAgents);
   }, []);
+  
+  const updateOrdersStateAndStorage = (newOrders: Order[]) => {
+    setOrders(newOrders);
+    try {
+        window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(newOrders));
+    } catch (error) {
+        console.error("Failed to save orders to localStorage", error);
+    }
+  };
+
 
   const handleShowDetails = (order: Order) => {
     setSelectedOrder(order);
@@ -128,16 +162,18 @@ export default function OrdersPage() {
   };
 
   const handleAgentAssigned = (orderId: string, agentId: string, agentName: string) => {
-    setOrders(prevOrders => prevOrders.map(o => 
+    const newOrders = orders.map(o => 
       o.id === orderId ? { ...o, assignedAgentId: agentId, agentName, status: 'In-progress' } : o
-    ));
+    );
+    updateOrdersStateAndStorage(newOrders);
   };
   
   const confirmCancelOrder = () => {
     if (selectedOrder) {
-      setOrders(prevOrders => prevOrders.map(o => 
+      const newOrders = orders.map(o => 
         o.id === selectedOrder.id ? { ...o, status: 'Cancelled', reason: 'Cancelled by admin' } : o
-      ));
+      );
+      updateOrdersStateAndStorage(newOrders);
       toast({
         title: 'Order Cancelled',
         description: `Order #${selectedOrder.id.slice(0,6)} has been cancelled.`,
