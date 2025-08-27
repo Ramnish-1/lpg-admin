@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { ProfileProvider } from '@/context/profile-context';
+import { SettingsProvider } from '@/context/settings-context';
 
 export const metadata: Metadata = {
   title: 'GasTrack Admin',
@@ -22,7 +23,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased h-full">
         <ProfileProvider>
-          {children}
+          <SettingsProvider>
+            {children}
+          </SettingsProvider>
         </ProfileProvider>
         <Toaster />
       </body>
