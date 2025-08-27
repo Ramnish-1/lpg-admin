@@ -93,6 +93,7 @@ export default async function DashboardPage() {
                   <TableRow>
                     <TableHead>Customer</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -105,6 +106,9 @@ export default async function DashboardPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={statusVariant[order.status]}>{order.status}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(order.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">₹{order.totalAmount.toLocaleString()}</TableCell>
                     </TableRow>
