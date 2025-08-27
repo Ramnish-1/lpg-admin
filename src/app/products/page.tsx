@@ -1,3 +1,4 @@
+
 "use client";
 
 import { AppShell } from '@/components/app-shell';
@@ -11,13 +12,22 @@ import { MoreHorizontal, PlusCircle, AlertCircle } from 'lucide-react';
 import { getProductsData } from '@/lib/data';
 import type { Product } from '@/lib/types';
 import { useEffect, useState } from 'react';
+import { ProductDetailsDialog } from '@/components/product-details-dialog';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   useEffect(() => {
     getProductsData().then(setProducts);
   }, [])
+
+  const handleShowDetails = (product: Product) => {
+    setSelectedProduct(product);
+    setIsDetailsOpen(true);
+  };
+
 
   return (
     <AppShell>
@@ -52,7 +62,7 @@ export default function ProductsPage() {
               {products.map((product: Product) => {
                 const isLowStock = product.stock < product.lowStockThreshold;
                 return (
-                  <TableRow key={product.id}>
+                  <TableRow key={product.id} onClick={() => handleShowDetails(product)} className="cursor-pointer">
                     <TableCell className="font-medium">{product.name}</TableCell>
                     <TableCell>₹{product.price.toLocaleString()}</TableCell>
                     <TableCell>
@@ -65,7 +75,7 @@ export default function ProductsPage() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -74,6 +84,7 @@ export default function ProductsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                           <DropdownMenuItem onClick={() => handleShowDetails(product)}>View Details</DropdownMenuItem>
                           <DropdownMenuItem>Edit Price/Stock</DropdownMenuItem>
                           <DropdownMenuItem>View History</DropdownMenuItem>
                         </DropdownMenuContent>
@@ -86,6 +97,12 @@ export default function ProductsPage() {
           </Table>
         </CardContent>
       </Card>
+      <ProductDetailsDialog
+        product={selectedProduct}
+        isOpen={isDetailsOpen}
+        onOpenChange={setIsDetailsOpen}
+      />
     </AppShell>
   );
 }
+
