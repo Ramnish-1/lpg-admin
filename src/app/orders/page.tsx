@@ -46,57 +46,59 @@ function OrdersTable({ orders, onShowDetails, onAssignAgent, onCancelOrder }: {
   return (
     <Card>
       <CardContent className="pt-6">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Order ID</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Agent</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>
-                <span className="sr-only">Actions</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {orders.map((order: Order) => (
-              <TableRow key={order.id} onClick={() => onShowDetails(order)} className="cursor-pointer">
-                <TableCell className="font-medium text-primary">#{order.id.slice(0, 6)}</TableCell>
-                <TableCell>{order.customerName}</TableCell>
-                <TableCell>
-                  {order.agentName ? (
-                    <Badge variant="outline">{order.agentName}</Badge>
-                  ) : (
-                    <span className="text-muted-foreground">Unassigned</span>
-                  )}
-                </TableCell>
-                <TableCell>₹{order.totalAmount.toLocaleString()}</TableCell>
-                <TableCell>{new Date(order.createdAt).toLocaleString()}</TableCell>
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button aria-haspopup="true" size="icon" variant="ghost">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Toggle menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => onShowDetails(order)}>View Details</DropdownMenuItem>
-                       {order.status === 'Pending' && (
-                        <DropdownMenuItem onClick={() => onAssignAgent(order)}>Assign Agent</DropdownMenuItem>
-                      )}
-                      {order.status !== 'Cancelled' && order.status !== 'Delivered' && (
-                        <DropdownMenuItem onClick={() => onCancelOrder(order)} className="text-destructive">Cancel Order</DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Order ID</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead className="hidden sm:table-cell">Agent</TableHead>
+                <TableHead className="hidden md:table-cell">Amount</TableHead>
+                <TableHead className="hidden lg:table-cell">Date</TableHead>
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {orders.map((order: Order) => (
+                <TableRow key={order.id} onClick={() => onShowDetails(order)} className="cursor-pointer">
+                  <TableCell className="font-medium text-primary">#{order.id.slice(0, 6)}</TableCell>
+                  <TableCell>{order.customerName}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    {order.agentName ? (
+                      <Badge variant="outline">{order.agentName}</Badge>
+                    ) : (
+                      <span className="text-muted-foreground">Unassigned</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">₹{order.totalAmount.toLocaleString()}</TableCell>
+                  <TableCell className="hidden lg:table-cell">{new Date(order.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => onShowDetails(order)}>View Details</DropdownMenuItem>
+                         {order.status === 'Pending' && (
+                          <DropdownMenuItem onClick={() => onAssignAgent(order)}>Assign Agent</DropdownMenuItem>
+                        )}
+                        {order.status !== 'Cancelled' && order.status !== 'Delivered' && (
+                          <DropdownMenuItem onClick={() => onCancelOrder(order)} className="text-destructive">Cancel Order</DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   )
@@ -212,23 +214,25 @@ export default function OrdersPage() {
         </div>
       </PageHeader>
       <Tabs defaultValue="Pending">
-        <TabsList className="bg-transparent p-0 border-b-2 border-border h-auto rounded-none">
-          {orderStatuses.map(status => (
-            <TabsTrigger 
-              key={status} 
-              value={status}
-              className={cn(
-                "data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none",
-                "text-base"
-              )}
-            >
-              {status}
-              <Badge variant={statusVariant[status]} className="ml-2 px-1.5 py-0.5 text-xs">
-                {orders.filter(o => o.status === status).length}
-              </Badge>
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="overflow-x-auto">
+          <TabsList className="bg-transparent p-0 border-b-2 border-border h-auto rounded-none">
+            {orderStatuses.map(status => (
+              <TabsTrigger 
+                key={status} 
+                value={status}
+                className={cn(
+                  "data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none",
+                  "text-base"
+                )}
+              >
+                <span className="whitespace-nowrap">{status}</span>
+                <Badge variant={statusVariant[status]} className="ml-2 px-1.5 py-0.5 text-xs">
+                  {orders.filter(o => o.status === status).length}
+                </Badge>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
         {orderStatuses.map(status => (
           <TabsContent key={status} value={status}>
             <OrdersTable 

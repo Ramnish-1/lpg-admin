@@ -68,7 +68,7 @@ export default function UsersPage() {
   const updateUsersStateAndStorage = (newUsers: User[]) => {
     setUsers(newUsers);
     // When updating users, we need to reflect that in the filtered list as well.
-    const currentSearchTerm = (document.querySelector('input[placeholder="Search users by name, email or phone..."]') as HTMLInputElement)?.value || '';
+    const currentSearchTerm = (document.querySelector('input[placeholder="Search users..."]') as HTMLInputElement)?.value || '';
     if (currentSearchTerm) {
         const filtered = newUsers.filter(user => 
             user.name.toLowerCase().includes(currentSearchTerm) ||
@@ -148,69 +148,71 @@ export default function UsersPage() {
            <CardTitle>Customers</CardTitle>
             <div className="mt-4">
                 <Input 
-                    placeholder="Search users by name, email or phone..." 
-                    className="max-w-sm" 
+                    placeholder="Search users..." 
+                    className="max-w-xs" 
                     onChange={handleSearch}
                 />
             </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Customer</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Registered On</TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user: User) => (
-                <TableRow key={user.id} onClick={() => handleShowDetails(user)} className="cursor-pointer">
-                  <TableCell className="font-medium">
-                    <div className="font-medium">{user.name}</div>
-                    <div 
-                      className="text-sm text-muted-foreground hover:underline"
-                      onClick={(e) => handleAddressClick(e, user.address)}
-                    >
-                      {user.address}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <a href={`tel:${user.phone}`} onClick={(e) => e.stopPropagation()} className="font-medium hover:underline">{user.phone}</a>
-                    <div className="text-sm text-muted-foreground">
-                      <a href={`mailto:${user.email}`} onClick={(e) => e.stopPropagation()} className="hover:underline">{user.email}</a>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={user.status === 'Active' ? 'secondary' : 'destructive'}>{user.status}</Badge>
-                  </TableCell>
-                  <TableCell>{new Date(user.createdAt).toLocaleString()}</TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleShowDetails(user)}>View Details</DropdownMenuItem>
-                        {user.status === 'Active' ? (
-                          <DropdownMenuItem className="text-destructive" onClick={() => handleAction(user, 'Block')}>Block</DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem onClick={() => handleAction(user, 'Unblock')}>Unblock</DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Customer</TableHead>
+                  <TableHead className="hidden md:table-cell">Contact</TableHead>
+                  <TableHead className="hidden sm:table-cell">Status</TableHead>
+                  <TableHead className="hidden lg:table-cell">Registered On</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredUsers.map((user: User) => (
+                  <TableRow key={user.id} onClick={() => handleShowDetails(user)} className="cursor-pointer">
+                    <TableCell>
+                      <div className="font-medium">{user.name}</div>
+                      <div 
+                        className="text-sm text-muted-foreground hover:underline md:hidden"
+                        onClick={(e) => handleAddressClick(e, user.address)}
+                      >
+                        {user.address}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <a href={`tel:${user.phone}`} onClick={(e) => e.stopPropagation()} className="font-medium hover:underline">{user.phone}</a>
+                      <div className="text-sm text-muted-foreground">
+                        <a href={`mailto:${user.email}`} onClick={(e) => e.stopPropagation()} className="hover:underline">{user.email}</a>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Badge variant={user.status === 'Active' ? 'secondary' : 'destructive'}>{user.status}</Badge>
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleShowDetails(user)}>View Details</DropdownMenuItem>
+                          {user.status === 'Active' ? (
+                            <DropdownMenuItem className="text-destructive" onClick={() => handleAction(user, 'Block')}>Block</DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => handleAction(user, 'Unblock')}>Unblock</DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
       

@@ -27,7 +27,7 @@ export default async function DashboardPage() {
     <AppShell>
       <PageHeader title="Dashboard" />
       <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link href="/users">
             <UserHoverCard>
               <Card>
@@ -81,7 +81,7 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Orders Overview (Last 7 Days)</CardTitle>
@@ -95,33 +95,35 @@ export default async function DashboardPage() {
               <CardTitle>Recent Orders</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentOrders.map((order: Order) => (
-                    <TableRow key={order.id}>
-                      <TableCell>
-                        <div className="font-medium">{order.customerName}</div>
-                        <div className="text-sm text-muted-foreground">#{order.id.slice(0, 6)}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={statusVariant[order.status]}>{order.status}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-right">₹{order.totalAmount.toLocaleString()}</TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="hidden sm:table-cell">Date</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {recentOrders.map((order: Order) => (
+                      <TableRow key={order.id}>
+                        <TableCell>
+                          <div className="font-medium">{order.customerName}</div>
+                          <div className="text-sm text-muted-foreground">#{order.id.slice(0, 6)}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={statusVariant[order.status]}>{order.status}</Badge>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-right">₹{order.totalAmount.toLocaleString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </div>
