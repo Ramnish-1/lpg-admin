@@ -49,11 +49,6 @@ export default function ProfilePage() {
       reader.onloadend = () => {
         const newPhotoUrl = reader.result as string;
         setPhotoUrl(newPhotoUrl);
-        setProfile({ photoUrl: newPhotoUrl });
-        toast({
-          title: 'Photo Changed',
-          description: 'Your profile picture has been updated.',
-        });
       };
       reader.readAsDataURL(file);
     }

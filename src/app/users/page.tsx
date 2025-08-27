@@ -125,6 +125,11 @@ export default function UsersPage() {
     }
   }
 
+  const handleAddressClick = (e: React.MouseEvent, address: string) => {
+    e.stopPropagation();
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
+  }
+
 
   return (
     <AppShell>
@@ -167,11 +172,18 @@ export default function UsersPage() {
                 <TableRow key={user.id} onClick={() => handleShowDetails(user)} className="cursor-pointer">
                   <TableCell className="font-medium">
                     <div className="font-medium">{user.name}</div>
-                    <div className="text-sm text-muted-foreground">{user.address}</div>
+                    <div 
+                      className="text-sm text-muted-foreground hover:underline"
+                      onClick={(e) => handleAddressClick(e, user.address)}
+                    >
+                      {user.address}
+                    </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{user.phone}</div>
-                    <div className="text-sm text-muted-foreground">{user.email}</div>
+                    <a href={`tel:${user.phone}`} onClick={(e) => e.stopPropagation()} className="font-medium hover:underline">{user.phone}</a>
+                    <div className="text-sm text-muted-foreground">
+                      <a href={`mailto:${user.email}`} onClick={(e) => e.stopPropagation()} className="hover:underline">{user.email}</a>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Badge variant={user.status === 'Active' ? 'secondary' : 'destructive'}>{user.status}</Badge>
