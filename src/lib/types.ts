@@ -37,6 +37,7 @@ export interface Agent {
   vehicleDetails: string;
   panCard: string;
   aadharCard: string;
+  drivingLicense: string;
   accountDetails: string;
   status: 'Online' | 'Offline';
   createdAt: Date;

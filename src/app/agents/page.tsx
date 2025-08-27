@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Trash2, Mail } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, Mail, BadgeCheck } from 'lucide-react';
 import { getAgentsData } from '@/lib/data';
 import type { Agent } from '@/lib/types';
 import { useEffect, useState, useMemo } from 'react';

@@ -35,6 +35,7 @@ const agentSchema = z.object({
   vehicleDetails: z.string().min(1, { message: "Vehicle details are required." }),
   panCard: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, { message: "Invalid PAN card format." }),
   aadharCard: z.string().min(1, { message: "Aadhar card is required." }),
+  drivingLicense: z.string().min(1, { message: "Driving license is required." }),
   accountDetails: z.string().min(1, { message: "Account details are required." }),
 });
 
@@ -157,6 +158,19 @@ export function EditAgentDialog({ agent, isOpen, onOpenChange, onAgentUpdate }: 
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Aadhar Card</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="drivingLicense"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Driving License</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>

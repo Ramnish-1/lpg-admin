@@ -9,7 +9,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Agent } from '@/lib/types';
-import { Truck, IndianRupee, PieChart, CheckCircle, Clock, Mail, Phone, User, Banknote } from 'lucide-react';
+import { Truck, IndianRupee, PieChart, CheckCircle, Clock, Mail, Phone, User, Banknote, BadgeCheck } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -138,6 +138,8 @@ export function AgentReportDialog({ agent, isOpen, onOpenChange }: AgentReportDi
                         <InfoRow icon={<User className="h-5 w-5 text-primary"/>} label="PAN Card" value={agent.panCard} />
                         <Separator />
                         <InfoRow icon={<User className="h-5 w-5 text-primary"/>} label="Aadhar Card" value={agent.aadharCard} />
+                        <Separator />
+                        <InfoRow icon={<BadgeCheck className="h-5 w-5 text-primary"/>} label="Driving License" value={agent.drivingLicense} />
                         <Separator />
                         <InfoRow icon={<Banknote className="h-5 w-5 text-primary"/>} label="Bank Account" value={agent.accountDetails} />
                     </CardContent>
