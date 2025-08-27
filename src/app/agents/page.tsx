@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2 } from 'lucide-react';
 import { getAgentsData } from '@/lib/data';
 import type { Agent } from '@/lib/types';
 import { useEffect, useState, useMemo } from 'react';
@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { AgentReportDialog } from '@/components/agent-report-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const AGENTS_STORAGE_KEY = 'gastrack-agents';
 const ITEMS_PER_PAGE = 10;
@@ -46,6 +47,7 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -104,6 +106,11 @@ export default function AgentsPage() {
     setIsDeleteDialogOpen(true);
   };
   
+  const handleBulkDelete = () => {
+    setSelectedAgent(null);
+    setIsDeleteDialogOpen(true);
+  }
+
   const handleViewReport = (agent: Agent) => {
     setSelectedAgent(agent);
     setIsReportDialogOpen(true);
@@ -143,7 +150,7 @@ export default function AgentsPage() {
   }
 
   const confirmDelete = () => {
-    if (selectedAgent) {
+    if (selectedAgent) { // Single delete
       const newAgents = agents.filter(a => a.id !== selectedAgent.id);
       updateAgentsStateAndStorage(newAgents);
       toast({
@@ -151,8 +158,33 @@ export default function AgentsPage() {
         description: `${selectedAgent.name} has been deleted.`,
         variant: 'destructive'
       });
-      setIsDeleteDialogOpen(false);
-      setSelectedAgent(null);
+    } else if (selectedAgentIds.length > 0) { // Bulk delete
+      const newAgents = agents.filter(a => !selectedAgentIds.includes(a.id));
+      updateAgentsStateAndStorage(newAgents);
+      toast({
+        title: 'Agents Deleted',
+        description: `${selectedAgentIds.length} agent(s) have been deleted.`,
+        variant: 'destructive'
+      });
+      setSelectedAgentIds([]);
+    }
+    setIsDeleteDialogOpen(false);
+    setSelectedAgent(null);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedAgentIds(paginatedAgents.map(a => a.id));
+    } else {
+      setSelectedAgentIds([]);
+    }
+  };
+  
+  const handleSelectOne = (agentId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedAgentIds(prev => [...prev, agentId]);
+    } else {
+      setSelectedAgentIds(prev => prev.filter(id => id !== agentId));
     }
   };
 
@@ -166,12 +198,21 @@ export default function AgentsPage() {
   return (
     <AppShell>
       <PageHeader title="Delivery Agent Management">
-        <Button size="sm" className="h-8 gap-1" onClick={() => setIsAddDialogOpen(true)}>
-          <PlusCircle className="h-3.5 w-3.5" />
-          <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-            Add Agent
-          </span>
-        </Button>
+        {selectedAgentIds.length > 0 ? (
+          <Button size="sm" variant="destructive" className="h-8 gap-1" onClick={handleBulkDelete}>
+            <Trash2 className="h-3.5 w-3.5" />
+            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+              Delete ({selectedAgentIds.length})
+            </span>
+          </Button>
+        ) : (
+          <Button size="sm" className="h-8 gap-1" onClick={() => setIsAddDialogOpen(true)}>
+            <PlusCircle className="h-3.5 w-3.5" />
+            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+              Add Agent
+            </span>
+          </Button>
+        )}
       </PageHeader>
       <Card>
         <CardHeader>
@@ -184,6 +225,13 @@ export default function AgentsPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                 <TableHead className="w-[40px]">
+                  <Checkbox 
+                    checked={selectedAgentIds.length > 0 && selectedAgentIds.length === paginatedAgents.length}
+                    onCheckedChange={handleSelectAll}
+                    aria-label="Select all"
+                  />
+                </TableHead>
                 <TableHead>Agent</TableHead>
                 <TableHead>Vehicle</TableHead>
                 <TableHead>Status</TableHead>
@@ -195,8 +243,15 @@ export default function AgentsPage() {
             </TableHeader>
             <TableBody>
               {paginatedAgents.map((agent: Agent) => (
-                <TableRow key={agent.id} onClick={() => handleViewReport(agent)} className="cursor-pointer">
-                  <TableCell className="font-medium">
+                <TableRow key={agent.id} data-state={selectedAgentIds.includes(agent.id) && "selected"}>
+                  <TableCell>
+                     <Checkbox
+                        checked={selectedAgentIds.includes(agent.id)}
+                        onCheckedChange={(checked) => handleSelectOne(agent.id, !!checked)}
+                        aria-label="Select row"
+                      />
+                  </TableCell>
+                  <TableCell className="font-medium" onClick={() => handleViewReport(agent)} >
                     <div className="font-medium">{agent.name}</div>
                     <div className="text-sm text-muted-foreground flex items-center gap-1">
                       <a href={`tel:${agent.phone}`} onClick={(e) => e.stopPropagation()} className="hover:underline">{agent.phone}</a>
@@ -205,14 +260,14 @@ export default function AgentsPage() {
                       </Button>
                     </div>
                   </TableCell>
-                  <TableCell>{agent.vehicleDetails}</TableCell>
-                  <TableCell>
+                  <TableCell onClick={() => handleViewReport(agent)}>{agent.vehicleDetails}</TableCell>
+                  <TableCell onClick={() => handleViewReport(agent)}>
                     <Badge variant={agent.status === 'Online' ? 'default' : 'outline'} className={agent.status === 'Online' ? 'bg-green-500 text-white' : ''}>
                       <span className={`inline-block w-2 h-2 mr-2 rounded-full ${agent.status === 'Online' ? 'bg-white' : 'bg-gray-400'}`}></span>
                       {agent.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{new Date(agent.createdAt).toLocaleString()}</TableCell>
+                  <TableCell onClick={() => handleViewReport(agent)}>{new Date(agent.createdAt).toLocaleString()}</TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -282,7 +337,7 @@ export default function AgentsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the agent
+              This action cannot be undone. This will permanently delete the agent(s)
               and remove their data from our servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -300,3 +355,5 @@ export default function AgentsPage() {
     </AppShell>
   );
 }
+
+    
