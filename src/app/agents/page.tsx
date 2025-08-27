@@ -1,3 +1,5 @@
+"use client";
+
 import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -8,9 +10,56 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, PlusCircle } from 'lucide-react';
 import { getAgentsData } from '@/lib/data';
 import type { Agent } from '@/lib/types';
+import { useEffect, useState } from 'react';
+import { EditAgentDialog } from '@/components/edit-agent-dialog';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
-export default async function AgentsPage() {
-  const agents = await getAgentsData();
+export default function AgentsPage() {
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+
+  useEffect(() => {
+    getAgentsData().then(setAgents);
+  }, []);
+
+  const handleEdit = (agent: Agent) => {
+    setSelectedAgent(agent);
+    setIsEditDialogOpen(true);
+  };
+  
+  const handleDelete = (agent: Agent) => {
+    setSelectedAgent(agent);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedAgent) {
+      console.log('Deleting agent:', selectedAgent);
+      toast({
+        title: 'Agent Deleted',
+        description: `${selectedAgent.name} has been deleted.`,
+        variant: 'destructive'
+      });
+      setAgents(agents.filter(a => a.id !== selectedAgent.id));
+      setIsDeleteDialogOpen(false);
+      setSelectedAgent(null);
+    }
+  };
+
 
   return (
     <AppShell>
@@ -56,7 +105,7 @@ export default async function AgentsPage() {
                       {agent.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{agent.createdAt.toLocaleDateString()}</TableCell>
+                  <TableCell>{new Date(agent.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -66,9 +115,9 @@ export default async function AgentsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEdit(agent)}>Edit</DropdownMenuItem>
                         <DropdownMenuItem>View Report</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(agent)}>Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -78,6 +127,28 @@ export default async function AgentsPage() {
           </Table>
         </CardContent>
       </Card>
+      {selectedAgent && (
+        <EditAgentDialog 
+          agent={selectedAgent} 
+          isOpen={isEditDialogOpen} 
+          onOpenChange={setIsEditDialogOpen} 
+        />
+      )}
+       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the agent
+              and remove their data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
   );
 }
