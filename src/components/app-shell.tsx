@@ -68,8 +68,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       title: "Logged Out",
       description: "You have been successfully logged out.",
     });
-    // Here you would typically redirect or clear session state
-    // For now, we just show a notification.
+
+    // Clear all app-related data from localStorage
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('gastrack-')) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    // Redirect to home page after a short delay
+    setTimeout(() => {
+        window.location.href = '/';
+    }, 500);
   }
 
   const sidebarNav = (
