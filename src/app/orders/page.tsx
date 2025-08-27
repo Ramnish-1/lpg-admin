@@ -124,12 +124,9 @@ function OrdersTable({
                                     key={status} 
                                     value={status}
                                     disabled={
-                                        // Disable "In-progress" if no agent is assigned
                                         (status === 'In-progress' && !order.assignedAgentId) || 
-                                        // Disable changing status if order is already delivered
                                         (order.status === 'Delivered') ||
-                                        // Also disable if the order is cancelled, unless we are un-cancelling it
-                                        (order.status === 'Cancelled' && status !== 'Pending' && status !== 'In-progress' && status !== 'Delivered')
+                                        (order.status === 'Cancelled' && status === 'Cancelled')
                                     }
                                   >
                                     {status}
@@ -315,12 +312,44 @@ export default function OrdersPage() {
   const getOrderCount = (status: Order['status']) => {
     return orders.filter(o => o.status === status).length;
   }
+  
+  const handleExport = () => {
+    const csvHeader = "Order ID,Customer Name,Customer Phone,Agent Name,Agent Phone,Status,Total Amount,Date,Products\n";
+    const csvRows = orders.map(o => {
+        const productList = o.products.map(p => `${p.name} (x${p.quantity})`).join('; ');
+        const row = [
+            o.id,
+            `"${o.customerName}"`,
+            o.customerPhone,
+            `"${o.agentName || 'N/A'}"`,
+            o.agentPhone || 'N/A',
+            o.status,
+            o.totalAmount,
+            new Date(o.createdAt).toISOString(),
+            `"${productList}"`
+        ].join(',');
+        return row;
+    }).join('\n');
+
+    const csvContent = csvHeader + csvRows;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.href) {
+        URL.revokeObjectURL(link.href);
+    }
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.setAttribute('download', 'orders_export.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
   return (
     <AppShell>
       <PageHeader title="Orders Management">
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" className="h-8 gap-1">
+          <Button size="sm" variant="outline" className="h-8 gap-1" onClick={handleExport}>
             <FileDown className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
               Export
