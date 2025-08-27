@@ -30,15 +30,7 @@ interface AssignAgentDialogProps {
 }
 
 export function AssignAgentDialog({ order, isOpen, onOpenChange, onAgentAssigned, agents }: AssignAgentDialogProps) {
-  const [onlineAgents, setOnlineAgents] = useState<Agent[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    if (isOpen) {
-      setOnlineAgents(agents.filter(a => a.status === 'Online'));
-    }
-  }, [isOpen, agents]);
 
   const handleAssign = () => {
     if (order && selectedAgentId) {
@@ -46,6 +38,13 @@ export function AssignAgentDialog({ order, isOpen, onOpenChange, onAgentAssigned
       onOpenChange(false);
     }
   };
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedAgentId(null);
+    }
+  }, [isOpen]);
+
 
   if (!order) return null;
 
@@ -61,10 +60,10 @@ export function AssignAgentDialog({ order, isOpen, onOpenChange, onAgentAssigned
         <div className="py-4">
           <Select onValueChange={setSelectedAgentId}>
             <SelectTrigger>
-              <SelectValue placeholder="Select an online agent" />
+              <SelectValue placeholder="Select an agent" />
             </SelectTrigger>
             <SelectContent>
-              {onlineAgents.map(agent => (
+              {agents.map(agent => (
                 <SelectItem key={agent.id} value={agent.id}>
                   {agent.name}
                 </SelectItem>
