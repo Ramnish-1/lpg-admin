@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from 'react';
@@ -23,8 +24,12 @@ import {
   CreditCard,
   Menu,
   ChevronDown,
+  Settings,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 const GasPump = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -47,10 +52,21 @@ const navItems = [
   { href: '/agents', label: 'Delivery Agents', icon: Truck },
   { href: '/products', label: 'Products', icon: Package },
   { href: '/payments', label: 'Payments', icon: CreditCard },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+    });
+    // Here you would typically redirect or clear session state
+    // For now, we just show a notification.
+  }
 
   const sidebarNav = (
     <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
@@ -126,10 +142,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
+                    <UserIcon className="h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                   <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Log out</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 cursor-pointer">
+                 <LogOut className="h-4 w-4" />
+                 <span>Log out</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
