@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import Image from 'next/image';
+import { Eye, EyeOff } from 'lucide-react';
 
 
 const GasPump = (props: React.SVGProps<SVGSVGElement>) => (
@@ -30,6 +31,7 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const { signup } = useAuth();
@@ -98,13 +100,24 @@ export default function SignupPage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                required 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="relative">
+                <Input 
+                  id="password" 
+                  type={showPassword ? "text" : "password"}
+                  required 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                 <Button 
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                  onClick={() => setShowPassword(prev => !prev)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                </Button>
+              </div>
             </div>
             <Button type="submit" className="w-full">
               Create an account
