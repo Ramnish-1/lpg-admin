@@ -87,4 +87,22 @@ body {
   .animate-cylinder-blast {
     animation: cylinder-blast 2s ease-out forwards;
   }
+
+  @keyframes wave-left {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(15deg); }
+  }
+
+  @keyframes wave-right {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(-15deg); }
+  }
+
+  .animate-wave-left {
+    animation: wave-left 2s ease-in-out infinite;
+  }
+
+  .animate-wave-right {
+    animation: wave-right 2s ease-in-out infinite;
+  }
 }

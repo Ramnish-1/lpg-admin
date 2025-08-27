@@ -33,6 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ProfileContext } from '@/context/profile-context';
 import { SettingsContext } from '@/context/settings-context';
 import { useAuth } from '@/context/auth-context';
+import { SidebarMascot } from './sidebar-mascot';
 
 const GasPump = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -118,6 +119,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex-1">
             {sidebarNav}
           </div>
+          <SidebarMascot />
         </div>
       </div>
       <div className="flex flex-col">
@@ -137,6 +139,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </Link>
               </div>
               {sidebarNav}
+              <SidebarMascot />
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1" />
