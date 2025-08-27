@@ -12,9 +12,7 @@ import {
   DialogClose
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Agent } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,7 +27,7 @@ interface AddAgentDialogProps {
 
 const agentSchema = z.object({
   name: z.string().min(1, { message: "Name is required." }),
-  email: z.string().email({ message: "Invalid email address." }),
+  email: z.string().email({ message: "Invalid email address." }).min(1, { message: "Email is required." }),
   phone: z.string().min(10, { message: "Phone number must be at least 10 digits." }),
   vehicleDetails: z.string().min(1, { message: "Vehicle details are required." }),
   panCard: z.string().min(1, { message: "PAN card is required." }),
@@ -40,8 +38,6 @@ const agentSchema = z.object({
 type AgentFormValues = z.infer<typeof agentSchema>;
 
 export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDialogProps) {
-  const { toast } = useToast();
-
   const form = useForm<AgentFormValues>({
     resolver: zodResolver(agentSchema),
     defaultValues: {
@@ -70,16 +66,16 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[480px] grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[480px] grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh] p-0">
+        <DialogHeader className="p-6 pb-0">
           <DialogTitle>Add New Agent</DialogTitle>
           <DialogDescription>
             Enter the details for the new delivery agent. All fields are required.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} noValidate className="overflow-hidden flex flex-col">
-             <ScrollArea className="pr-6 flex-1">
+          <form onSubmit={form.handleSubmit(handleSubmit)} noValidate className="overflow-hidden flex flex-col h-full">
+             <ScrollArea className="flex-1 px-6">
               <div className="grid gap-4 py-4 ">
                 <FormField
                   control={form.control}
@@ -174,8 +170,10 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
                 />
               </div>
             </ScrollArea>
-            <DialogFooter className="mt-4">
-              <Button variant="outline" type="button" onClick={() => handleOpenChange(false)}>Cancel</Button>
+            <DialogFooter className="p-6 pt-4 border-t bg-muted/40">
+              <DialogClose asChild>
+                <Button variant="outline" type="button">Cancel</Button>
+              </DialogClose>
               <Button type="submit">Add Agent</Button>
             </DialogFooter>
           </form>
