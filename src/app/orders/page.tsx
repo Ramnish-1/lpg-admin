@@ -29,6 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 const ORDERS_STORAGE_KEY = 'gastrack-orders';
+const AGENTS_STORAGE_KEY = 'gastrack-agents';
 const ITEMS_PER_PAGE = 10;
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -126,7 +127,9 @@ function OrdersTable({
                                         // Disable "In-progress" if no agent is assigned
                                         (status === 'In-progress' && !order.assignedAgentId) || 
                                         // Disable changing status if order is already delivered
-                                        (order.status === 'Delivered')
+                                        (order.status === 'Delivered') ||
+                                        // Also disable if the order is cancelled, unless we are un-cancelling it
+                                        (order.status === 'Cancelled' && status !== 'Pending' && status !== 'In-progress' && status !== 'Delivered')
                                     }
                                   >
                                     {status}
@@ -215,9 +218,25 @@ export default function OrdersPage() {
         }
     };
     const fetchAgents = async () => {
-      const data = await getAgentsData();
-      setAgents(data);
-    }
+       try {
+        const savedAgents = window.localStorage.getItem(AGENTS_STORAGE_KEY);
+        if (savedAgents) {
+          const parsedAgents = JSON.parse(savedAgents).map((a: any) => ({
+            ...a,
+            createdAt: new Date(a.createdAt),
+          }));
+          setAgents(parsedAgents);
+        } else {
+          const data = await getAgentsData();
+          setAgents(data);
+          window.localStorage.setItem(AGENTS_STORAGE_KEY, JSON.stringify(data));
+        }
+      } catch (error) {
+        console.error("Failed to load agents from localStorage", error);
+        const data = await getAgentsData();
+        setAgents(data);
+      }
+    };
     fetchOrders();
     fetchAgents();
   }, []);
@@ -264,9 +283,8 @@ export default function OrdersPage() {
   };
 
   const handleStatusChange = (order: Order, newStatus: Order['status']) => {
-    if (order.status === newStatus) return; // No change
+    if (order.status === newStatus) return;
     
-    // If trying to set to cancelled, use the cancel dialog flow
     if (newStatus === 'Cancelled' && order.status !== 'Cancelled') {
       handleCancelOrder(order);
       return;
