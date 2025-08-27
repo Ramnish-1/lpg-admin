@@ -13,20 +13,71 @@ import { getProductsData } from '@/lib/data';
 import type { Product } from '@/lib/types';
 import { useEffect, useState } from 'react';
 import { ProductDetailsDialog } from '@/components/product-details-dialog';
+import { EditProductDialog } from '@/components/edit-product-dialog';
+import { ProductHistoryDialog } from '@/components/product-history-dialog';
+import { useToast } from '@/hooks/use-toast';
+
+const PRODUCTS_STORAGE_KEY = 'gastrack-products';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
-    getProductsData().then(setProducts);
+    try {
+      const savedProducts = window.localStorage.getItem(PRODUCTS_STORAGE_KEY);
+      if (savedProducts) {
+        setProducts(JSON.parse(savedProducts));
+      } else {
+        getProductsData().then(data => {
+          setProducts(data);
+          window.localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(data));
+        });
+      }
+    } catch (error) {
+      console.error("Failed to load products from localStorage", error);
+      getProductsData().then(setProducts);
+    }
   }, [])
+  
+  const updateProductsStateAndStorage = (newProducts: Product[]) => {
+    setProducts(newProducts);
+    try {
+      window.localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(newProducts));
+    } catch (error) {
+      console.error("Failed to save products to localStorage", error);
+    }
+  };
 
   const handleShowDetails = (product: Product) => {
     setSelectedProduct(product);
     setIsDetailsOpen(true);
   };
+  
+  const handleEditProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setIsEditOpen(true);
+  };
+  
+  const handleShowHistory = (product: Product) => {
+    setSelectedProduct(product);
+    setIsHistoryOpen(true);
+  };
+
+  const handleProductUpdate = (updatedProduct: Product) => {
+    const newProducts = products.map(p => p.id === updatedProduct.id ? updatedProduct : p);
+    updateProductsStateAndStorage(newProducts);
+    toast({
+      title: 'Product Updated',
+      description: `${updatedProduct.name} has been successfully updated.`,
+    });
+    setIsEditOpen(false);
+    setSelectedProduct(null);
+  }
 
 
   return (
@@ -85,8 +136,8 @@ export default function ProductsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                            <DropdownMenuItem onClick={() => handleShowDetails(product)}>View Details</DropdownMenuItem>
-                          <DropdownMenuItem>Edit Price/Stock</DropdownMenuItem>
-                          <DropdownMenuItem>View History</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditProduct(product)}>Edit Price/Stock</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleShowHistory(product)}>View History</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -102,7 +153,21 @@ export default function ProductsPage() {
         isOpen={isDetailsOpen}
         onOpenChange={setIsDetailsOpen}
       />
+      {selectedProduct && (
+        <EditProductDialog
+          product={selectedProduct}
+          isOpen={isEditOpen}
+          onOpenChange={setIsEditOpen}
+          onProductUpdate={handleProductUpdate}
+        />
+      )}
+       {selectedProduct && (
+        <ProductHistoryDialog
+          product={selectedProduct}
+          isOpen={isHistoryOpen}
+          onOpenChange={setIsHistoryOpen}
+        />
+      )}
     </AppShell>
   );
 }
-
