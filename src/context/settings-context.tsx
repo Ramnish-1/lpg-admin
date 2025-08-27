@@ -3,12 +3,14 @@
 
 import { createContext, useState, useEffect, ReactNode, useContext } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import type { Availability } from '@/lib/types';
 
 interface Settings {
   appName: string;
   timezone: string;
   emailNotifications: boolean;
   pushNotifications: boolean;
+  availability: Availability;
 }
 
 interface SettingsContextType {
@@ -24,6 +26,15 @@ const defaultSettings: Settings = {
   timezone: 'Asia/Kolkata',
   emailNotifications: true,
   pushNotifications: false,
+  availability: {
+    monday: { available: true, startTime: '09:00', endTime: '18:00' },
+    tuesday: { available: true, startTime: '09:00', endTime: '18:00' },
+    wednesday: { available: true, startTime: '09:00', endTime: '18:00' },
+    thursday: { available: true, startTime: '09:00', endTime: '18:00' },
+    friday: { available: true, startTime: '09:00', endTime: '18:00' },
+    saturday: { available: true, startTime: '10:00', endTime: '14:00' },
+    sunday: { available: false, startTime: '', endTime: '' },
+  }
 };
 
 export const SettingsContext = createContext<SettingsContextType>({
@@ -41,7 +52,17 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
     try {
       const savedSettings = window.localStorage.getItem('gastrack-settings');
-      return savedSettings ? { ...defaultSettings, ...JSON.parse(savedSettings) } : defaultSettings;
+      // Deep merge to handle nested availability object
+      const parsed = savedSettings ? JSON.parse(savedSettings) : {};
+      const mergedSettings = {
+        ...defaultSettings,
+        ...parsed,
+        availability: {
+          ...defaultSettings.availability,
+          ...(parsed.availability || {}),
+        }
+      };
+      return mergedSettings;
     } catch (error) {
       console.error('Error reading settings from localStorage', error);
       return defaultSettings;

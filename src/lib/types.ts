@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   name: string;
@@ -19,7 +20,7 @@ export interface Product {
 }
 
 export interface Agent {
-  id: string;
+  id:string;
   name: string;
   phone: string;
   vehicleDetails: string;
@@ -49,4 +50,20 @@ export interface Payment {
   status: 'Pending' | 'Success' | 'Refunded';
   type: 'COD';
   timestamp: Date;
+}
+
+export interface DayAvailability {
+  available: boolean;
+  startTime: string;
+  endTime: string;
+}
+
+export interface Availability {
+  monday: DayAvailability;
+  tuesday: DayAvailability;
+  wednesday: DayAvailability;
+  thursday: DayAvailability;
+  friday: DayAvailability;
+  saturday: DayAvailability;
+  sunday: DayAvailability;
 }
