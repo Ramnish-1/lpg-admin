@@ -7,12 +7,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import type { Order } from '@/lib/types';
-import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package, Phone } from 'lucide-react';
+import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package, Phone, MapPin } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Button } from './ui/button';
+import Link from 'next/link';
+
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg
@@ -141,8 +144,17 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetails
                 <span className="text-primary">Total Amount</span>
                 <span className="flex items-center text-primary"><IndianRupee className="h-5 w-5" />{order.totalAmount.toLocaleString()}</span>
             </div>
-
         </div>
+        {order.status === 'In-progress' && (
+             <DialogFooter className="mt-4">
+                <Button asChild className="w-full">
+                    <Link href={`/track/${order.id}`}>
+                        <MapPin className="h-4 w-4 mr-2" />
+                        Track Order
+                    </Link>
+                </Button>
+            </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

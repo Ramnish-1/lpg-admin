@@ -1,18 +1,22 @@
 
-
 import type { User, Product, Agent, Order, Payment } from './types';
 
 // Dummy Data
 const users: User[] = [
-  { id: 'usr_1', name: 'Arjun Kumar', email: 'arjun@example.com', phone: '9876543210', address: '123, MG Road, Bangalore', status: 'Active', orderHistory: ['ord_1', 'ord_3'], createdAt: new Date('2023-01-15') },
-  { id: 'usr_2', name: 'Priya Sharma', email: 'priya@example.com', phone: '9876543211', address: '456, Park Street, Kolkata', status: 'Active', orderHistory: ['ord_2'], createdAt: new Date('2023-02-20') },
-  { id: 'usr_3', name: 'Rohan Mehta', email: 'rohan@example.com', phone: '9876543212', address: '789, Juhu Beach, Mumbai', status: 'Blocked', orderHistory: [], createdAt: new Date('2023-03-10') },
+  { id: 'usr_1', name: 'Arjun Kumar', email: 'arjun@example.com', phone: '9876543210', address: '123, MG Road, Bangalore, Karnataka 560001', status: 'Active', orderHistory: ['ord_1', 'ord_3'], createdAt: new Date('2023-01-15'), location: { lat: 12.9716, lng: 77.5946 } },
+  { id: 'usr_2', name: 'Priya Sharma', email: 'priya@example.com', phone: '9876543211', address: '456, Park Street, Kolkata, West Bengal 700016', status: 'Active', orderHistory: ['ord_2'], createdAt: new Date('2023-02-20'), location: { lat: 22.551, lng: 88.3578 } },
+  { id: 'usr_3', name: 'Rohan Mehta', email: 'rohan@example.com', phone: '9876543212', address: '789, Juhu Beach, Mumbai, Maharashtra 400049', status: 'Blocked', orderHistory: [], createdAt: new Date('2023-03-10'), location: { lat: 19.088, lng: 72.8265 } },
 ];
 
 const products: Product[] = [
-  { id: 'prod_1', name: 'LPG Cylinder 14.2kg', description: 'Standard domestic cylinder', price: 1100, stock: 150, lowStockThreshold: 20 },
-  { id: 'prod_2', name: 'LPG Cylinder 5kg', description: 'Small portable cylinder', price: 450, stock: 15, lowStockThreshold: 10 },
-  { id: 'prod_3', name: 'LPG Pipe', description: 'High-quality safety hose', price: 200, stock: 80, lowStockThreshold: 15 },
+    { id: 'prod_1', name: 'LPG Cylinder 14.2kg', description: 'Standard domestic cylinder', price: 1100, stock: 150, lowStockThreshold: 20, history: [
+        { date: new Date('2023-04-10'), type: 'price_change', oldValue: 1050, newValue: 1100 },
+        { date: new Date('2023-05-15'), type: 'stock_update', oldValue: 200, newValue: 150 },
+    ] },
+    { id: 'prod_2', name: 'LPG Cylinder 5kg', description: 'Small portable cylinder', price: 450, stock: 15, lowStockThreshold: 10, history: [
+        { date: new Date('2023-03-20'), type: 'price_change', oldValue: 440, newValue: 450 },
+    ] },
+    { id: 'prod_3', name: 'LPG Pipe', description: 'High-quality safety hose', price: 200, stock: 80, lowStockThreshold: 15 },
 ];
 
 const agents: Agent[] = [
@@ -23,6 +27,7 @@ const agents: Agent[] = [
     vehicleDetails: 'KA-01-AB-1234', 
     status: 'Online', 
     createdAt: new Date('2023-01-05'),
+    currentLocation: { lat: 12.973, lng: 77.61 }, // Near MG Road, Bangalore
     report: {
       totalDeliveries: 124,
       totalEarnings: 31000,
@@ -43,6 +48,7 @@ const agents: Agent[] = [
     vehicleDetails: 'MH-02-CD-5678', 
     status: 'Offline', 
     createdAt: new Date('2023-02-01'),
+    currentLocation: { lat: 19.07, lng: 72.87 }, // Near Bandra, Mumbai
     report: {
       totalDeliveries: 95,
       totalEarnings: 23750,
@@ -79,7 +85,7 @@ const enrichOrders = (ordersToEnrich: any[]): Order[] => {
   });
 };
 
-const orders: Order[] = enrichOrders(baseOrders);
+let orders: Order[] = enrichOrders(baseOrders);
 
 
 const payments: Payment[] = [
@@ -126,23 +132,47 @@ export async function getDashboardData() {
 }
 
 export async function getRecentOrders() {
-  return orders.slice(0, 5);
+  const enriched = enrichOrders(orders);
+  return enriched.slice(0, 5);
 }
 
 // Users
-export async function getUsersData() { return users; }
+export async function getUsersData(): Promise<User[]> { return users; }
 
 // Orders
 export async function getOrdersData(): Promise<Order[]> {
-  const enriched = enrichOrders(baseOrders);
-  return enriched;
+  // Re-enrich every time in case underlying data (users, agents) changes.
+  orders = enrichOrders(baseOrders);
+  return orders;
 }
 
+export async function getOrderById(orderId: string) {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return null;
+
+    const customer = users.find(u => u.id === order.customerId);
+    const agent = agents.find(a => a.id === order.assignedAgentId);
+
+    return {
+        ...order,
+        customer,
+        agent,
+    };
+}
+
+
 // Agents
-export async function getAgentsData() { return agents; }
+export async function getAgentsData(): Promise<Agent[]> { return agents; }
 
 // Products
-export async function getProductsData() { return products; }
+export async function getProductsData(): Promise<Product[]> { return products; }
 
 // Payments
-export async function getPaymentsData() { return payments; }
+export async function getPaymentsData(): Promise<Payment[]> { return payments; }
+
+// This is a utility function to update localStorage, not an API call
+export function updateLocalStorage(key: string, data: any) {
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(key, JSON.stringify(data));
+  }
+}

@@ -1,5 +1,4 @@
 
-
 export interface User {
   id: string;
   name: string;
@@ -9,6 +8,7 @@ export interface User {
   status: 'Active' | 'Blocked';
   orderHistory: string[];
   createdAt: Date;
+  location: { lat: number; lng: number };
 }
 
 export interface Product {
@@ -18,6 +18,7 @@ export interface Product {
   price: number;
   stock: number;
   lowStockThreshold: number;
+  history?: { date: Date; type: 'price_change' | 'stock_update', oldValue: number, newValue: number }[];
 }
 
 export interface AgentReport {
@@ -36,6 +37,7 @@ export interface Agent {
   status: 'Online' | 'Offline';
   createdAt: Date;
   report: AgentReport;
+  currentLocation: { lat: number; lng: number };
 }
 
 export interface Order {
