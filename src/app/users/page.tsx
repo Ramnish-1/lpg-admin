@@ -29,7 +29,7 @@ import { UserDetailsDialog } from '@/components/user-details-dialog';
 const USERS_STORAGE_KEY = 'gastrack-users';
 const ITEMS_PER_PAGE = 10;
 
-export default function UsersPage() {
+export default function CustomersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -77,7 +77,7 @@ export default function UsersPage() {
 
   const updateUsersStateAndStorage = (newUsers: User[]) => {
     setUsers(newUsers);
-    const currentSearchTerm = (document.querySelector('input[placeholder="Search users..."]') as HTMLInputElement)?.value || '';
+    const currentSearchTerm = (document.querySelector('input[placeholder="Search customers..."]') as HTMLInputElement)?.value || '';
     if (currentSearchTerm) {
         const filtered = newUsers.filter(user => 
             user.name.toLowerCase().includes(currentSearchTerm) ||
@@ -125,7 +125,7 @@ export default function UsersPage() {
       updateUsersStateAndStorage(updatedUsers);
 
       toast({
-        title: `User ${action === 'Block' ? 'Blocked' : 'Unblocked'}`,
+        title: `Customer ${action === 'Block' ? 'Blocked' : 'Unblocked'}`,
         description: `${selectedUser.name} has been ${action.toLowerCase()}ed.`,
         variant: action === 'Block' ? 'destructive' : 'default',
       });
@@ -141,7 +141,7 @@ export default function UsersPage() {
   }
 
   const handleExport = () => {
-    const csvHeader = "User ID,Name,Email,Phone,Address,Status,Registered On\n";
+    const csvHeader = "Customer ID,Name,Email,Phone,Address,Status,Registered On\n";
     const csvRows = filteredUsers.map(u => {
         const row = [
             u.id,
@@ -160,7 +160,7 @@ export default function UsersPage() {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.href = url;
-    link.setAttribute('download', 'users_export.csv');
+    link.setAttribute('download', 'customers_export.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -170,7 +170,7 @@ export default function UsersPage() {
 
   return (
     <AppShell>
-      <PageHeader title="User Management">
+      <PageHeader title="Customer Management">
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" className="h-8 gap-1" onClick={handleExport}>
             <FileDown className="h-3.5 w-3.5" />
@@ -185,7 +185,7 @@ export default function UsersPage() {
            <CardTitle>Customers</CardTitle>
             <div className="mt-4">
                 <Input 
-                    placeholder="Search users..." 
+                    placeholder="Search customers..." 
                     className="max-w-xs" 
                     onChange={handleSearch}
                 />
@@ -284,7 +284,7 @@ export default function UsersPage() {
       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to {action?.toLowerCase()} this user?</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure you want to {action?.toLowerCase()} this customer?</AlertDialogTitle>
             <AlertDialogDescription>
               This action can be reversed later.
             </AlertDialogDescription>

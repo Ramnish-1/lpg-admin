@@ -52,7 +52,7 @@ const GasPump = (props: React.SVGProps<SVGSVGElement>) => (
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/orders', label: 'Orders', icon: ShoppingCart },
-  { href: '/users', label: 'Users', icon: Users },
+  { href: '/customers', label: 'Customers', icon: Users },
   { href: '/agents', label: 'Delivery Agents', icon: Truck },
   { href: '/products', label: 'Products', icon: Package },
   { href: '/payments', label: 'Payments', icon: CreditCard },

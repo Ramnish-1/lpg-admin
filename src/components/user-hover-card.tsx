@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useEffect, useState } from 'react';
@@ -18,7 +19,7 @@ export function UserHoverCard({ children }: { children: React.ReactNode }) {
     <HoverCard>
       <HoverCardTrigger asChild>{children}</HoverCardTrigger>
       <HoverCardContent className="w-80">
-        <h4 className="font-semibold mb-2">Users</h4>
+        <h4 className="font-semibold mb-2">Customers</h4>
         <ScrollArea className="h-48">
           <div className="space-y-4">
             {users.map(user => (
