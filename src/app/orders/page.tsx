@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 const ORDERS_STORAGE_KEY = 'gastrack-orders';
 
@@ -199,9 +200,16 @@ export default function OrdersPage() {
         </div>
       </PageHeader>
       <Tabs defaultValue="Pending">
-        <TabsList>
+        <TabsList className="bg-transparent p-0 border-b-2 border-border h-auto rounded-none">
           {orderStatuses.map(status => (
-            <TabsTrigger key={status} value={status}>
+            <TabsTrigger 
+              key={status} 
+              value={status}
+              className={cn(
+                "data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none",
+                "text-base"
+              )}
+            >
               {status}
               <Badge variant={statusVariant[status]} className="ml-2 px-1.5 py-0.5 text-xs">
                 {orders.filter(o => o.status === status).length}
