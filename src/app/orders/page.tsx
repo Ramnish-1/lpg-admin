@@ -73,6 +73,7 @@ function OrdersTable({
                 <TableHead className="hidden sm:table-cell">Agent</TableHead>
                 <TableHead className="hidden md:table-cell">Amount</TableHead>
                 <TableHead className="hidden lg:table-cell">Status</TableHead>
+                <TableHead className="hidden sm:table-cell">Date</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -122,6 +123,9 @@ function OrdersTable({
                             </DropdownMenuRadioGroup>
                         </DropdownMenuContent>
                     </DropdownMenu>
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    {new Date(order.createdAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
@@ -472,3 +476,5 @@ export default function OrdersPage() {
     </AppShell>
   );
 }
+
+    
