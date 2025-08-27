@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useEffect, useState } from 'react';
@@ -7,12 +8,33 @@ import { getAgentsData } from "@/lib/data";
 import { Agent } from "@/lib/types";
 import { Badge } from './ui/badge';
 
+const AGENTS_STORAGE_KEY = 'gastrack-agents';
+
 export function AgentHoverCard({ children }: { children: React.ReactNode }) {
   const [agents, setAgents] = useState<Agent[]>([]);
 
   useEffect(() => {
-    // We only want to show active agents
-    getAgentsData().then(data => setAgents(data.filter(a => a.status === 'Online')));
+    const fetchAgents = async () => {
+      try {
+        const savedAgents = window.localStorage.getItem(AGENTS_STORAGE_KEY);
+        if (savedAgents) {
+          const parsedAgents = JSON.parse(savedAgents).map((a: any) => ({
+            ...a,
+            createdAt: new Date(a.createdAt),
+          }));
+          setAgents(parsedAgents.filter(a => a.status === 'Online'));
+        } else {
+          const data = await getAgentsData();
+          setAgents(data.filter(a => a.status === 'Online'));
+          window.localStorage.setItem(AGENTS_STORAGE_KEY, JSON.stringify(data));
+        }
+      } catch (error) {
+        console.error("Failed to load agents from localStorage", error);
+        const data = await getAgentsData();
+        setAgents(data.filter(a => a.status === 'Online'));
+      }
+    };
+    fetchAgents();
   }, []);
 
   return (
