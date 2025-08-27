@@ -7,9 +7,9 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MoreHorizontal, FileDown } from 'lucide-react';
+import { MoreHorizontal, FileDown, Truck, CheckCircle } from 'lucide-react';
 import { getOrdersData, getAgentsData } from '@/lib/data';
 import type { Order, Agent } from '@/lib/types';
 import { useEffect, useState, useMemo } from 'react';
@@ -42,12 +42,14 @@ function OrdersTable({
   orders, 
   onShowDetails, 
   onAssignAgent, 
-  onCancelOrder 
+  onCancelOrder,
+  onStatusChange,
 }: { 
   orders: Order[],
   onShowDetails: (order: Order) => void,
   onAssignAgent: (order: Order) => void,
-  onCancelOrder: (order: Order) => void
+  onCancelOrder: (order: Order) => void,
+  onStatusChange: (order: Order, status: Order['status']) => void,
 }) {
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.ceil(orders.length / ITEMS_PER_PAGE);
@@ -104,11 +106,34 @@ function OrdersTable({
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => onShowDetails(order)}>View Details</DropdownMenuItem>
-                         {order.status === 'Pending' && (
+                        {order.status === 'Pending' && (
                           <DropdownMenuItem onClick={() => onAssignAgent(order)}>Assign Agent</DropdownMenuItem>
                         )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Change Status</DropdownMenuLabel>
+                        {order.status === 'Pending' && !order.assignedAgentId && (
+                           <DropdownMenuItem disabled>
+                              <Truck className="mr-2 h-4 w-4" />
+                              <span>Mark In-progress (Assign first)</span>
+                           </DropdownMenuItem>
+                        )}
+                        {order.status === 'Pending' && order.assignedAgentId && (
+                           <DropdownMenuItem onClick={() => onStatusChange(order, 'In-progress')}>
+                              <Truck className="mr-2 h-4 w-4" />
+                              <span>Mark In-progress</span>
+                           </DropdownMenuItem>
+                        )}
+
+                        {order.status === 'In-progress' && (
+                          <DropdownMenuItem onClick={() => onStatusChange(order, 'Delivered')}>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            <span>Mark Delivered</span>
+                          </DropdownMenuItem>
+                        )}
                         {order.status !== 'Cancelled' && order.status !== 'Delivered' && (
-                          <DropdownMenuItem onClick={() => onCancelOrder(order)} className="text-destructive">Cancel Order</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onCancelOrder(order)} className="text-destructive focus:text-destructive">
+                            Cancel Order
+                          </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -225,28 +250,33 @@ export default function OrdersPage() {
         updateOrdersStateAndStorage(newOrders);
         toast({
           title: "Agent Assigned",
-          description: `${agent.name} has been assigned to order #${orderId.slice(0, 6)}.`,
+          description: `${agent.name} has been assigned to order #${orderId.slice(0, 6)}. Status updated to In-progress.`,
         });
     }
   };
+
+  const handleStatusChange = (order: Order, newStatus: Order['status']) => {
+    const newOrders = orders.map(o => o.id === order.id ? { ...o, status: newStatus } : o);
+    updateOrdersStateAndStorage(newOrders);
+    toast({
+      title: 'Order Status Updated',
+      description: `Order #${order.id.slice(0,6)} has been marked as ${newStatus}.`
+    });
+  }
   
   const confirmCancelOrder = () => {
     if (selectedOrder) {
-      const newOrders = orders.map(o => 
-        o.id === selectedOrder.id ? { ...o, status: 'Cancelled' as const, reason: 'Cancelled by admin' } : o
-      );
-      updateOrdersStateAndStorage(newOrders);
-      toast({
-        title: 'Order Cancelled',
-        description: `Order #${selectedOrder.id.slice(0,6)} has been cancelled.`,
-        variant: 'destructive',
-      });
+      handleStatusChange(selectedOrder, 'Cancelled');
       setIsCancelOpen(false);
       setSelectedOrder(null);
     }
   };
 
   const orderStatuses: Order['status'][] = ['Pending', 'In-progress', 'Delivered', 'Cancelled'];
+
+  const getOrderCount = (status: Order['status']) => {
+    return orders.filter(o => o.status === status).length;
+  }
 
   return (
     <AppShell>
@@ -262,31 +292,42 @@ export default function OrdersPage() {
       </PageHeader>
       <Tabs defaultValue="Pending">
         <div className="overflow-x-auto">
-          <TabsList className="bg-transparent p-0 border-b-2 border-border h-auto rounded-none">
-            {orderStatuses.map(status => (
-              <TabsTrigger 
-                key={status} 
-                value={status}
-                className={cn(
-                  "data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none",
-                  "text-base"
-                )}
-              >
-                <span className="whitespace-nowrap">{status}</span>
-                <Badge variant={statusVariant[status]} className="ml-2 px-1.5 py-0.5 text-xs">
-                  {orders.filter(o => o.status === status).length}
-                </Badge>
-              </TabsTrigger>
-            ))}
+          <TabsList className="bg-transparent p-0 border-b h-auto rounded-none">
+            {orderStatuses.map(status => {
+              const count = getOrderCount(status);
+              return (
+                <TabsTrigger 
+                  key={status} 
+                  value={status}
+                  className={cn(
+                    "data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none",
+                    "text-base px-4"
+                  )}
+                >
+                  <span className="whitespace-nowrap">{status}</span>
+                  <Badge 
+                     variant={statusVariant[status]} 
+                     className={cn("ml-2 px-2 py-0.5 text-xs font-semibold", {
+                       'bg-primary/10 text-primary': status === 'In-progress',
+                       'bg-green-100 text-green-800': status === 'Delivered',
+                       'bg-red-100 text-red-800': status === 'Cancelled'
+                     })}
+                  >
+                    {count > 9 ? '9+' : count}
+                  </Badge>
+                </TabsTrigger>
+              )
+            })}
           </TabsList>
         </div>
         {orderStatuses.map(status => (
-          <TabsContent key={status} value={status}>
+          <TabsContent key={status} value={status} className="mt-4">
             <OrdersTable 
               orders={orders.filter(o => o.status === status)}
               onShowDetails={handleShowDetails}
               onAssignAgent={handleAssignAgent}
               onCancelOrder={handleCancelOrder}
+              onStatusChange={handleStatusChange}
             />
           </TabsContent>
         ))}
