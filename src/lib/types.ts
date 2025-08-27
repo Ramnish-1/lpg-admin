@@ -67,12 +67,20 @@ export interface Order {
   returnReason?: string;
 }
 
+export interface PaymentMethod {
+    id: string;
+    name: string;
+    description: string;
+    status: 'Active' | 'Inactive';
+    config: Record<string, any>; // For API keys, etc.
+}
+
 export interface Payment {
   id: string;
   orderId: string;
   amount: number;
   status: 'Pending' | 'Success' | 'Refunded';
-  type: 'COD';
+  method: string; // e.g., 'Cash on Delivery', 'UPI'
   timestamp: Date;
 }
 

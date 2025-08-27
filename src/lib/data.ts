@@ -1,5 +1,6 @@
 
-import type { User, Product, Agent, Order, Payment } from './types';
+
+import type { User, Product, Agent, Order, Payment, PaymentMethod } from './types';
 
 // Dummy Data
 const users: User[] = [
@@ -97,11 +98,17 @@ const enrichOrders = (ordersToEnrich: any[]): Order[] => {
 
 let orders: Order[] = enrichOrders(baseOrders);
 
+const paymentMethods: PaymentMethod[] = [
+    { id: 'pm_1', name: 'Cash on Delivery', description: 'Pay cash upon receiving the order.', status: 'Active', config: {} },
+    { id: 'pm_2', name: 'UPI', description: 'Pay via any UPI app (Google Pay, PhonePe, etc.).', status: 'Active', config: { upiId: 'gastrack@bank' } },
+    { id: 'pm_3', name: 'Credit/Debit Card', description: 'Pay using Visa, Mastercard, or Rupay.', status: 'Inactive', config: {} },
+    { id: 'pm_4', name: 'Netbanking', description: 'Pay through your bank\'s netbanking portal.', status: 'Inactive', config: {} }
+];
 
 const payments: Payment[] = [
-  { id: 'pay_1', orderId: 'ord_1', amount: 1100, status: 'Success', type: 'COD', timestamp: new Date('2024-05-20') },
-  { id: 'pay_2', orderId: 'ord_2', amount: 650, status: 'Pending', type: 'COD', timestamp: new Date() },
-  { id: 'pay_3', orderId: 'ord_3', amount: 1100, status: 'Pending', type: 'COD', timestamp: new Date(new Date().setDate(new Date().getDate() - 1)) },
+  { id: 'pay_1', orderId: 'ord_1', amount: 1100, status: 'Success', method: 'Cash on Delivery', timestamp: new Date('2024-05-20') },
+  { id: 'pay_2', orderId: 'ord_2', amount: 650, status: 'Pending', method: 'Cash on Delivery', timestamp: new Date() },
+  { id: 'pay_3', orderId: 'ord_3', amount: 1100, status: 'Pending', method: 'Cash on Delivery', timestamp: new Date(new Date().setDate(new Date().getDate() - 1)) },
 ];
 
 // Data Access Functions (simulating API calls)
@@ -179,6 +186,8 @@ export async function getProductsData(): Promise<Product[]> { return products; }
 
 // Payments
 export async function getPaymentsData(): Promise<Payment[]> { return payments; }
+export async function getPaymentMethodsData(): Promise<PaymentMethod[]> { return paymentMethods; }
+
 
 // This is a utility function to update localStorage, not an API call
 export function updateLocalStorage(key: string, data: any) {
