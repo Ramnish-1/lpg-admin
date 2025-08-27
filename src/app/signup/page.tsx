@@ -30,6 +30,7 @@ const GasPump = (props: React.SVGProps<SVGSVGElement>) => (
 export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -40,7 +41,7 @@ export default function SignupPage() {
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword || !phone) {
       toast({
         variant: 'destructive',
         title: 'Signup Failed',
@@ -59,7 +60,7 @@ export default function SignupPage() {
     }
 
 
-    if (signup(name, email, password)) {
+    if (signup(name, email, password, phone)) {
       toast({
         title: 'Signup Successful',
         description: 'You can now log in with your new account.',
@@ -108,6 +109,17 @@ export default function SignupPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input 
+                id="phone" 
+                type="tel"
+                placeholder="9876543210" 
+                required 
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
               />
             </div>
             <div className="grid gap-2">

@@ -9,7 +9,7 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => boolean;
   logout: () => void;
-  signup: (name: string, email: string, password: string) => boolean;
+  signup: (name: string, email: string, password: string, phone: string) => boolean;
 }
 
 const AUTH_STORAGE_KEY = 'gastrack-auth';
@@ -48,15 +48,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    const storedAuth = getStoredAuth();
-    if (storedAuth) {
-        setUser(storedAuth);
-        setIsAuthenticated(true);
-    }
-    setIsLoading(false);
+    setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      const storedAuth = getStoredAuth();
+      if (storedAuth) {
+          setUser(storedAuth);
+          setIsAuthenticated(true);
+      }
+      setIsLoading(false);
+    }
+  }, [isClient]);
 
   const login = (email: string, password: string): boolean => {
     const users = getStoredUsers();
@@ -75,15 +82,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setIsAuthenticated(false);
     if (typeof window !== 'undefined') {
-      const keysToRemove = [AUTH_STORAGE_KEY, 'gastrack-profile', 'gastrack-settings', 'gastrack-agents', 'gastrack-orders', 'gastrack-products', 'gastrack-users'];
+      const keysToRemove = [AUTH_STORAGE_KEY, 'gastrack-profile', 'gastrack-settings', 'gastrack-agents', 'gastrack-orders', 'gastrack-products', 'gastrack-customers'];
       keysToRemove.forEach(key => {
         window.localStorage.removeItem(key);
       });
+      window.localStorage.removeItem(USERS_DB_KEY); // Also clear the user DB for consistency
       window.location.href = '/login';
     }
   }
 
-  const signup = (name: string, email: string, password: string): boolean => {
+  const signup = (name: string, email: string, password: string, phone: string): boolean => {
     const users = getStoredUsers();
     if (users.find(u => u.email === email)) {
         return false; // User already exists
@@ -94,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name,
         email,
         password, // In a real app, this would be hashed
-        phone: '',
+        phone: phone,
         address: '',
         status: 'Active',
         orderHistory: [],
@@ -104,8 +112,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const updatedUsers = [...users, newUser];
     window.localStorage.setItem(USERS_DB_KEY, JSON.stringify(updatedUsers));
-    // Also save this new user to the main user list for the Users page
-     window.localStorage.setItem('gastrack-users', JSON.stringify(updatedUsers));
+    // Also save this new user to the main user list for the Customers page
+     window.localStorage.setItem('gastrack-customers', JSON.stringify(updatedUsers));
 
     return true;
   }
