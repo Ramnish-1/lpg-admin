@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { ProfileContext } from '@/context/profile-context';
 import { SettingsContext } from '@/context/settings-context';
+import { useAuth } from '@/context/auth-context';
 
 const GasPump = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -59,27 +60,26 @@ const navItems = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { toast } = useToast();
   const { profile } = React.useContext(ProfileContext);
   const { settings } = React.useContext(SettingsContext);
+  const { isAuthenticated, logout } = useAuth();
+  
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, router]);
+
 
   const handleLogout = () => {
+    logout();
     toast({
       title: "Logged Out",
       description: "You have been successfully logged out.",
     });
-
-    // Clear all app-related data from localStorage
-    Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('gastrack-')) {
-        localStorage.removeItem(key);
-      }
-    });
-
-    // Redirect to home page after a short delay
-    setTimeout(() => {
-        window.location.href = '/';
-    }, 500);
+    router.push('/login');
   }
 
   const sidebarNav = (
@@ -99,6 +99,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       ))}
     </nav>
   );
+  
+  if (!isAuthenticated) {
+    return null; // or a loading spinner
+  }
+
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
