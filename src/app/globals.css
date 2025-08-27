@@ -9,11 +9,11 @@ body {
 
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%;
+    --background: 220 13% 9%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --card: 220 13% 11%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    --popover: 220 13% 9%;
     --popover-foreground: 210 40% 98%;
     --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.2 47.4% 11.2%;
@@ -36,11 +36,11 @@ body {
     --radius: 0.5rem;
   }
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 220 13% 9%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --card: 220 13% 11%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    --popover: 220 13% 9%;
     --popover-foreground: 210 40% 98%;
     --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.2 47.4% 11.2%;
@@ -86,23 +86,5 @@ body {
 
   .animate-cylinder-blast {
     animation: cylinder-blast 2s ease-out forwards;
-  }
-
-  @keyframes wave-left {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(15deg); }
-  }
-
-  @keyframes wave-right {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(-15deg); }
-  }
-
-  .animate-wave-left {
-    animation: wave-left 2s ease-in-out infinite;
-  }
-
-  .animate-wave-right {
-    animation: wave-right 2s ease-in-out infinite;
   }
 }
