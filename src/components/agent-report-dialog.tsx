@@ -33,6 +33,13 @@ const chartConfig = {
 export function AgentReportDialog({ agent, isOpen, onOpenChange }: AgentReportDialogProps) {
   if (!agent) return null;
 
+  const reportData = agent.report || {
+    totalDeliveries: 0,
+    totalEarnings: 0,
+    onTimeRate: 0,
+    monthlyDeliveries: [],
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
@@ -61,7 +68,7 @@ export function AgentReportDialog({ agent, isOpen, onOpenChange }: AgentReportDi
                     <CheckCircle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{agent.report?.totalDeliveries}</div>
+                    <div className="text-2xl font-bold">{reportData.totalDeliveries}</div>
                 </CardContent>
             </Card>
             <Card>
@@ -70,7 +77,7 @@ export function AgentReportDialog({ agent, isOpen, onOpenChange }: AgentReportDi
                     <IndianRupee className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">₹{agent.report?.totalEarnings.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">₹{reportData.totalEarnings.toLocaleString()}</div>
                 </CardContent>
             </Card>
             <Card>
@@ -79,7 +86,7 @@ export function AgentReportDialog({ agent, isOpen, onOpenChange }: AgentReportDi
                     <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{agent.report?.onTimeRate}%</div>
+                    <div className="text-2xl font-bold">{reportData.onTimeRate}%</div>
                 </CardContent>
             </Card>
         </div>
@@ -92,7 +99,7 @@ export function AgentReportDialog({ agent, isOpen, onOpenChange }: AgentReportDi
             </CardHeader>
             <CardContent>
                  <ChartContainer config={chartConfig} className="h-[200px] w-full">
-                    <BarChart accessibilityLayer data={agent.report?.monthlyDeliveries}>
+                    <BarChart accessibilityLayer data={reportData.monthlyDeliveries}>
                         <CartesianGrid vertical={false} />
                         <XAxis
                         dataKey="month"
