@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, AlertCircle } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, AlertCircle, ChevronDown } from 'lucide-react';
 import { getProductsData } from '@/lib/data';
 import type { Product } from '@/lib/types';
 import { useEffect, useState, useMemo } from 'react';
@@ -151,14 +151,13 @@ export default function ProductsPage() {
                 return (
                   <TableRow 
                     key={product.id} 
-                    onClick={() => handleShowDetails(product)} 
-                    className={cn("cursor-pointer", {
+                    className={cn({
                       "bg-red-100 hover:bg-red-100/80 dark:bg-red-900/20 dark:hover:bg-red-900/30": isLowStock
                     })}
                   >
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>₹{product.price.toLocaleString()}</TableCell>
-                    <TableCell>
+                    <TableCell className="font-medium" onClick={() => handleShowDetails(product)}>{product.name}</TableCell>
+                    <TableCell onClick={() => handleShowDetails(product)}>₹{product.price.toLocaleString()}</TableCell>
+                    <TableCell onClick={() => handleShowDetails(product)}>
                       <div className="flex items-center gap-2">
                         <span>{product.stock}</span>
                         {isLowStockLegacy && !isLowStock && (
@@ -174,11 +173,26 @@ export default function ProductsPage() {
                       </div>
                     </TableCell>
                      <TableCell>
-                        <Badge variant={product.status === 'Active' ? 'default' : 'outline'} className={product.status === 'Active' ? 'bg-green-500 text-white' : ''}>
-                          {product.status}
-                        </Badge>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="w-28 justify-between">
+                                    <span className={cn({
+                                        'text-green-600': product.status === 'Active',
+                                        'text-gray-500': product.status === 'Inactive'
+                                    })}>
+                                        {product.status}
+                                    </span>
+                                    <ChevronDown className="h-4 w-4 text-muted-foreground"/>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                                <DropdownMenuItem onClick={() => handleToggleStatus(product)}>
+                                    {product.status === 'Active' ? 'Set as Inactive' : 'Set as Active'}
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
+                    <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -189,9 +203,6 @@ export default function ProductsPage() {
                         <DropdownMenuContent align="end">
                            <DropdownMenuItem onClick={() => handleShowDetails(product)}>View Details</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEditProduct(product)}>Edit Price/Stock</DropdownMenuItem>
-                           <DropdownMenuItem onClick={() => handleToggleStatus(product)}>
-                            {product.status === 'Active' ? 'Set as Inactive' : 'Set as Active'}
-                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -251,3 +262,5 @@ export default function ProductsPage() {
     </AppShell>
   );
 }
+
+    
