@@ -3,18 +3,10 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { getDashboardData, getRecentOrders } from '@/lib/data';
 import { Users, ShoppingCart, Truck, IndianRupee } from 'lucide-react';
 import type { Order } from '@/lib/types';
-
-const chartConfig = {
-  orders: {
-    label: "Orders",
-    color: "hsl(var(--chart-1))",
-  },
-} satisfies ChartConfig;
+import { DashboardChart } from '@/components/dashboard-chart';
 
 export default async function DashboardPage() {
   const { stats, ordersByDay } = await getDashboardData();
@@ -79,21 +71,7 @@ export default async function DashboardPage() {
               <CardTitle>Orders Overview (Last 7 Days)</CardTitle>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                <BarChart accessibilityLayer data={ordersByDay}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="day"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    tickFormatter={(value) => value.slice(0, 3)}
-                  />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="orders" fill="var(--color-orders)" radius={4} />
-                </BarChart>
-              </ChartContainer>
+              <DashboardChart ordersByDay={ordersByDay} />
             </CardContent>
           </Card>
           <Card>
