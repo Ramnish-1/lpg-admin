@@ -1,3 +1,4 @@
+
 "use client";
 
 import { AppShell } from '@/components/app-shell';
@@ -24,6 +25,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
+const USERS_STORAGE_KEY = 'gastrack-users';
+
+
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -33,11 +37,41 @@ export default function UsersPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    getUsersData().then(data => {
-      setUsers(data);
-      setFilteredUsers(data);
-    });
+    const fetchUsers = async () => {
+      try {
+        const savedUsers = window.localStorage.getItem(USERS_STORAGE_KEY);
+        if (savedUsers) {
+          const parsedUsers = JSON.parse(savedUsers).map((u: any) => ({
+            ...u,
+            createdAt: new Date(u.createdAt),
+          }));
+          setUsers(parsedUsers);
+          setFilteredUsers(parsedUsers);
+        } else {
+          const data = await getUsersData();
+          setUsers(data);
+          setFilteredUsers(data);
+          window.localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(data));
+        }
+      } catch (error) {
+        console.error("Failed to load users from localStorage", error);
+        const data = await getUsersData();
+        setUsers(data);
+        setFilteredUsers(data);
+      }
+    };
+    fetchUsers();
   }, []);
+
+  const updateUsersStateAndStorage = (newUsers: User[]) => {
+    setUsers(newUsers);
+    setFilteredUsers(newUsers); // Keep filtered view in sync or re-apply filter
+    try {
+      window.localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(newUsers));
+    } catch (error) {
+      console.error("Failed to save users to localStorage", error);
+    }
+  };
   
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     const searchTerm = event.target.value.toLowerCase();
@@ -59,8 +93,7 @@ export default function UsersPage() {
     if (selectedUser && action) {
       const newStatus = action === 'Block' ? 'Blocked' : 'Active';
       const updatedUsers = users.map(u => u.id === selectedUser.id ? { ...u, status: newStatus } : u)
-      setUsers(updatedUsers);
-      setFilteredUsers(updatedUsers);
+      updateUsersStateAndStorage(updatedUsers);
 
       toast({
         title: `User ${action === 'Block' ? 'Blocked' : 'Unblocked'}`,
