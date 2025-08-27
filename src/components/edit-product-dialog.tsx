@@ -23,13 +23,13 @@ interface EditProductDialogProps {
 }
 
 export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpdate }: EditProductDialogProps) {
-  const [price, setPrice] = useState(product.price);
-  const [stock, setStock] = useState(product.stock);
+  const [price, setPrice] = useState(String(product.price));
+  const [stock, setStock] = useState(String(product.stock));
 
   useEffect(() => {
     if (isOpen) {
-      setPrice(product.price);
-      setStock(product.stock);
+      setPrice(String(product.price));
+      setStock(String(product.stock));
     }
   }, [product, isOpen]);
 
@@ -60,8 +60,9 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
               id="price" 
               type="number"
               value={price} 
-              onChange={(e) => setPrice(Number(e.target.value))} 
-              className="col-span-3" 
+              onChange={(e) => setPrice(e.target.value)} 
+              className="col-span-3"
+              placeholder="e.g. 1100" 
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -72,8 +73,9 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
               id="stock" 
               type="number"
               value={stock} 
-              onChange={(e) => setStock(Number(e.target.value))} 
-              className="col-span-3" 
+              onChange={(e) => setStock(e.target.value)} 
+              className="col-span-3"
+              placeholder="e.g. 150" 
             />
           </div>
         </div>

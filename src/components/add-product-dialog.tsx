@@ -25,25 +25,25 @@ interface AddProductDialogProps {
 export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProductDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [price, setPrice] = useState(0);
-  const [stock, setStock] = useState(0);
-  const [lowStockThreshold, setLowStockThreshold] = useState(10);
+  const [price, setPrice] = useState('');
+  const [stock, setStock] = useState('');
+  const [lowStockThreshold, setLowStockThreshold] = useState('');
 
   const handleSubmit = () => {
-    if (name && description && price > 0) {
+    if (name && description && Number(price) > 0) {
       onProductAdd({
         name,
         description,
         price: Number(price),
-        stock: Number(stock),
-        lowStockThreshold: Number(lowStockThreshold),
+        stock: Number(stock) || 0,
+        lowStockThreshold: Number(lowStockThreshold) || 10,
       });
       // Reset form and close dialog
       setName('');
       setDescription('');
-      setPrice(0);
-      setStock(0);
-      setLowStockThreshold(10);
+      setPrice('');
+      setStock('');
+      setLowStockThreshold('');
       onOpenChange(false);
     }
   };
@@ -69,16 +69,16 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
           <div className="grid grid-cols-2 gap-4">
              <div className="space-y-2">
               <Label htmlFor="price">Price (₹)</Label>
-              <Input id="price" type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
+              <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="e.g. 1100" />
             </div>
              <div className="space-y-2">
               <Label htmlFor="stock">Stock</Label>
-              <Input id="stock" type="number" value={stock} onChange={(e) => setStock(Number(e.target.value))} />
+              <Input id="stock" type="number" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="e.g. 150" />
             </div>
           </div>
            <div className="space-y-2">
               <Label htmlFor="lowStockThreshold">Low Stock Threshold</Label>
-              <Input id="lowStockThreshold" type="number" value={lowStockThreshold} onChange={(e) => setLowStockThreshold(Number(e.target.value))} />
+              <Input id="lowStockThreshold" type="number" value={lowStockThreshold} onChange={(e) => setLowStockThreshold(e.target.value)} placeholder="e.g. 20" />
             </div>
         </div>
         <DialogFooter>
