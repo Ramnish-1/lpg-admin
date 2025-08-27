@@ -61,7 +61,7 @@ function OrdersTable({ orders, onShowDetails, onAssignAgent, onCancelOrder }: {
           </TableHeader>
           <TableBody>
             {orders.map((order: Order) => (
-              <TableRow key={order.id}>
+              <TableRow key={order.id} onClick={() => onShowDetails(order)} className="cursor-pointer">
                 <TableCell className="font-medium text-primary">#{order.id.slice(0, 6)}</TableCell>
                 <TableCell>{order.customerName}</TableCell>
                 <TableCell>
@@ -73,7 +73,7 @@ function OrdersTable({ orders, onShowDetails, onAssignAgent, onCancelOrder }: {
                 </TableCell>
                 <TableCell>₹{order.totalAmount.toLocaleString()}</TableCell>
                 <TableCell>{new Date(order.createdAt).toLocaleString()}</TableCell>
-                <TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -132,9 +132,12 @@ export default function OrdersPage() {
             setOrders(data);
         }
     };
-
+    const fetchAgents = async () => {
+      const data = await getAgentsData();
+      setAgents(data);
+    }
     fetchOrders();
-    getAgentsData().then(setAgents);
+    fetchAgents();
   }, []);
   
   const updateOrdersStateAndStorage = (newOrders: Order[]) => {
