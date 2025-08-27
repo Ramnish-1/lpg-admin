@@ -15,6 +15,7 @@ export function AgentHoverCard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const fetchAgents = async () => {
+      if (typeof window === 'undefined') return;
       try {
         const savedAgents = window.localStorage.getItem(AGENTS_STORAGE_KEY);
         if (savedAgents) {

@@ -32,8 +32,10 @@ export default function DashboardPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     const fetchDashboardData = async () => {
       try {
         const savedAgents = window.localStorage.getItem(AGENTS_STORAGE_KEY);
@@ -78,6 +80,10 @@ export default function DashboardPage() {
     'In-progress': 'outline',
     'Cancelled': 'destructive',
   };
+  
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <AppShell>

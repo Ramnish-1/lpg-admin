@@ -17,8 +17,10 @@ const ITEMS_PER_PAGE = 10;
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     getPaymentsData().then(setPayments);
   }, []);
 
@@ -39,6 +41,10 @@ export default function PaymentsPage() {
     'Pending': 'secondary',
     'Refunded': 'destructive',
   };
+  
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <AppShell>
