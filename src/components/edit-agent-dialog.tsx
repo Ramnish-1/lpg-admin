@@ -19,6 +19,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
+import { Textarea } from './ui/textarea';
 
 interface EditAgentDialogProps {
   agent: Agent;
@@ -32,7 +33,7 @@ const agentSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }).min(1, { message: "Email is required." }),
   phone: z.string().min(10, { message: "Phone number must be at least 10 digits." }),
   vehicleDetails: z.string().min(1, { message: "Vehicle details are required." }),
-  panCard: z.string().min(1, { message: "PAN card is required." }),
+  panCard: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, { message: "Invalid PAN card format." }),
   aadharCard: z.string().min(1, { message: "Aadhar card is required." }),
   accountDetails: z.string().min(1, { message: "Account details are required." }),
 });
@@ -138,7 +139,13 @@ export function EditAgentDialog({ agent, isOpen, onOpenChange, onAgentUpdate }: 
                     <FormItem>
                       <FormLabel>PAN Card</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input 
+                          {...field}
+                          onChange={(e) => {
+                            const upperValue = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                            field.onChange(upperValue);
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -164,7 +171,7 @@ export function EditAgentDialog({ agent, isOpen, onOpenChange, onAgentUpdate }: 
                     <FormItem>
                       <FormLabel>Bank Account Details</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Textarea {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

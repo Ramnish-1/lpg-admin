@@ -18,6 +18,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
+import { Textarea } from './ui/textarea';
 
 interface AddAgentDialogProps {
   isOpen: boolean;
@@ -30,7 +31,7 @@ const agentSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }).min(1, { message: "Email is required." }),
   phone: z.string().min(10, { message: "Phone number must be at least 10 digits." }),
   vehicleDetails: z.string().min(1, { message: "Vehicle details are required." }),
-  panCard: z.string().min(1, { message: "PAN card is required." }),
+  panCard: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, { message: "Invalid PAN card format." }),
   aadharCard: z.string().min(1, { message: "Aadhar card is required." }),
   accountDetails: z.string().min(1, { message: "Account details are required." }),
 });
@@ -136,7 +137,14 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
                     <FormItem>
                       <FormLabel>PAN Card</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. ABCDE1234F" {...field} />
+                        <Input 
+                          placeholder="e.g. ABCDE1234F" 
+                          {...field}
+                          onChange={(e) => {
+                            const upperValue = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                            field.onChange(upperValue);
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -162,7 +170,7 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
                     <FormItem>
                       <FormLabel>Bank Account Details</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. SBI - 1234567890" {...field} />
+                        <Textarea placeholder="e.g. State Bank of India&#10;Account: 1234567890&#10;IFSC: SBIN0001234" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
