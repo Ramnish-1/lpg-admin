@@ -27,6 +27,7 @@ import {
   Settings,
   LogOut,
   User as UserIcon,
+  UserPlus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -57,6 +58,7 @@ const navItems = [
   { href: '/products', label: 'Products', icon: Package },
   { href: '/payments', label: 'Payments', icon: CreditCard },
   { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/add-user', label: 'Add User', icon: UserPlus },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
