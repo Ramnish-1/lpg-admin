@@ -33,7 +33,11 @@ export interface Agent {
   id:string;
   name: string;
   phone: string;
+  email: string;
   vehicleDetails: string;
+  panCard: string;
+  aadharCard: string;
+  accountDetails: string;
   status: 'Online' | 'Offline';
   createdAt: Date;
   report: AgentReport;

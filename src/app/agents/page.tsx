@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Trash2 } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, Mail } from 'lucide-react';
 import { getAgentsData } from '@/lib/data';
 import type { Agent } from '@/lib/types';
 import { useEffect, useState, useMemo } from 'react';
@@ -127,12 +127,13 @@ export default function AgentsPage() {
     setSelectedAgent(null);
   }
 
-  const handleAgentAdd = (newAgent: Omit<Agent, 'id' | 'createdAt' | 'status' | 'report'>) => {
+  const handleAgentAdd = (newAgent: Omit<Agent, 'id' | 'createdAt' | 'status' | 'report' | 'currentLocation'>) => {
     const agentToAdd: Agent = {
       ...newAgent,
       id: `agt_${Date.now()}`,
       createdAt: new Date(),
       status: 'Offline',
+      currentLocation: { lat: 12.9716, lng: 77.5946 }, // Default to Bangalore
       report: {
         totalDeliveries: 0,
         totalEarnings: 0,
@@ -233,9 +234,9 @@ export default function AgentsPage() {
                   />
                 </TableHead>
                 <TableHead>Agent</TableHead>
-                <TableHead>Vehicle</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Joined On</TableHead>
+                <TableHead className="hidden sm:table-cell">Vehicle</TableHead>
+                <TableHead className="hidden md:table-cell">Status</TableHead>
+                <TableHead className="hidden lg:table-cell">Joined On</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -243,8 +244,8 @@ export default function AgentsPage() {
             </TableHeader>
             <TableBody>
               {paginatedAgents.map((agent: Agent) => (
-                <TableRow key={agent.id} data-state={selectedAgentIds.includes(agent.id) && "selected"}>
-                  <TableCell>
+                <TableRow key={agent.id} data-state={selectedAgentIds.includes(agent.id) && "selected"} className="cursor-pointer">
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                      <Checkbox
                         checked={selectedAgentIds.includes(agent.id)}
                         onCheckedChange={(checked) => handleSelectOne(agent.id, !!checked)}
@@ -253,21 +254,29 @@ export default function AgentsPage() {
                   </TableCell>
                   <TableCell className="font-medium" onClick={() => handleViewReport(agent)} >
                     <div className="font-medium">{agent.name}</div>
-                    <div className="text-sm text-muted-foreground flex items-center gap-1">
-                      <a href={`tel:${agent.phone}`} onClick={(e) => e.stopPropagation()} className="hover:underline">{agent.phone}</a>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-green-500 hover:text-green-600 -ml-1" onClick={(e) => handleWhatsAppClick(e, agent.phone)}>
-                          <WhatsAppIcon className="h-4 w-4" />
-                      </Button>
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                        <a href={`tel:${agent.phone}`} onClick={(e) => e.stopPropagation()} className="hover:underline flex items-center gap-1">
+                            {agent.phone}
+                        </a>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-green-500 hover:text-green-600 -ml-2" onClick={(e) => handleWhatsAppClick(e, agent.phone)}>
+                            <WhatsAppIcon className="h-4 w-4" />
+                        </Button>
+                    </div>
+                     <div className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Mail className="h-3.5 w-3.5"/>
+                        <a href={`mailto:${agent.email}`} onClick={(e) => e.stopPropagation()} className="hover:underline">
+                            {agent.email}
+                        </a>
                     </div>
                   </TableCell>
-                  <TableCell onClick={() => handleViewReport(agent)}>{agent.vehicleDetails}</TableCell>
-                  <TableCell onClick={() => handleViewReport(agent)}>
+                  <TableCell onClick={() => handleViewReport(agent)} className="hidden sm:table-cell">{agent.vehicleDetails}</TableCell>
+                  <TableCell onClick={() => handleViewReport(agent)} className="hidden md:table-cell">
                     <Badge variant={agent.status === 'Online' ? 'default' : 'outline'} className={agent.status === 'Online' ? 'bg-green-500 text-white' : ''}>
                       <span className={`inline-block w-2 h-2 mr-2 rounded-full ${agent.status === 'Online' ? 'bg-white' : 'bg-gray-400'}`}></span>
                       {agent.status}
                     </Badge>
                   </TableCell>
-                  <TableCell onClick={() => handleViewReport(agent)}>{new Date(agent.createdAt).toLocaleString()}</TableCell>
+                  <TableCell onClick={() => handleViewReport(agent)} className="hidden lg:table-cell">{new Date(agent.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -347,13 +356,13 @@ export default function AgentsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <AgentReportDialog
-        agent={selectedAgent}
-        isOpen={isReportDialogOpen}
-        onOpenChange={setIsReportDialogOpen}
-      />
+      {selectedAgent && (
+        <AgentReportDialog
+          agent={selectedAgent}
+          isOpen={isReportDialogOpen}
+          onOpenChange={setIsReportDialogOpen}
+        />
+      )}
     </AppShell>
   );
 }
-
-    

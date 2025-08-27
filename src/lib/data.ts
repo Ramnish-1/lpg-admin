@@ -23,8 +23,12 @@ const agents: Agent[] = [
   { 
     id: 'agt_1', 
     name: 'Suresh Singh', 
-    phone: '8765432109', 
-    vehicleDetails: 'KA-01-AB-1234', 
+    phone: '8765432109',
+    email: 'suresh@example.com',
+    vehicleDetails: 'KA-01-AB-1234',
+    panCard: 'ABCDE1234F',
+    aadharCard: '1234 5678 9012',
+    accountDetails: 'SBI - 1234567890',
     status: 'Online', 
     createdAt: new Date('2023-01-05'),
     currentLocation: { lat: 12.973, lng: 77.61 }, // Near MG Road, Bangalore
@@ -44,8 +48,12 @@ const agents: Agent[] = [
   { 
     id: 'agt_2', 
     name: 'Deepak Verma', 
-    phone: '8765432108', 
+    phone: '8765432108',
+    email: 'deepak@example.com',
     vehicleDetails: 'MH-02-CD-5678', 
+    panCard: 'FGHIJ5678K',
+    aadharCard: '9876 5432 1098',
+    accountDetails: 'HDFC - 0987654321',
     status: 'Offline', 
     createdAt: new Date('2023-02-01'),
     currentLocation: { lat: 19.07, lng: 72.87 }, // Near Bandra, Mumbai
