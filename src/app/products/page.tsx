@@ -16,9 +16,11 @@ import { ProductDetailsDialog } from '@/components/product-details-dialog';
 import { EditProductDialog } from '@/components/edit-product-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { AddProductDialog } from '@/components/add-product-dialog';
+import { cn } from '@/lib/utils';
 
 const PRODUCTS_STORAGE_KEY = 'gastrack-products';
 const ITEMS_PER_PAGE = 10;
+const LOW_STOCK_THRESHOLD = 10;
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -73,6 +75,18 @@ export default function ProductsPage() {
     setIsEditOpen(true);
   };
 
+  const handleToggleStatus = (product: Product) => {
+    const newStatus = product.status === 'Active' ? 'Inactive' : 'Active';
+    const updatedProducts = products.map(p => 
+      p.id === product.id ? { ...p, status: newStatus } : p
+    );
+    updateProductsStateAndStorage(updatedProducts);
+    toast({
+        title: 'Product Status Updated',
+        description: `${product.name} is now ${newStatus}.`,
+    });
+  };
+
   const handleProductUpdate = (updatedProduct: Product) => {
     const newProducts = products.map(p => p.id === updatedProduct.id ? updatedProduct : p);
     updateProductsStateAndStorage(newProducts);
@@ -84,10 +98,11 @@ export default function ProductsPage() {
     setSelectedProduct(null);
   }
 
-  const handleProductAdd = (newProduct: Omit<Product, 'id'>) => {
+  const handleProductAdd = (newProduct: Omit<Product, 'id' | 'status'>) => {
     const productToAdd: Product = {
       ...newProduct,
       id: `prod_${Date.now()}`,
+      status: 'Active',
     };
     const newProducts = [...products, productToAdd];
     updateProductsStateAndStorage(newProducts);
@@ -123,6 +138,7 @@ export default function ProductsPage() {
                 <TableHead>Product Name</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Stock</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -130,20 +146,37 @@ export default function ProductsPage() {
             </TableHeader>
             <TableBody>
               {paginatedProducts.map((product: Product) => {
-                const isLowStock = product.stock < product.lowStockThreshold;
+                const isLowStockLegacy = product.stock < product.lowStockThreshold;
+                const isLowStock = product.stock < LOW_STOCK_THRESHOLD;
                 return (
-                  <TableRow key={product.id} onClick={() => handleShowDetails(product)} className="cursor-pointer">
+                  <TableRow 
+                    key={product.id} 
+                    onClick={() => handleShowDetails(product)} 
+                    className={cn("cursor-pointer", {
+                      "bg-red-100 hover:bg-red-100/80 dark:bg-red-900/20 dark:hover:bg-red-900/30": isLowStock
+                    })}
+                  >
                     <TableCell className="font-medium">{product.name}</TableCell>
                     <TableCell>₹{product.price.toLocaleString()}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span>{product.stock}</span>
-                        {isLowStock && (
+                        {isLowStockLegacy && !isLowStock && (
+                          <Badge variant="destructive" className="flex items-center gap-1 bg-orange-400 hover:bg-orange-500">
+                            <AlertCircle className="h-3 w-3" /> Alert
+                          </Badge>
+                        )}
+                         {isLowStock && (
                           <Badge variant="destructive" className="flex items-center gap-1">
                             <AlertCircle className="h-3 w-3" /> Low
                           </Badge>
                         )}
                       </div>
+                    </TableCell>
+                     <TableCell>
+                        <Badge variant={product.status === 'Active' ? 'default' : 'outline'} className={product.status === 'Active' ? 'bg-green-500 text-white' : ''}>
+                          {product.status}
+                        </Badge>
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
@@ -156,6 +189,9 @@ export default function ProductsPage() {
                         <DropdownMenuContent align="end">
                            <DropdownMenuItem onClick={() => handleShowDetails(product)}>View Details</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEditProduct(product)}>Edit Price/Stock</DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => handleToggleStatus(product)}>
+                            {product.status === 'Active' ? 'Set as Inactive' : 'Set as Active'}
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

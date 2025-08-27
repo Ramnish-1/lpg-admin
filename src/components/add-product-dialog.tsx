@@ -19,7 +19,7 @@ import { Product } from '@/lib/types';
 interface AddProductDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onProductAdd: (product: Omit<Product, 'id'>) => void;
+  onProductAdd: (product: Omit<Product, 'id' | 'status'>) => void;
 }
 
 export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProductDialogProps) {
