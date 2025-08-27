@@ -3,7 +3,7 @@
 
 import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, PlusCircle } from 'lucide-react';
 import { getAgentsData } from '@/lib/data';
 import type { Agent } from '@/lib/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { EditAgentDialog } from '@/components/edit-agent-dialog';
 import { AddAgentDialog } from '@/components/add-agent-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +28,7 @@ import {
 import { AgentReportDialog } from '@/components/agent-report-dialog';
 
 const AGENTS_STORAGE_KEY = 'gastrack-agents';
+const ITEMS_PER_PAGE = 10;
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg
@@ -49,6 +50,7 @@ export default function AgentsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -74,6 +76,14 @@ export default function AgentsPage() {
     };
     fetchAgents();
   }, []);
+
+  const totalPages = Math.ceil(agents.length / ITEMS_PER_PAGE);
+
+  const paginatedAgents = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return agents.slice(startIndex, endIndex);
+  }, [agents, currentPage]);
 
   const updateAgentsStateAndStorage = (newAgents: Agent[]) => {
     setAgents(newAgents);
@@ -110,12 +120,18 @@ export default function AgentsPage() {
     setSelectedAgent(null);
   }
 
-  const handleAgentAdd = (newAgent: Omit<Agent, 'id' | 'createdAt' | 'status'>) => {
+  const handleAgentAdd = (newAgent: Omit<Agent, 'id' | 'createdAt' | 'status' | 'report'>) => {
     const agentToAdd: Agent = {
       ...newAgent,
       id: `agt_${Date.now()}`,
       createdAt: new Date(),
       status: 'Offline',
+      report: {
+        totalDeliveries: 0,
+        totalEarnings: 0,
+        onTimeRate: 0,
+        monthlyDeliveries: [],
+      }
     }
     const newAgents = [...agents, agentToAdd];
     updateAgentsStateAndStorage(newAgents);
@@ -178,7 +194,7 @@ export default function AgentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {agents.map((agent: Agent) => (
+              {paginatedAgents.map((agent: Agent) => (
                 <TableRow key={agent.id} onClick={() => handleViewReport(agent)} className="cursor-pointer">
                   <TableCell className="font-medium">
                     <div className="font-medium">{agent.name}</div>
@@ -217,6 +233,34 @@ export default function AgentsPage() {
             </TableBody>
           </Table>
         </CardContent>
+        {totalPages > 1 && (
+          <CardFooter className="flex justify-between">
+            <div className="text-sm text-muted-foreground">
+              Showing {paginatedAgents.length} of {agents.length} agents.
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <span className="text-sm">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </CardFooter>
+        )}
       </Card>
       
       <AddAgentDialog 

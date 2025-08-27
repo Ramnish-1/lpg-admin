@@ -3,7 +3,7 @@
 
 import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MoreHorizontal, FileDown } from 'lucide-react';
 import { getOrdersData, getAgentsData } from '@/lib/data';
 import type { Order, Agent } from '@/lib/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { OrderDetailsDialog } from '@/components/order-details-dialog';
 import { AssignAgentDialog } from '@/components/assign-agent-dialog';
 import {
@@ -29,6 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 const ORDERS_STORAGE_KEY = 'gastrack-orders';
+const ITEMS_PER_PAGE = 10;
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   'Delivered': 'default',
@@ -37,12 +38,30 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
   'Cancelled': 'destructive',
 };
 
-function OrdersTable({ orders, onShowDetails, onAssignAgent, onCancelOrder }: { 
+function OrdersTable({ 
+  orders, 
+  onShowDetails, 
+  onAssignAgent, 
+  onCancelOrder 
+}: { 
   orders: Order[],
   onShowDetails: (order: Order) => void,
   onAssignAgent: (order: Order) => void,
   onCancelOrder: (order: Order) => void
 }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.ceil(orders.length / ITEMS_PER_PAGE);
+
+  const paginatedOrders = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return orders.slice(startIndex, endIndex);
+  }, [orders, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [orders]);
+
   return (
     <Card>
       <CardContent className="pt-6">
@@ -61,7 +80,7 @@ function OrdersTable({ orders, onShowDetails, onAssignAgent, onCancelOrder }: {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orders.map((order: Order) => (
+              {paginatedOrders.map((order: Order) => (
                 <TableRow key={order.id} onClick={() => onShowDetails(order)} className="cursor-pointer">
                   <TableCell className="font-medium text-primary">#{order.id.slice(0, 6)}</TableCell>
                   <TableCell>{order.customerName}</TableCell>
@@ -100,6 +119,34 @@ function OrdersTable({ orders, onShowDetails, onAssignAgent, onCancelOrder }: {
           </Table>
         </div>
       </CardContent>
+       {totalPages > 1 && (
+        <CardFooter className="flex justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {paginatedOrders.length} of {orders.length} orders.
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+            <span className="text-sm">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        </CardFooter>
+      )}
     </Card>
   )
 }

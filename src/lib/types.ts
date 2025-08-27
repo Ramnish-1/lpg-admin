@@ -35,7 +35,7 @@ export interface Agent {
   vehicleDetails: string;
   status: 'Online' | 'Offline';
   createdAt: Date;
-  report?: AgentReport;
+  report: AgentReport;
 }
 
 export interface Order {

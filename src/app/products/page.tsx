@@ -3,7 +3,7 @@
 
 import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,13 +11,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, PlusCircle, AlertCircle } from 'lucide-react';
 import { getProductsData } from '@/lib/data';
 import type { Product } from '@/lib/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { ProductDetailsDialog } from '@/components/product-details-dialog';
 import { EditProductDialog } from '@/components/edit-product-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { AddProductDialog } from '@/components/add-product-dialog';
 
 const PRODUCTS_STORAGE_KEY = 'gastrack-products';
+const ITEMS_PER_PAGE = 10;
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -25,6 +26,7 @@ export default function ProductsPage() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -43,6 +45,14 @@ export default function ProductsPage() {
       getProductsData().then(setProducts);
     }
   }, [])
+
+  const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
+
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return products.slice(startIndex, endIndex);
+  }, [products, currentPage]);
   
   const updateProductsStateAndStorage = (newProducts: Product[]) => {
     setProducts(newProducts);
@@ -119,7 +129,7 @@ export default function ProductsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((product: Product) => {
+              {paginatedProducts.map((product: Product) => {
                 const isLowStock = product.stock < product.lowStockThreshold;
                 return (
                   <TableRow key={product.id} onClick={() => handleShowDetails(product)} className="cursor-pointer">
@@ -155,6 +165,34 @@ export default function ProductsPage() {
             </TableBody>
           </Table>
         </CardContent>
+        {totalPages > 1 && (
+            <CardFooter className="flex justify-between">
+                <div className="text-sm text-muted-foreground">
+                Showing {paginatedProducts.length} of {products.length} products.
+                </div>
+                <div className="flex items-center gap-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                >
+                    Previous
+                </Button>
+                <span className="text-sm">
+                    Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                >
+                    Next
+                </Button>
+                </div>
+            </CardFooter>
+        )}
       </Card>
       <ProductDetailsDialog
         product={selectedProduct}

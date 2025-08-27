@@ -3,7 +3,7 @@
 
 import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { MoreHorizontal, FileDown } from 'lucide-react';
 import { getUsersData } from '@/lib/data';
 import type { User } from '@/lib/types';
 import { Input } from '@/components/ui/input';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -27,7 +27,7 @@ import {
 import { UserDetailsDialog } from '@/components/user-details-dialog';
 
 const USERS_STORAGE_KEY = 'gastrack-users';
-
+const ITEMS_PER_PAGE = 10;
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -36,6 +36,7 @@ export default function UsersPage() {
   const [action, setAction] = useState<'Block' | 'Unblock' | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -64,10 +65,18 @@ export default function UsersPage() {
     };
     fetchUsers();
   }, []);
+  
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filteredUsers.slice(startIndex, endIndex);
+  }, [filteredUsers, currentPage]);
+
 
   const updateUsersStateAndStorage = (newUsers: User[]) => {
     setUsers(newUsers);
-    // When updating users, we need to reflect that in the filtered list as well.
     const currentSearchTerm = (document.querySelector('input[placeholder="Search users..."]') as HTMLInputElement)?.value || '';
     if (currentSearchTerm) {
         const filtered = newUsers.filter(user => 
@@ -89,6 +98,7 @@ export default function UsersPage() {
   
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     const searchTerm = event.target.value.toLowerCase();
+    setCurrentPage(1);
     const filtered = users.filter(user => 
         user.name.toLowerCase().includes(searchTerm) ||
         user.email.toLowerCase().includes(searchTerm) ||
@@ -169,7 +179,7 @@ export default function UsersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user: User) => (
+                {paginatedUsers.map((user: User) => (
                   <TableRow key={user.id} onClick={() => handleShowDetails(user)} className="cursor-pointer">
                     <TableCell>
                       <div className="font-medium">{user.name}</div>
@@ -214,6 +224,34 @@ export default function UsersPage() {
             </Table>
           </div>
         </CardContent>
+         {totalPages > 1 && (
+          <CardFooter className="flex justify-between">
+            <div className="text-sm text-muted-foreground">
+              Showing {paginatedUsers.length} of {filteredUsers.length} users.
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <span className="text-sm">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </CardFooter>
+        )}
       </Card>
       
       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
