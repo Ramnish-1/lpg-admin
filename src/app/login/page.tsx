@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import Image from 'next/image';
 import { Eye, EyeOff } from 'lucide-react';
+import { LoginAnimation } from '@/components/login-animation';
 
 const GasPump = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -31,6 +32,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showAnimation, setShowAnimation] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const { login } = useAuth();
@@ -38,11 +40,14 @@ export default function LoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (login(email, password)) {
-      toast({
-        title: 'Login Successful',
-        description: 'Welcome back!',
-      });
-      router.push('/');
+       setShowAnimation(true);
+       setTimeout(() => {
+          toast({
+            title: 'Login Successful',
+            description: 'Welcome back!',
+          });
+          router.push('/');
+       }, 2000); // Wait for 2 seconds for animation to complete
     } else {
       toast({
         variant: 'destructive',
@@ -51,6 +56,10 @@ export default function LoginPage() {
       });
     }
   };
+
+  if (showAnimation) {
+    return <LoginAnimation />;
+  }
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
