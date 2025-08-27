@@ -120,12 +120,12 @@ export default function SignupPage() {
       </div>
        <div className="hidden bg-muted lg:block">
         <Image
-          src="https://picsum.photos/1200/900"
-          alt="Image"
-          width="1920"
-          height="1080"
+          src="https://picsum.photos/seed/gas/1200/900"
+          alt="LPG cylinders"
+          width="1200"
+          height="900"
           className="h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-          data-ai-hint="gas cylinders warehouse"
+          data-ai-hint="LPG cylinders"
         />
       </div>
     </div>
