@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MoreHorizontal, FileDown } from 'lucide-react';
+import { MoreHorizontal, FileDown, ChevronDown } from 'lucide-react';
 import { getOrdersData, getAgentsData } from '@/lib/data';
 import type { Order, Agent } from '@/lib/types';
 import { useEffect, useState, useMemo } from 'react';
@@ -71,7 +71,7 @@ function OrdersTable({
                 <TableHead>Customer</TableHead>
                 <TableHead className="hidden sm:table-cell">Agent</TableHead>
                 <TableHead className="hidden md:table-cell">Amount</TableHead>
-                <TableHead className="hidden lg:table-cell">Date</TableHead>
+                <TableHead className="hidden lg:table-cell">Status</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -90,7 +90,38 @@ function OrdersTable({
                     )}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">₹{order.totalAmount.toLocaleString()}</TableCell>
-                  <TableCell className="hidden lg:table-cell">{new Date(order.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                     <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="w-32 justify-between" onClick={(e) => e.stopPropagation()}>
+                                <Badge variant={statusVariant[order.status]} className="pointer-events-none">{order.status}</Badge>
+                                <ChevronDown className="h-4 w-4 text-muted-foreground"/>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+                            <DropdownMenuRadioGroup 
+                                value={order.status} 
+                                onValueChange={(newStatus) => onStatusChange(order, newStatus as Order['status'])}
+                            >
+                            {orderStatuses.filter(s => s !== 'Returned').map(status => (
+                                <DropdownMenuRadioItem 
+                                key={status} 
+                                value={status}
+                                disabled={
+                                    (status === 'In-progress' && !order.assignedAgentId) || 
+                                    (order.status === 'Delivered') ||
+                                    (order.status === 'Cancelled' && status === 'Cancelled') ||
+                                    (order.status === 'Returned')
+                                }
+                                >
+                                {status}
+                                {status === 'In-progress' && !order.assignedAgentId && " (Assign agent first)"}
+                                </DropdownMenuRadioItem>
+                            ))}
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -108,31 +139,6 @@ function OrdersTable({
                         {order.status === 'Delivered' && (
                             <DropdownMenuItem onClick={() => onReturn(order)}>Return</DropdownMenuItem>
                         )}
-                         <DropdownMenuSeparator />
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger disabled={order.status === 'Delivered' || order.status === 'Cancelled' || order.status === 'Returned'}>
-                              <span>Change Status</span>
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent>
-                               <DropdownMenuRadioGroup value={order.status} onValueChange={(newStatus) => onStatusChange(order, newStatus as Order['status'])}>
-                                {orderStatuses.filter(s => s !== 'Returned').map(status => (
-                                  <DropdownMenuRadioItem 
-                                    key={status} 
-                                    value={status}
-                                    disabled={
-                                        (status === 'In-progress' && !order.assignedAgentId) || 
-                                        (order.status === 'Delivered') ||
-                                        (order.status === 'Cancelled' && status === 'Cancelled') ||
-                                        (order.status === 'Returned')
-                                    }
-                                  >
-                                    {status}
-                                    {status === 'In-progress' && !order.assignedAgentId && " (Assign agent first)"}
-                                  </DropdownMenuRadioItem>
-                                ))}
-                              </DropdownMenuRadioGroup>
-                            </DropdownMenuSubContent>
-                          </DropdownMenuSub>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -430,3 +436,5 @@ export default function OrdersPage() {
     </AppShell>
   );
 }
+
+    
