@@ -342,10 +342,10 @@ export default function OrdersPage() {
                     "text-base px-4"
                   )}
                 >
-                  <span className="whitespace-nowrap">{status}</span>
+                  <span className="whitespace-nowrap mr-2">{status}</span>
                   <Badge 
                      variant={statusVariant[status]} 
-                     className={cn("ml-2 px-2 py-0.5 text-xs font-semibold", {
+                     className={cn("px-2 py-0.5 text-xs font-semibold", {
                        'bg-primary/10 text-primary': status === 'In-progress',
                        'bg-green-100 text-green-800': status === 'Delivered',
                        'bg-red-100 text-red-800': status === 'Cancelled'
