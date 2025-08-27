@@ -25,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { AgentReportDialog } from '@/components/agent-report-dialog';
 
 const AGENTS_STORAGE_KEY = 'gastrack-agents';
 
@@ -47,6 +48,7 @@ export default function AgentsPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -92,6 +94,11 @@ export default function AgentsPage() {
     setIsDeleteDialogOpen(true);
   };
   
+  const handleViewReport = (agent: Agent) => {
+    setSelectedAgent(agent);
+    setIsReportDialogOpen(true);
+  };
+
   const handleAgentUpdate = (updatedAgent: Agent) => {
     const newAgents = agents.map(a => a.id === updatedAgent.id ? updatedAgent : a);
     updateAgentsStateAndStorage(newAgents);
@@ -172,7 +179,7 @@ export default function AgentsPage() {
             </TableHeader>
             <TableBody>
               {agents.map((agent: Agent) => (
-                <TableRow key={agent.id}>
+                <TableRow key={agent.id} onClick={() => handleViewReport(agent)} className="cursor-pointer">
                   <TableCell className="font-medium">
                     <div className="font-medium">{agent.name}</div>
                     <div className="text-sm text-muted-foreground flex items-center gap-1">
@@ -190,7 +197,7 @@ export default function AgentsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>{new Date(agent.createdAt).toLocaleString()}</TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -200,7 +207,7 @@ export default function AgentsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => handleEdit(agent)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>View Report</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleViewReport(agent)}>View Report</DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(agent)}>Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -241,6 +248,11 @@ export default function AgentsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <AgentReportDialog
+        agent={selectedAgent}
+        isOpen={isReportDialogOpen}
+        onOpenChange={setIsReportDialogOpen}
+      />
     </AppShell>
   );
 }

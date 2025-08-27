@@ -1,4 +1,5 @@
 
+
 import type { User, Product, Agent, Order, Payment } from './types';
 
 // Dummy Data
@@ -15,8 +16,46 @@ const products: Product[] = [
 ];
 
 const agents: Agent[] = [
-  { id: 'agt_1', name: 'Suresh Singh', phone: '8765432109', vehicleDetails: 'KA-01-AB-1234', status: 'Online', createdAt: new Date('2023-01-05') },
-  { id: 'agt_2', name: 'Deepak Verma', phone: '8765432108', vehicleDetails: 'MH-02-CD-5678', status: 'Offline', createdAt: new Date('2023-02-01') },
+  { 
+    id: 'agt_1', 
+    name: 'Suresh Singh', 
+    phone: '8765432109', 
+    vehicleDetails: 'KA-01-AB-1234', 
+    status: 'Online', 
+    createdAt: new Date('2023-01-05'),
+    report: {
+      totalDeliveries: 124,
+      totalEarnings: 31000,
+      onTimeRate: 98,
+      monthlyDeliveries: [
+        { month: 'Jan', deliveries: 20 },
+        { month: 'Feb', deliveries: 25 },
+        { month: 'Mar', deliveries: 30 },
+        { month: 'Apr', deliveries: 28 },
+        { month: 'May', deliveries: 21 },
+      ]
+    }
+  },
+  { 
+    id: 'agt_2', 
+    name: 'Deepak Verma', 
+    phone: '8765432108', 
+    vehicleDetails: 'MH-02-CD-5678', 
+    status: 'Offline', 
+    createdAt: new Date('2023-02-01'),
+    report: {
+      totalDeliveries: 95,
+      totalEarnings: 23750,
+      onTimeRate: 92,
+       monthlyDeliveries: [
+        { month: 'Jan', deliveries: 15 },
+        { month: 'Feb', deliveries: 18 },
+        { month: 'Mar', deliveries: 22 },
+        { month: 'Apr', deliveries: 20 },
+        { month: 'May', deliveries: 20 },
+      ]
+    }
+  },
 ];
 
 const baseOrders: Omit<Order, 'customerName' | 'agentName' | 'agentPhone' | 'customerPhone'>[] = [
@@ -95,7 +134,8 @@ export async function getUsersData() { return users; }
 
 // Orders
 export async function getOrdersData(): Promise<Order[]> {
-  return orders;
+  const enriched = enrichOrders(baseOrders);
+  return enriched;
 }
 
 // Agents

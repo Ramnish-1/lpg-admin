@@ -1,4 +1,5 @@
 
+
 export interface User {
   id: string;
   name: string;
@@ -19,6 +20,14 @@ export interface Product {
   lowStockThreshold: number;
 }
 
+export interface AgentReport {
+    totalDeliveries: number;
+    totalEarnings: number;
+    onTimeRate: number;
+    monthlyDeliveries: { month: string; deliveries: number }[];
+}
+
+
 export interface Agent {
   id:string;
   name: string;
@@ -26,6 +35,7 @@ export interface Agent {
   vehicleDetails: string;
   status: 'Online' | 'Offline';
   createdAt: Date;
+  report?: AgentReport;
 }
 
 export interface Order {
