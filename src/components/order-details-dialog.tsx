@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import type { Order } from '@/lib/types';
-import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package, Phone, MapPin, XCircle } from 'lucide-react';
+import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package, Phone, MapPin, XCircle, Undo2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Button } from './ui/button';
 import Link from 'next/link';
@@ -41,6 +41,7 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
     'Pending': 'secondary',
     'In-progress': 'outline',
     'Cancelled': 'destructive',
+    'Returned': 'destructive'
   };
 
 export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetailsDialogProps) {
@@ -126,6 +127,12 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetails
                    <div className="flex justify-between items-start pt-2">
                         <span className="text-muted-foreground flex items-center gap-2"><XCircle className="h-4 w-4"/>Reason</span>
                         <span className="text-right text-destructive text-sm font-medium">{order.cancellationReason}</span>
+                    </div>
+                )}
+                 {order.status === 'Returned' && order.returnReason && (
+                   <div className="flex justify-between items-start pt-2">
+                        <span className="text-muted-foreground flex items-center gap-2"><Undo2 className="h-4 w-4"/>Return Reason</span>
+                        <span className="text-right text-destructive text-sm font-medium">{order.returnReason}</span>
                     </div>
                 )}
             </div>

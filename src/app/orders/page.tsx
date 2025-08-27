@@ -18,6 +18,7 @@ import { AssignAgentDialog } from '@/components/assign-agent-dialog';
 import { CancelOrderDialog } from '@/components/cancel-order-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { ReturnOrderDialog } from '@/components/return-order-dialog';
 
 const ORDERS_STORAGE_KEY = 'gastrack-orders';
 const AGENTS_STORAGE_KEY = 'gastrack-agents';
@@ -28,20 +29,23 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
   'Pending': 'secondary',
   'In-progress': 'outline',
   'Cancelled': 'destructive',
+  'Returned': 'destructive',
 };
 
-const orderStatuses: Order['status'][] = ['Pending', 'In-progress', 'Delivered', 'Cancelled'];
+const orderStatuses: Order['status'][] = ['Pending', 'In-progress', 'Delivered', 'Cancelled', 'Returned'];
 
 function OrdersTable({ 
   orders, 
   onShowDetails, 
   onAssignAgent, 
   onStatusChange,
+  onReturn,
 }: { 
   orders: Order[],
   onShowDetails: (order: Order) => void,
   onAssignAgent: (order: Order) => void,
   onStatusChange: (order: Order, status: Order['status']) => void,
+  onReturn: (order: Order) => void;
 }) {
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.ceil(orders.length / ITEMS_PER_PAGE);
@@ -101,21 +105,25 @@ function OrdersTable({
                         {order.status === 'Pending' && (
                           <DropdownMenuItem onClick={() => onAssignAgent(order)}>Assign Agent</DropdownMenuItem>
                         )}
+                        {order.status === 'Delivered' && (
+                            <DropdownMenuItem onClick={() => onReturn(order)}>Return</DropdownMenuItem>
+                        )}
                          <DropdownMenuSeparator />
                           <DropdownMenuSub>
-                            <DropdownMenuSubTrigger disabled={order.status === 'Delivered' || order.status === 'Cancelled'}>
+                            <DropdownMenuSubTrigger disabled={order.status === 'Delivered' || order.status === 'Cancelled' || order.status === 'Returned'}>
                               <span>Change Status</span>
                             </DropdownMenuSubTrigger>
                             <DropdownMenuSubContent>
                                <DropdownMenuRadioGroup value={order.status} onValueChange={(newStatus) => onStatusChange(order, newStatus as Order['status'])}>
-                                {orderStatuses.map(status => (
+                                {orderStatuses.filter(s => s !== 'Returned').map(status => (
                                   <DropdownMenuRadioItem 
                                     key={status} 
                                     value={status}
                                     disabled={
                                         (status === 'In-progress' && !order.assignedAgentId) || 
                                         (order.status === 'Delivered') ||
-                                        (order.status === 'Cancelled' && status === 'Cancelled')
+                                        (order.status === 'Cancelled' && status === 'Cancelled') ||
+                                        (order.status === 'Returned')
                                     }
                                   >
                                     {status}
@@ -173,6 +181,7 @@ export default function OrdersPage() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
+  const [isReturnOpen, setIsReturnOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
 
@@ -251,6 +260,11 @@ export default function OrdersPage() {
     setIsCancelOpen(true);
   };
 
+  const handleReturnOrder = (order: Order) => {
+    setSelectedOrder(order);
+    setIsReturnOpen(true);
+  };
+
   const handleAgentAssigned = (orderId: string, agentId: string) => {
     const agent = agents.find(a => a.id === agentId);
     if (agent) {
@@ -296,6 +310,21 @@ export default function OrdersPage() {
       setSelectedOrder(null);
     }
   };
+
+  const confirmReturnOrder = (reason: string) => {
+    if (selectedOrder) {
+      const newOrders = orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'Returned' as const, returnReason: reason } : o);
+      updateOrdersStateAndStorage(newOrders);
+      toast({
+        title: 'Order Returned',
+        description: `Order #${selectedOrder.id.slice(0,6)} has been marked as returned.`,
+        variant: 'destructive'
+      });
+      setIsReturnOpen(false);
+      setSelectedOrder(null);
+    }
+  };
+
 
   const getOrderCount = (status: Order['status']) => {
     return orders.filter(o => o.status === status).length;
@@ -370,7 +399,7 @@ export default function OrdersPage() {
                      className={cn("px-2 py-0.5 text-xs font-semibold", {
                        'bg-primary/10 text-primary': status === 'In-progress',
                        'bg-green-100 text-green-800': status === 'Delivered',
-                       'bg-red-100 text-red-800': status === 'Cancelled'
+                       'bg-red-100 text-red-800': status === 'Cancelled' || status === 'Returned',
                      })}
                   >
                     {count > 9 ? '9+' : count}
@@ -387,6 +416,7 @@ export default function OrdersPage() {
               onShowDetails={handleShowDetails}
               onAssignAgent={handleAssignAgent}
               onStatusChange={handleStatusChange}
+              onReturn={handleReturnOrder}
             />
           </TabsContent>
         ))}
@@ -395,6 +425,7 @@ export default function OrdersPage() {
       {selectedOrder && <OrderDetailsDialog order={selectedOrder} isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} />}
       {selectedOrder && <AssignAgentDialog order={selectedOrder} isOpen={isAssignOpen} onOpenChange={setIsAssignOpen} onAgentAssigned={handleAgentAssigned} agents={agents} />}
       {selectedOrder && <CancelOrderDialog order={selectedOrder} isOpen={isCancelOpen} onOpenChange={setIsCancelOpen} onConfirm={confirmCancelOrder} />}
+      {selectedOrder && <ReturnOrderDialog order={selectedOrder} isOpen={isReturnOpen} onOpenChange={setIsReturnOpen} onConfirm={confirmReturnOrder} />}
 
     </AppShell>
   );

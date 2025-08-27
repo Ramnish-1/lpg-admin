@@ -55,7 +55,7 @@ export interface Order {
   customerPhone?: string;
   products: { productId: string; name: string; quantity: number }[];
   totalAmount: number;
-  status: 'Pending' | 'In-progress' | 'Delivered' | 'Cancelled';
+  status: 'Pending' | 'In-progress' | 'Delivered' | 'Cancelled' | 'Returned';
   assignedAgentId: string | null;
   agentName?: string;
   agentPhone?: string;
@@ -63,6 +63,7 @@ export interface Order {
   deliveryType: 'Home Delivery' | 'Pickup';
   paymentType: 'COD';
   cancellationReason?: string;
+  returnReason?: string;
 }
 
 export interface Payment {
