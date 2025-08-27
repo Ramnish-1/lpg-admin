@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import { MoreHorizontal, FileDown } from 'lucide-react';
+import { getUsersData } from '@/lib/data';
 import type { User } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { useEffect, useState, useMemo } from 'react';
@@ -24,40 +25,45 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { UserDetailsDialog } from '@/components/user-details-dialog';
-import { AddUserDialog } from '@/components/add-user-dialog';
 
-const USERS_DB_KEY = 'gastrack-users-db';
+const USERS_STORAGE_KEY = 'gastrack-users';
 const ITEMS_PER_PAGE = 10;
 
-const getUsersFromDb = (): User[] => {
-    if (typeof window === 'undefined') return [];
-    try {
-        const users = window.localStorage.getItem(USERS_DB_KEY);
-        if (users) {
-            return JSON.parse(users).map((u: any) => ({ ...u, createdAt: new Date(u.createdAt) }));
-        }
-        return [];
-    } catch (error) {
-        console.error("Failed to load users from DB", error);
-        return [];
-    }
-};
-
-export default function ManageUsersPage() {
+export default function CustomersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [action, setAction] = useState<'Block' | 'Unblock' | 'Delete' | null>(null);
+  const [action, setAction] = useState<'Block' | 'Unblock' | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
   useEffect(() => {
-    const allUsers = getUsersFromDb();
-    setUsers(allUsers);
-    setFilteredUsers(allUsers);
+    const fetchUsers = async () => {
+      try {
+        const savedUsers = window.localStorage.getItem(USERS_STORAGE_KEY);
+        if (savedUsers) {
+          const parsedUsers = JSON.parse(savedUsers).map((u: any) => ({
+            ...u,
+            createdAt: new Date(u.createdAt),
+          }));
+          setUsers(parsedUsers);
+          setFilteredUsers(parsedUsers);
+        } else {
+          const data = await getUsersData();
+          setUsers(data);
+          setFilteredUsers(data);
+          window.localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(data));
+        }
+      } catch (error) {
+        console.error("Failed to load users from localStorage", error);
+        const data = await getUsersData();
+        setUsers(data);
+        setFilteredUsers(data);
+      }
+    };
+    fetchUsers();
   }, []);
   
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
@@ -71,7 +77,7 @@ export default function ManageUsersPage() {
 
   const updateUsersStateAndStorage = (newUsers: User[]) => {
     setUsers(newUsers);
-    const currentSearchTerm = (document.querySelector('input[placeholder="Search users..."]') as HTMLInputElement)?.value || '';
+    const currentSearchTerm = (document.querySelector('input[placeholder="Search customers..."]') as HTMLInputElement)?.value || '';
     if (currentSearchTerm) {
         const filtered = newUsers.filter(user => 
             user.name.toLowerCase().includes(currentSearchTerm) ||
@@ -84,7 +90,11 @@ export default function ManageUsersPage() {
     }
 
     try {
-      window.localStorage.setItem(USERS_DB_KEY, JSON.stringify(newUsers));
+      window.localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(newUsers));
+      // Also update the DB key if it exists
+      if (window.localStorage.getItem('gastrack-users-db')) {
+        window.localStorage.setItem('gastrack-users-db', JSON.stringify(newUsers));
+      }
     } catch (error) {
       console.error("Failed to save users to localStorage", error);
     }
@@ -101,7 +111,7 @@ export default function ManageUsersPage() {
     setFilteredUsers(filtered);
   };
 
-  const handleAction = (user: User, userAction: 'Block' | 'Unblock' | 'Delete') => {
+  const handleAction = (user: User, userAction: 'Block' | 'Unblock') => {
     setSelectedUser(user);
     setAction(userAction);
     setIsConfirmOpen(true);
@@ -114,84 +124,72 @@ export default function ManageUsersPage() {
   
   const confirmAction = () => {
     if (selectedUser && action) {
-      let updatedUsers;
-      let toastTitle = '';
-      let toastDescription = '';
-      let toastVariant: 'default' | 'destructive' = 'default';
-
-      if (action === 'Delete') {
-        updatedUsers = users.filter(u => u.id !== selectedUser.id);
-        toastTitle = 'User Deleted';
-        toastDescription = `${selectedUser.name} has been permanently deleted.`;
-        toastVariant = 'destructive';
-      } else {
-        const newStatus = action === 'Block' ? 'Blocked' : 'Active';
-        updatedUsers = users.map(u => u.id === selectedUser.id ? { ...u, status: newStatus } : u)
-        toastTitle = `User ${action === 'Block' ? 'Blocked' : 'Unblocked'}`;
-        toastDescription = `${selectedUser.name} has been ${action.toLowerCase()}ed.`;
-        toastVariant = action === 'Block' ? 'destructive' : 'default';
-      }
-      
+      const newStatus = action === 'Block' ? 'Blocked' : 'Active';
+      const updatedUsers = users.map(u => u.id === selectedUser.id ? { ...u, status: newStatus } : u)
       updateUsersStateAndStorage(updatedUsers);
-      
-      toast({
-        title: toastTitle,
-        description: toastDescription,
-        variant: toastVariant,
-      });
 
+      toast({
+        title: `Customer ${action === 'Block' ? 'Blocked' : 'Unblocked'}`,
+        description: `${selectedUser.name} has been ${action.toLowerCase()}ed.`,
+        variant: action === 'Block' ? 'destructive' : 'default',
+      });
       setIsConfirmOpen(false);
       setSelectedUser(null);
       setAction(null);
     }
   }
 
-  const handleAddUser = (newUser: Omit<User, 'id' | 'createdAt' | 'status' | 'orderHistory' | 'location' | 'address'>) => {
-     const userExists = users.some(u => u.email === newUser.email);
-      if (userExists) {
-        toast({
-            variant: 'destructive',
-            title: 'User Creation Failed',
-            description: 'An account with this email already exists.',
-        });
-        return false;
-      }
-
-      const userToAdd: User = {
-        ...newUser,
-        id: `usr_${Date.now()}`,
-        createdAt: new Date(),
-        status: 'Active',
-        orderHistory: [],
-        location: { lat: 0, lng: 0 },
-        address: ''
-      };
-      const newUsers = [...users, userToAdd];
-      updateUsersStateAndStorage(newUsers);
-      toast({
-        title: 'User Created',
-        description: `${newUser.name} has been added successfully.`,
-      });
-      setIsAddUserOpen(false);
-      return true;
+  const handleAddressClick = (e: React.MouseEvent, address: string) => {
+    e.stopPropagation();
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
   }
+
+  const handleExport = () => {
+    const csvHeader = "Customer ID,Name,Email,Phone,Address,Status,Registered On\n";
+    const csvRows = filteredUsers.map(u => {
+        const row = [
+            u.id,
+            `"${u.name}"`,
+            u.email,
+            u.phone,
+            `"${u.address.replace(/"/g, '""')}"`,
+            u.status,
+            new Date(u.createdAt).toISOString()
+        ].join(',');
+        return row;
+    }).join('\n');
+
+    const csvContent = csvHeader + csvRows;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.setAttribute('download', 'customers_export.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
 
   return (
     <AppShell>
-      <PageHeader title="User Administration">
-        <Button size="sm" className="h-8 gap-1" onClick={() => setIsAddUserOpen(true)}>
-            <PlusCircle className="h-3.5 w-3.5" />
+      <PageHeader title="Customer Management">
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" className="h-8 gap-1" onClick={handleExport}>
+            <FileDown className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-              Add User
+              Export
             </span>
           </Button>
+        </div>
       </PageHeader>
       <Card>
         <CardHeader>
-           <CardTitle>Registered Users</CardTitle>
+           <CardTitle>Customers</CardTitle>
             <div className="mt-4">
                 <Input 
-                    placeholder="Search users..." 
+                    placeholder="Search customers..." 
                     className="max-w-xs" 
                     onChange={handleSearch}
                 />
@@ -202,7 +200,7 @@ export default function ManageUsersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>User</TableHead>
+                  <TableHead>Customer</TableHead>
                   <TableHead className="hidden md:table-cell">Contact</TableHead>
                   <TableHead className="hidden sm:table-cell">Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Registered On</TableHead>
@@ -216,7 +214,10 @@ export default function ManageUsersPage() {
                   <TableRow key={user.id} onClick={() => handleShowDetails(user)} className="cursor-pointer">
                     <TableCell>
                       <div className="font-medium">{user.name}</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div 
+                        className="text-sm text-muted-foreground hover:underline md:hidden"
+                        onClick={(e) => handleAddressClick(e, user.address)}
+                      >
                         {user.address}
                       </div>
                     </TableCell>
@@ -245,7 +246,6 @@ export default function ManageUsersPage() {
                           ) : (
                             <DropdownMenuItem onClick={() => handleAction(user, 'Unblock')}>Unblock</DropdownMenuItem>
                           )}
-                          <DropdownMenuItem className="text-destructive" onClick={() => handleAction(user, 'Delete')}>Delete</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -288,28 +288,19 @@ export default function ManageUsersPage() {
       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure you want to {action?.toLowerCase()} this customer?</AlertDialogTitle>
             <AlertDialogDescription>
-              {action === 'Delete'
-                ? 'This action cannot be undone. This will permanently delete the user account.'
-                : `This will ${action?.toLowerCase()} the user. This action can be reversed later.`
-              }
+              This action can be reversed later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmAction} className={action === 'Block' || action === 'Delete' ? 'bg-destructive hover:bg-destructive/90' : ''}>
+            <AlertDialogAction onClick={confirmAction} className={action === 'Block' ? 'bg-destructive hover:bg-destructive/90' : ''}>
               Confirm
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <AddUserDialog 
-        isOpen={isAddUserOpen}
-        onOpenChange={setIsAddUserOpen}
-        onAddUser={handleAddUser}
-      />
 
       <UserDetailsDialog user={selectedUser} isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} />
 

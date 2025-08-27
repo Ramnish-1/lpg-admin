@@ -58,7 +58,7 @@ const navItems = [
   { href: '/products', label: 'Products', icon: Package },
   { href: '/payments', label: 'Payments', icon: CreditCard },
   { href: '/settings', label: 'Settings', icon: Settings },
-  { href: '/add-user', label: 'Add User', icon: UserPlus },
+  { href: '/add-user', label: 'Manage Users', icon: UserPlus },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
