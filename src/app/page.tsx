@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,42 +28,48 @@ export default async function DashboardPage() {
       <PageHeader title="Dashboard" />
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <UserHoverCard>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalUsers}</div>
-                <p className="text-xs text-muted-foreground">+2% from last month</p>
-              </CardContent>
-            </Card>
-          </UserHoverCard>
-          <OrderHoverCard>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalOrders}</div>
-                <p className="text-xs text-muted-foreground">+15% from last month</p>
-              </CardContent>
-            </Card>
-          </OrderHoverCard>
-          <AgentHoverCard>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Agents</CardTitle>
-                <Truck className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.activeAgents}</div>
-                <p className="text-xs text-muted-foreground">{stats.totalAgents} total agents</p>
-              </CardContent>
-            </Card>
-          </AgentHoverCard>
+          <Link href="/users">
+            <UserHoverCard>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalUsers}</div>
+                  <p className="text-xs text-muted-foreground">+2% from last month</p>
+                </CardContent>
+              </Card>
+            </UserHoverCard>
+          </Link>
+          <Link href="/orders">
+            <OrderHoverCard>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalOrders}</div>
+                  <p className="text-xs text-muted-foreground">+15% from last month</p>
+                </CardContent>
+              </Card>
+            </OrderHoverCard>
+          </Link>
+          <Link href="/agents">
+            <AgentHoverCard>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Agents</CardTitle>
+                  <Truck className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.activeAgents}</div>
+                  <p className="text-xs text-muted-foreground">{stats.totalAgents} total agents</p>
+                </CardContent>
+              </Card>
+            </AgentHoverCard>
+          </Link>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
