@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect, useRef } from 'react';
 import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -17,6 +18,7 @@ export default function ProfilePage() {
   const [email, setEmail] = useState('admin@gastrack.com');
   const [phone, setPhone] = useState('+91 99999 88888');
   const [photoUrl, setPhotoUrl] = useState(profile.photoUrl);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -32,16 +34,27 @@ export default function ProfilePage() {
     });
   };
 
-  const handleChangePhoto = () => {
-    const newPhotoId = Math.floor(Math.random() * 1000);
-    const newPhotoUrl = `https://picsum.photos/seed/${newPhotoId}/100`;
-    setPhotoUrl(newPhotoUrl);
-    setProfile({ name, photoUrl: newPhotoUrl });
-    toast({
-      title: 'Photo Changed',
-      description: 'Your profile picture has been updated.',
-    });
+  const handleChangePhotoClick = () => {
+    fileInputRef.current?.click();
   };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const newPhotoUrl = reader.result as string;
+        setPhotoUrl(newPhotoUrl);
+        setProfile({ name, photoUrl: newPhotoUrl });
+        toast({
+          title: 'Photo Changed',
+          description: 'Your profile picture has been updated.',
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
 
   return (
     <AppShell>
@@ -57,7 +70,14 @@ export default function ProfilePage() {
               <AvatarImage src={photoUrl} alt="@admin" data-ai-hint="manager portrait"/>
               <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
-            <Button variant="outline" onClick={handleChangePhoto}>Change Photo</Button>
+            <Button variant="outline" onClick={handleChangePhotoClick}>Change Photo</Button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange}
+              className="hidden" 
+              accept="image/*"
+            />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
