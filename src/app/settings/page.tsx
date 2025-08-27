@@ -136,7 +136,7 @@ export default function SettingsPage() {
             </Card>
           </div>
         </div>
-        <div className="flex justify-end pt-4 border-t bg-background">
+        <div className="flex justify-end pt-4 border-t bg-background sticky bottom-0">
             <Button onClick={saveSettings}>Save All Settings</Button>
         </div>
       </div>
