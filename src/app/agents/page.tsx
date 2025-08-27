@@ -45,16 +45,25 @@ export default function AgentsPage() {
     setSelectedAgent(agent);
     setIsDeleteDialogOpen(true);
   };
+  
+  const handleAgentUpdate = (updatedAgent: Agent) => {
+    setAgents(prev => prev.map(a => a.id === updatedAgent.id ? updatedAgent : a));
+    toast({
+      title: 'Agent Updated',
+      description: `${updatedAgent.name}'s details have been successfully updated.`,
+    });
+    setIsEditDialogOpen(false);
+    setSelectedAgent(null);
+  }
 
   const confirmDelete = () => {
     if (selectedAgent) {
-      console.log('Deleting agent:', selectedAgent);
+      setAgents(agents.filter(a => a.id !== selectedAgent.id));
       toast({
         title: 'Agent Deleted',
         description: `${selectedAgent.name} has been deleted.`,
         variant: 'destructive'
       });
-      setAgents(agents.filter(a => a.id !== selectedAgent.id));
       setIsDeleteDialogOpen(false);
       setSelectedAgent(null);
     }
@@ -105,7 +114,7 @@ export default function AgentsPage() {
                       {agent.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{new Date(agent.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell>{new Date(agent.createdAt).toLocaleString()}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -132,6 +141,7 @@ export default function AgentsPage() {
           agent={selectedAgent} 
           isOpen={isEditDialogOpen} 
           onOpenChange={setIsEditDialogOpen} 
+          onAgentUpdate={handleAgentUpdate}
         />
       )}
        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

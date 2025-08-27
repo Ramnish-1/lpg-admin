@@ -68,7 +68,7 @@ function OrdersTable({ orders, onShowDetails, onAssignAgent, onCancelOrder }: {
                   )}
                 </TableCell>
                 <TableCell>₹{order.totalAmount.toLocaleString()}</TableCell>
-                <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
+                <TableCell>{new Date(order.createdAt).toLocaleString()}</TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

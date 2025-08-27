@@ -79,7 +79,7 @@ export default async function PaymentsPage() {
                     <TableCell>
                       <Badge variant={statusVariant[payment.status]}>{payment.status}</Badge>
                     </TableCell>
-                    <TableCell>{payment.timestamp.toLocaleDateString()}</TableCell>
+                    <TableCell>{payment.timestamp.toLocaleString()}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

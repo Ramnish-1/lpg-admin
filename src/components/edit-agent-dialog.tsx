@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -13,27 +13,35 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Agent } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
 
 interface EditAgentDialogProps {
   agent: Agent;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  onAgentUpdate: (agent: Agent) => void;
 }
 
-export function EditAgentDialog({ agent, isOpen, onOpenChange }: EditAgentDialogProps) {
-  const { toast } = useToast();
+export function EditAgentDialog({ agent, isOpen, onOpenChange, onAgentUpdate }: EditAgentDialogProps) {
   const [name, setName] = useState(agent.name);
   const [phone, setPhone] = useState(agent.phone);
   const [vehicle, setVehicle] = useState(agent.vehicleDetails);
 
+  useEffect(() => {
+    if (isOpen) {
+      setName(agent.name);
+      setPhone(agent.phone);
+      setVehicle(agent.vehicleDetails);
+    }
+  }, [agent, isOpen]);
+
   const handleSubmit = () => {
-    console.log('Updating agent:', { ...agent, name, phone, vehicleDetails: vehicle });
-    toast({
-      title: 'Agent Updated',
-      description: `${name}'s details have been successfully updated.`,
-    });
-    onOpenChange(false);
+    const updatedAgent = {
+      ...agent,
+      name,
+      phone,
+      vehicleDetails: vehicle,
+    };
+    onAgentUpdate(updatedAgent);
   };
 
   return (

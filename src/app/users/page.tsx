@@ -1,3 +1,5 @@
+"use client";
+
 import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,9 +11,67 @@ import { MoreHorizontal, FileDown } from 'lucide-react';
 import { getUsersData } from '@/lib/data';
 import type { User } from '@/lib/types';
 import { Input } from '@/components/ui/input';
+import { useEffect, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
-export default async function UsersPage() {
-  const users = await getUsersData();
+export default function UsersPage() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [action, setAction] = useState<'Block' | 'Unblock' | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    getUsersData().then(data => {
+      setUsers(data);
+      setFilteredUsers(data);
+    });
+  }, []);
+  
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const searchTerm = event.target.value.toLowerCase();
+    const filtered = users.filter(user => 
+        user.name.toLowerCase().includes(searchTerm) ||
+        user.email.toLowerCase().includes(searchTerm) ||
+        user.phone.toLowerCase().includes(searchTerm)
+    );
+    setFilteredUsers(filtered);
+  };
+
+  const handleAction = (user: User, userAction: 'Block' | 'Unblock') => {
+    setSelectedUser(user);
+    setAction(userAction);
+    setIsConfirmOpen(true);
+  };
+  
+  const confirmAction = () => {
+    if (selectedUser && action) {
+      const newStatus = action === 'Block' ? 'Blocked' : 'Active';
+      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, status: newStatus } : u));
+      setFilteredUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, status: newStatus } : u));
+
+      toast({
+        title: `User ${action === 'Block' ? 'Blocked' : 'Unblocked'}`,
+        description: `${selectedUser.name} has been ${action.toLowerCase()}ed.`,
+        variant: action === 'Block' ? 'destructive' : 'default',
+      });
+      setIsConfirmOpen(false);
+      setSelectedUser(null);
+      setAction(null);
+    }
+  }
+
 
   return (
     <AppShell>
@@ -29,7 +89,11 @@ export default async function UsersPage() {
         <CardHeader>
            <CardTitle>Customers</CardTitle>
             <div className="mt-4">
-                <Input placeholder="Search users by name, email or phone..." className="max-w-sm" />
+                <Input 
+                    placeholder="Search users by name, email or phone..." 
+                    className="max-w-sm" 
+                    onChange={handleSearch}
+                />
             </div>
         </CardHeader>
         <CardContent>
@@ -46,7 +110,7 @@ export default async function UsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user: User) => (
+              {filteredUsers.map((user: User) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
                     <div className="font-medium">{user.name}</div>
@@ -59,7 +123,7 @@ export default async function UsersPage() {
                   <TableCell>
                     <Badge variant={user.status === 'Active' ? 'secondary' : 'destructive'}>{user.status}</Badge>
                   </TableCell>
-                  <TableCell>{user.createdAt.toLocaleDateString()}</TableCell>
+                  <TableCell>{user.createdAt.toLocaleString()}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -70,7 +134,11 @@ export default async function UsersPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>{user.status === 'Active' ? 'Block' : 'Unblock'}</DropdownMenuItem>
+                        {user.status === 'Active' ? (
+                          <DropdownMenuItem className="text-destructive" onClick={() => handleAction(user, 'Block')}>Block</DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem onClick={() => handleAction(user, 'Unblock')}>Unblock</DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -80,6 +148,23 @@ export default async function UsersPage() {
           </Table>
         </CardContent>
       </Card>
+      
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to {action?.toLowerCase()} this user?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action can be reversed later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmAction} className={action === 'Block' ? 'bg-destructive hover:bg-destructive/90' : ''}>
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
   );
 }
