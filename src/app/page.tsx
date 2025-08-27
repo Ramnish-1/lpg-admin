@@ -15,6 +15,7 @@ import { DashboardChart } from '@/components/dashboard-chart';
 import { UserHoverCard } from '@/components/user-hover-card';
 import { OrderHoverCard } from '@/components/order-hover-card';
 import { AgentHoverCard } from '@/components/agent-hover-card';
+import { OrderDetailsDialog } from '@/components/order-details-dialog';
 
 const AGENTS_STORAGE_KEY = 'gastrack-agents';
 
@@ -29,6 +30,8 @@ export default function DashboardPage() {
   const [ordersByDay, setOrdersByDay] = useState<{ day: string; orders: number }[]>([]);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -63,6 +66,11 @@ export default function DashboardPage() {
     };
     fetchDashboardData();
   }, []);
+
+  const handleShowDetails = (order: Order) => {
+    setSelectedOrder(order);
+    setIsDetailsOpen(true);
+  };
 
   const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
     'Delivered': 'default',
@@ -155,7 +163,7 @@ export default function DashboardPage() {
                   </TableHeader>
                   <TableBody>
                     {recentOrders.map((order: Order) => (
-                      <TableRow key={order.id}>
+                      <TableRow key={order.id} onClick={() => handleShowDetails(order)} className="cursor-pointer">
                         <TableCell>
                           <div className="font-medium">{order.customerName}</div>
                           <div className="text-sm text-muted-foreground">#{order.id.slice(0, 6)}</div>
@@ -176,6 +184,11 @@ export default function DashboardPage() {
           </Card>
         </div>
       </div>
+      <OrderDetailsDialog 
+        order={selectedOrder}
+        isOpen={isDetailsOpen}
+        onOpenChange={setIsDetailsOpen}
+      />
     </AppShell>
   );
 }
