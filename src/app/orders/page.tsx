@@ -113,7 +113,7 @@ function OrdersTable({
                         )}
                          <DropdownMenuSeparator />
                           <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
+                            <DropdownMenuSubTrigger disabled={order.status === 'Delivered'}>
                               <span>Change Status</span>
                             </DropdownMenuSubTrigger>
                             <DropdownMenuSubContent>
@@ -125,8 +125,8 @@ function OrdersTable({
                                     disabled={
                                         // Disable "In-progress" if no agent is assigned
                                         (status === 'In-progress' && !order.assignedAgentId) || 
-                                        // Disable changing status if order is already delivered or cancelled
-                                        (order.status === 'Delivered' || order.status === 'Cancelled')
+                                        // Disable changing status if order is already delivered
+                                        (order.status === 'Delivered')
                                     }
                                   >
                                     {status}
@@ -267,7 +267,7 @@ export default function OrdersPage() {
     if (order.status === newStatus) return; // No change
     
     // If trying to set to cancelled, use the cancel dialog flow
-    if (newStatus === 'Cancelled') {
+    if (newStatus === 'Cancelled' && order.status !== 'Cancelled') {
       handleCancelOrder(order);
       return;
     }
@@ -282,7 +282,7 @@ export default function OrdersPage() {
   
   const confirmCancelOrder = () => {
     if (selectedOrder) {
-      const newOrders = orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'Cancelled' } : o);
+      const newOrders = orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'Cancelled' as const } : o);
       updateOrdersStateAndStorage(newOrders);
       toast({
         title: 'Order Cancelled',
