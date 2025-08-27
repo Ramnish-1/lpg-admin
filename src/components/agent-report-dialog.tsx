@@ -9,7 +9,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Agent } from '@/lib/types';
-import { Truck, IndianRupee, PieChart, CheckCircle, Clock } from 'lucide-react';
+import { Truck, IndianRupee, PieChart, CheckCircle, Clock, Mail, Phone, User, Banknote } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -40,9 +40,19 @@ export function AgentReportDialog({ agent, isOpen, onOpenChange }: AgentReportDi
     monthlyDeliveries: [],
   };
 
+  const InfoRow = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string | React.ReactNode }) => (
+    <div className="flex items-center text-sm">
+        <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center">{icon}</div>
+        <div className="ml-2">
+            <div className="text-xs text-muted-foreground">{label}</div>
+            <div className="font-medium text-foreground">{value}</div>
+        </div>
+    </div>
+);
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] grid-rows-[auto_minmax(0,1fr)_auto]">
         <DialogHeader>
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
@@ -51,69 +61,89 @@ export function AgentReportDialog({ agent, isOpen, onOpenChange }: AgentReportDi
             </Avatar>
             <div>
                 <DialogTitle className="text-2xl flex items-center gap-2">
-                    <Truck className="h-6 w-6 text-primary" />
                     <span>{agent.name}'s Report</span>
                 </DialogTitle>
                 <DialogDescription>
-                    Performance overview for this delivery agent.
+                    Performance and personal details for this delivery agent.
                 </DialogDescription>
             </div>
           </div>
         </DialogHeader>
-        <Separator />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Deliveries</CardTitle>
-                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">{reportData.totalDeliveries}</div>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-                    <IndianRupee className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">₹{reportData.totalEarnings.toLocaleString()}</div>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">On-time Rate</CardTitle>
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">{reportData.onTimeRate}%</div>
-                </CardContent>
-            </Card>
+        <div className="grid md:grid-cols-2 gap-6 py-4 overflow-y-auto pr-4 -mr-4">
+            <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2"><PieChart className="h-5 w-5"/> Performance Metrics</h3>
+                <div className="grid grid-cols-1 gap-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Deliveries</CardTitle>
+                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{reportData.totalDeliveries}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+                            <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">₹{reportData.totalEarnings.toLocaleString()}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">On-time Rate</CardTitle>
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{reportData.onTimeRate}%</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <span>Monthly Deliveries</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={chartConfig} className="h-[150px] w-full">
+                                <BarChart accessibilityLayer data={reportData.monthlyDeliveries}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis
+                                    dataKey="month"
+                                    tickLine={false}
+                                    tickMargin={10}
+                                    axisLine={false}
+                                    />
+                                    <YAxis />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Bar dataKey="deliveries" fill="var(--color-deliveries)" radius={4} />
+                                </BarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+            <div>
+                 <h3 className="text-lg font-semibold mb-3 flex items-center gap-2"><User className="h-5 w-5"/> Agent Details</h3>
+                 <Card>
+                    <CardContent className="pt-6 space-y-4">
+                        <InfoRow icon={<Mail className="h-5 w-5 text-primary"/>} label="Email" value={<a href={`mailto:${agent.email}`} className="hover:underline">{agent.email}</a>} />
+                        <Separator />
+                        <InfoRow icon={<Phone className="h-5 w-5 text-primary"/>} label="Phone" value={<a href={`tel:${agent.phone}`} className="hover:underline">{agent.phone}</a>} />
+                        <Separator />
+                        <InfoRow icon={<Truck className="h-5 w-5 text-primary"/>} label="Vehicle Details" value={agent.vehicleDetails} />
+                        <Separator />
+                        <InfoRow icon={<User className="h-5 w-5 text-primary"/>} label="PAN Card" value={agent.panCard} />
+                        <Separator />
+                        <InfoRow icon={<User className="h-5 w-5 text-primary"/>} label="Aadhar Card" value={agent.aadharCard} />
+                        <Separator />
+                        <InfoRow icon={<Banknote className="h-5 w-5 text-primary"/>} label="Bank Account" value={agent.accountDetails} />
+                    </CardContent>
+                 </Card>
+            </div>
         </div>
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <PieChart className="h-5 w-5" />
-                    <span>Monthly Deliveries</span>
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                 <ChartContainer config={chartConfig} className="h-[200px] w-full">
-                    <BarChart accessibilityLayer data={reportData.monthlyDeliveries}>
-                        <CartesianGrid vertical={false} />
-                        <XAxis
-                        dataKey="month"
-                        tickLine={false}
-                        tickMargin={10}
-                        axisLine={false}
-                        />
-                        <YAxis />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="deliveries" fill="var(--color-deliveries)" radius={4} />
-                    </BarChart>
-                </ChartContainer>
-            </CardContent>
-        </Card>
       </DialogContent>
     </Dialog>
   );
