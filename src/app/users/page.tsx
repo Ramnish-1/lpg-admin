@@ -23,7 +23,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { UserDetailsDialog } from '@/components/user-details-dialog';
 
 const USERS_STORAGE_KEY = 'gastrack-users';
 
@@ -34,6 +35,7 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [action, setAction] = useState<'Block' | 'Unblock' | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -65,7 +67,19 @@ export default function UsersPage() {
 
   const updateUsersStateAndStorage = (newUsers: User[]) => {
     setUsers(newUsers);
-    setFilteredUsers(newUsers); // Keep filtered view in sync or re-apply filter
+    // When updating users, we need to reflect that in the filtered list as well.
+    const currentSearchTerm = (document.querySelector('input[placeholder="Search users by name, email or phone..."]') as HTMLInputElement)?.value || '';
+    if (currentSearchTerm) {
+        const filtered = newUsers.filter(user => 
+            user.name.toLowerCase().includes(currentSearchTerm) ||
+            user.email.toLowerCase().includes(currentSearchTerm) ||
+            user.phone.toLowerCase().includes(currentSearchTerm)
+        );
+        setFilteredUsers(filtered);
+    } else {
+        setFilteredUsers(newUsers);
+    }
+
     try {
       window.localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(newUsers));
     } catch (error) {
@@ -88,6 +102,11 @@ export default function UsersPage() {
     setAction(userAction);
     setIsConfirmOpen(true);
   };
+
+  const handleShowDetails = (user: User) => {
+    setSelectedUser(user);
+    setIsDetailsOpen(true);
+  }
   
   const confirmAction = () => {
     if (selectedUser && action) {
@@ -145,7 +164,7 @@ export default function UsersPage() {
             </TableHeader>
             <TableBody>
               {filteredUsers.map((user: User) => (
-                <TableRow key={user.id}>
+                <TableRow key={user.id} onClick={() => handleShowDetails(user)} className="cursor-pointer">
                   <TableCell className="font-medium">
                     <div className="font-medium">{user.name}</div>
                     <div className="text-sm text-muted-foreground">{user.address}</div>
@@ -158,7 +177,7 @@ export default function UsersPage() {
                     <Badge variant={user.status === 'Active' ? 'secondary' : 'destructive'}>{user.status}</Badge>
                   </TableCell>
                   <TableCell>{new Date(user.createdAt).toLocaleString()}</TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -167,7 +186,7 @@ export default function UsersPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleShowDetails(user)}>View Details</DropdownMenuItem>
                         {user.status === 'Active' ? (
                           <DropdownMenuItem className="text-destructive" onClick={() => handleAction(user, 'Block')}>Block</DropdownMenuItem>
                         ) : (
@@ -199,6 +218,9 @@ export default function UsersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <UserDetailsDialog user={selectedUser} isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} />
+
     </AppShell>
   );
 }
