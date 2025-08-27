@@ -14,7 +14,6 @@ import type { Product } from '@/lib/types';
 import { useEffect, useState } from 'react';
 import { ProductDetailsDialog } from '@/components/product-details-dialog';
 import { EditProductDialog } from '@/components/edit-product-dialog';
-import { ProductHistoryDialog } from '@/components/product-history-dialog';
 import { useToast } from '@/hooks/use-toast';
 
 const PRODUCTS_STORAGE_KEY = 'gastrack-products';
@@ -24,7 +23,6 @@ export default function ProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -61,11 +59,6 @@ export default function ProductsPage() {
   const handleEditProduct = (product: Product) => {
     setSelectedProduct(product);
     setIsEditOpen(true);
-  };
-  
-  const handleShowHistory = (product: Product) => {
-    setSelectedProduct(product);
-    setIsHistoryOpen(true);
   };
 
   const handleProductUpdate = (updatedProduct: Product) => {
@@ -137,7 +130,6 @@ export default function ProductsPage() {
                         <DropdownMenuContent align="end">
                            <DropdownMenuItem onClick={() => handleShowDetails(product)}>View Details</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEditProduct(product)}>Edit Price/Stock</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleShowHistory(product)}>View History</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -159,13 +151,6 @@ export default function ProductsPage() {
           isOpen={isEditOpen}
           onOpenChange={setIsEditOpen}
           onProductUpdate={handleProductUpdate}
-        />
-      )}
-       {selectedProduct && (
-        <ProductHistoryDialog
-          product={selectedProduct}
-          isOpen={isHistoryOpen}
-          onOpenChange={setIsHistoryOpen}
         />
       )}
     </AppShell>
