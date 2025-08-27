@@ -62,7 +62,7 @@ export interface Order {
   createdAt: Date;
   deliveryType: 'Home Delivery' | 'Pickup';
   paymentType: 'COD';
-  reason?: string;
+  cancellationReason?: string;
 }
 
 export interface Payment {

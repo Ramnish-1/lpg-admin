@@ -9,22 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MoreHorizontal, FileDown, Truck, CheckCircle, Ban } from 'lucide-react';
+import { MoreHorizontal, FileDown } from 'lucide-react';
 import { getOrdersData, getAgentsData } from '@/lib/data';
 import type { Order, Agent } from '@/lib/types';
 import { useEffect, useState, useMemo } from 'react';
 import { OrderDetailsDialog } from '@/components/order-details-dialog';
 import { AssignAgentDialog } from '@/components/assign-agent-dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { CancelOrderDialog } from '@/components/cancel-order-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -45,13 +36,11 @@ function OrdersTable({
   orders, 
   onShowDetails, 
   onAssignAgent, 
-  onCancelOrder,
   onStatusChange,
 }: { 
   orders: Order[],
   onShowDetails: (order: Order) => void,
   onAssignAgent: (order: Order) => void,
-  onCancelOrder: (order: Order) => void,
   onStatusChange: (order: Order, status: Order['status']) => void,
 }) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -114,7 +103,7 @@ function OrdersTable({
                         )}
                          <DropdownMenuSeparator />
                           <DropdownMenuSub>
-                            <DropdownMenuSubTrigger disabled={order.status === 'Delivered'}>
+                            <DropdownMenuSubTrigger disabled={order.status === 'Delivered' || order.status === 'Cancelled'}>
                               <span>Change Status</span>
                             </DropdownMenuSubTrigger>
                             <DropdownMenuSubContent>
@@ -184,9 +173,15 @@ export default function OrdersPage() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient) return;
     const fetchOrders = async () => {
         try {
             const savedOrders = window.localStorage.getItem(ORDERS_STORAGE_KEY);
@@ -229,7 +224,7 @@ export default function OrdersPage() {
     };
     fetchOrders();
     fetchAgents();
-  }, []);
+  }, [isClient]);
   
   const updateOrdersStateAndStorage = (newOrders: Order[]) => {
     setOrders(newOrders);
@@ -288,9 +283,9 @@ export default function OrdersPage() {
     });
   }
   
-  const confirmCancelOrder = () => {
+  const confirmCancelOrder = (reason: string) => {
     if (selectedOrder) {
-      const newOrders = orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'Cancelled' as const } : o);
+      const newOrders = orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'Cancelled' as const, cancellationReason: reason } : o);
       updateOrdersStateAndStorage(newOrders);
       toast({
         title: 'Order Cancelled',
@@ -337,6 +332,11 @@ export default function OrdersPage() {
     link.click();
     document.body.removeChild(link);
   }
+  
+  if (!isClient) {
+    return null;
+  }
+
 
   return (
     <AppShell>
@@ -386,7 +386,6 @@ export default function OrdersPage() {
               orders={orders.filter(o => o.status === status)}
               onShowDetails={handleShowDetails}
               onAssignAgent={handleAssignAgent}
-              onCancelOrder={handleCancelOrder}
               onStatusChange={handleStatusChange}
             />
           </TabsContent>
@@ -395,27 +394,8 @@ export default function OrdersPage() {
       
       {selectedOrder && <OrderDetailsDialog order={selectedOrder} isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} />}
       {selectedOrder && <AssignAgentDialog order={selectedOrder} isOpen={isAssignOpen} onOpenChange={setIsAssignOpen} onAgentAssigned={handleAgentAssigned} agents={agents} />}
-      
-      <AlertDialog open={isCancelOpen} onOpenChange={setIsCancelOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to cancel this order?</AlertDialogTitle>
-
-            <AlertDialogDescription>
-              This action cannot be undone. This will mark the order as cancelled.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Back</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmCancelOrder} className="bg-destructive hover:bg-destructive/90">
-              Confirm Cancellation
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {selectedOrder && <CancelOrderDialog order={selectedOrder} isOpen={isCancelOpen} onOpenChange={setIsCancelOpen} onConfirm={confirmCancelOrder} />}
 
     </AppShell>
   );
 }
-
-    

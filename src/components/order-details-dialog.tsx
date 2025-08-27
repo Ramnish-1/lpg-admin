@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import type { Order } from '@/lib/types';
-import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package, Phone, MapPin } from 'lucide-react';
+import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package, Phone, MapPin, XCircle } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Button } from './ui/button';
 import Link from 'next/link';
@@ -122,6 +122,12 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetails
                     <span className="text-muted-foreground flex items-center gap-2">Status</span>
                     <Badge variant={statusVariant[order.status]} className="text-xs">{order.status}</Badge>
                 </div>
+                {order.status === 'Cancelled' && order.cancellationReason && (
+                   <div className="flex justify-between items-start pt-2">
+                        <span className="text-muted-foreground flex items-center gap-2"><XCircle className="h-4 w-4"/>Reason</span>
+                        <span className="text-right text-destructive text-sm font-medium">{order.cancellationReason}</span>
+                    </div>
+                )}
             </div>
 
             <Separator />

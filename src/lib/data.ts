@@ -78,7 +78,7 @@ const baseOrders: Omit<Order, 'customerName' | 'agentName' | 'agentPhone' | 'cus
   { id: 'ord_1', customerId: 'usr_1', products: [{ productId: 'prod_1', name: 'LPG Cylinder 14.2kg', quantity: 1 }], totalAmount: 1100, status: 'Delivered', assignedAgentId: 'agt_1', createdAt: new Date('2024-05-20'), deliveryType: 'Home Delivery', paymentType: 'COD' },
   { id: 'ord_2', customerId: 'usr_2', products: [{ productId: 'prod_2', name: 'LPG Cylinder 5kg', quantity: 1 }, { productId: 'prod_3', name: 'LPG Pipe', quantity: 1 }], totalAmount: 650, status: 'In-progress', assignedAgentId: 'agt_1', createdAt: new Date(), deliveryType: 'Home Delivery', paymentType: 'COD' },
   { id: 'ord_3', customerId: 'usr_1', products: [{ productId: 'prod_1', name: 'LPG Cylinder 14.2kg', quantity: 1 }], totalAmount: 1100, status: 'Pending', assignedAgentId: null, createdAt: new Date(new Date().setDate(new Date().getDate() - 1)), deliveryType: 'Pickup', paymentType: 'COD' },
-  { id: 'ord_4', customerId: 'usr_2', products: [{ productId: 'prod_1', name: 'LPG Cylinder 14.2kg', quantity: 1 }], totalAmount: 1100, status: 'Cancelled', assignedAgentId: null, createdAt: new Date(new Date().setDate(new Date().getDate() - 2)), deliveryType: 'Home Delivery', paymentType: 'COD', reason: 'Customer request' },
+  { id: 'ord_4', customerId: 'usr_2', products: [{ productId: 'prod_1', name: 'LPG Cylinder 14.2kg', quantity: 1 }], totalAmount: 1100, status: 'Cancelled', assignedAgentId: null, createdAt: new Date(new Date().setDate(new Date().getDate() - 2)), deliveryType: 'Home Delivery', paymentType: 'COD', cancellationReason: 'Customer requested cancellation' },
 ];
 
 const enrichOrders = (ordersToEnrich: any[]): Order[] => {
