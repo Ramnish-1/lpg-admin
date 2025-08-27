@@ -7,9 +7,9 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MoreHorizontal, FileDown, Truck, CheckCircle } from 'lucide-react';
+import { MoreHorizontal, FileDown, Truck, CheckCircle, Ban } from 'lucide-react';
 import { getOrdersData, getAgentsData } from '@/lib/data';
 import type { Order, Agent } from '@/lib/types';
 import { useEffect, useState, useMemo } from 'react';
@@ -37,6 +37,8 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
   'In-progress': 'outline',
   'Cancelled': 'destructive',
 };
+
+const orderStatuses: Order['status'][] = ['Pending', 'In-progress', 'Delivered', 'Cancelled'];
 
 function OrdersTable({ 
   orders, 
@@ -109,32 +111,38 @@ function OrdersTable({
                         {order.status === 'Pending' && (
                           <DropdownMenuItem onClick={() => onAssignAgent(order)}>Assign Agent</DropdownMenuItem>
                         )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuLabel>Change Status</DropdownMenuLabel>
-                        {order.status === 'Pending' && !order.assignedAgentId && (
-                           <DropdownMenuItem disabled>
-                              <Truck className="mr-2 h-4 w-4" />
-                              <span>Mark In-progress (Assign first)</span>
-                           </DropdownMenuItem>
-                        )}
-                        {order.status === 'Pending' && order.assignedAgentId && (
-                           <DropdownMenuItem onClick={() => onStatusChange(order, 'In-progress')}>
-                              <Truck className="mr-2 h-4 w-4" />
-                              <span>Mark In-progress</span>
-                           </DropdownMenuItem>
-                        )}
+                         <DropdownMenuSeparator />
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                              <span>Change Status</span>
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                               <DropdownMenuRadioGroup value={order.status} onValueChange={(newStatus) => onStatusChange(order, newStatus as Order['status'])}>
+                                {orderStatuses.map(status => (
+                                  <DropdownMenuRadioItem 
+                                    key={status} 
+                                    value={status}
+                                    disabled={
+                                        // Disable "In-progress" if no agent is assigned
+                                        (status === 'In-progress' && !order.assignedAgentId) || 
+                                        // Disable changing status if order is already delivered or cancelled
+                                        (order.status === 'Delivered' || order.status === 'Cancelled')
+                                    }
+                                  >
+                                    {status}
+                                    {status === 'In-progress' && !order.assignedAgentId && " (Assign agent first)"}
+                                  </DropdownMenuRadioItem>
+                                ))}
+                              </DropdownMenuRadioGroup>
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
 
-                        {order.status === 'In-progress' && (
-                          <DropdownMenuItem onClick={() => onStatusChange(order, 'Delivered')}>
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            <span>Mark Delivered</span>
-                          </DropdownMenuItem>
-                        )}
-                        {order.status !== 'Cancelled' && order.status !== 'Delivered' && (
-                          <DropdownMenuItem onClick={() => onCancelOrder(order)} className="text-destructive focus:text-destructive">
-                            Cancel Order
-                          </DropdownMenuItem>
-                        )}
+                         {order.status !== 'Cancelled' && order.status !== 'Delivered' && (
+                           <DropdownMenuItem onClick={() => onCancelOrder(order)} className="text-destructive focus:text-destructive">
+                             <Ban className="mr-2 h-4 w-4" />
+                             <span>Cancel Order</span>
+                           </DropdownMenuItem>
+                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -256,6 +264,14 @@ export default function OrdersPage() {
   };
 
   const handleStatusChange = (order: Order, newStatus: Order['status']) => {
+    if (order.status === newStatus) return; // No change
+    
+    // If trying to set to cancelled, use the cancel dialog flow
+    if (newStatus === 'Cancelled') {
+      handleCancelOrder(order);
+      return;
+    }
+
     const newOrders = orders.map(o => o.id === order.id ? { ...o, status: newStatus } : o);
     updateOrdersStateAndStorage(newOrders);
     toast({
@@ -266,13 +282,17 @@ export default function OrdersPage() {
   
   const confirmCancelOrder = () => {
     if (selectedOrder) {
-      handleStatusChange(selectedOrder, 'Cancelled');
+      const newOrders = orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'Cancelled' } : o);
+      updateOrdersStateAndStorage(newOrders);
+      toast({
+        title: 'Order Cancelled',
+        description: `Order #${selectedOrder.id.slice(0,6)} has been cancelled.`,
+        variant: 'destructive'
+      });
       setIsCancelOpen(false);
       setSelectedOrder(null);
     }
   };
-
-  const orderStatuses: Order['status'][] = ['Pending', 'In-progress', 'Delivered', 'Cancelled'];
 
   const getOrderCount = (status: Order['status']) => {
     return orders.filter(o => o.status === status).length;
