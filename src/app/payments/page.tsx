@@ -1,3 +1,5 @@
+"use client";
+
 import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -6,9 +8,15 @@ import { Badge } from '@/components/ui/badge';
 import { getPaymentsData } from '@/lib/data';
 import type { Payment } from '@/lib/types';
 import { IndianRupee } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-export default async function PaymentsPage() {
-  const payments = await getPaymentsData();
+export default function PaymentsPage() {
+  const [payments, setPayments] = useState<Payment[]>([]);
+
+  useEffect(() => {
+    getPaymentsData().then(setPayments);
+  }, []);
+  
   const totalRevenue = payments.filter(p => p.status === 'Success').reduce((sum, p) => sum + p.amount, 0);
   const pendingAmount = payments.filter(p => p.status === 'Pending').reduce((sum, p) => sum + p.amount, 0);
   const refundedAmount = payments.filter(p => p.status === 'Refunded').reduce((sum, p) => sum + p.amount, 0);
@@ -79,7 +87,7 @@ export default async function PaymentsPage() {
                     <TableCell>
                       <Badge variant={statusVariant[payment.status]}>{payment.status}</Badge>
                     </TableCell>
-                    <TableCell>{payment.timestamp.toLocaleString()}</TableCell>
+                    <TableCell>{new Date(payment.timestamp).toLocaleString()}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

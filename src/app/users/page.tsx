@@ -58,8 +58,9 @@ export default function UsersPage() {
   const confirmAction = () => {
     if (selectedUser && action) {
       const newStatus = action === 'Block' ? 'Blocked' : 'Active';
-      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, status: newStatus } : u));
-      setFilteredUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, status: newStatus } : u));
+      const updatedUsers = users.map(u => u.id === selectedUser.id ? { ...u, status: newStatus } : u)
+      setUsers(updatedUsers);
+      setFilteredUsers(updatedUsers);
 
       toast({
         title: `User ${action === 'Block' ? 'Blocked' : 'Unblocked'}`,
@@ -123,7 +124,7 @@ export default function UsersPage() {
                   <TableCell>
                     <Badge variant={user.status === 'Active' ? 'secondary' : 'destructive'}>{user.status}</Badge>
                   </TableCell>
-                  <TableCell>{user.createdAt.toLocaleString()}</TableCell>
+                  <TableCell>{new Date(user.createdAt).toLocaleString()}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

@@ -17,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { getAgentsData } from '@/lib/data';
 import type { Agent, Order } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,25 +25,23 @@ interface AssignAgentDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onAgentAssigned: (orderId: string, agentId: string, agentName: string) => void;
+  agents: Agent[];
 }
 
-export function AssignAgentDialog({ order, isOpen, onOpenChange, onAgentAssigned }: AssignAgentDialogProps) {
-  const [agents, setAgents] = useState<Agent[]>([]);
+export function AssignAgentDialog({ order, isOpen, onOpenChange, onAgentAssigned, agents }: AssignAgentDialogProps) {
+  const [onlineAgents, setOnlineAgents] = useState<Agent[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
-      getAgentsData().then(data => {
-        const onlineAgents = data.filter(a => a.status === 'Online');
-        setAgents(onlineAgents);
-      });
+      setOnlineAgents(agents.filter(a => a.status === 'Online'));
     }
-  }, [isOpen]);
+  }, [isOpen, agents]);
 
   const handleAssign = () => {
     if (order && selectedAgentId) {
-      const agent = agents.find(a => a.id === selectedAgentId);
+      const agent = onlineAgents.find(a => a.id === selectedAgentId);
       if (agent) {
         onAgentAssigned(order.id, agent.id, agent.name);
         toast({
@@ -73,7 +70,7 @@ export function AssignAgentDialog({ order, isOpen, onOpenChange, onAgentAssigned
               <SelectValue placeholder="Select an online agent" />
             </SelectTrigger>
             <SelectContent>
-              {agents.map(agent => (
+              {onlineAgents.map(agent => (
                 <SelectItem key={agent.id} value={agent.id}>
                   {agent.name}
                 </SelectItem>

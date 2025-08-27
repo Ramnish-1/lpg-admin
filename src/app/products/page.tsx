@@ -1,3 +1,5 @@
+"use client";
+
 import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -8,9 +10,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, PlusCircle, AlertCircle } from 'lucide-react';
 import { getProductsData } from '@/lib/data';
 import type { Product } from '@/lib/types';
+import { useEffect, useState } from 'react';
 
-export default async function ProductsPage() {
-  const products = await getProductsData();
+export default function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    getProductsData().then(setProducts);
+  }, [])
 
   return (
     <AppShell>
