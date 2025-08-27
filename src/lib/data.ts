@@ -9,14 +9,14 @@ const users: User[] = [
 ];
 
 const products: Product[] = [
-    { id: 'prod_1', name: 'LPG Cylinder 14.2kg', description: 'Standard domestic cylinder', price: 1100, stock: 150, lowStockThreshold: 20, status: 'Active', history: [
+    { id: 'prod_1', name: 'LPG Cylinder', unit: '14.2kg', description: 'Standard domestic cylinder', price: 1100, stock: 150, lowStockThreshold: 20, status: 'Active', history: [
         { date: new Date('2023-04-10'), type: 'price_change', oldValue: 1050, newValue: 1100 },
         { date: new Date('2023-05-15'), type: 'stock_update', oldValue: 200, newValue: 150 },
     ] },
-    { id: 'prod_2', name: 'LPG Cylinder 5kg', description: 'Small portable cylinder', price: 450, stock: 8, lowStockThreshold: 10, status: 'Active', history: [
+    { id: 'prod_2', name: 'LPG Cylinder', unit: '5kg', description: 'Small portable cylinder', price: 450, stock: 8, lowStockThreshold: 10, status: 'Active', history: [
         { date: new Date('2023-03-20'), type: 'price_change', oldValue: 440, newValue: 450 },
     ] },
-    { id: 'prod_3', name: 'LPG Pipe', description: 'High-quality safety hose', price: 200, stock: 80, lowStockThreshold: 15, status: 'Inactive' },
+    { id: 'prod_3', name: 'LPG Pipe', unit: 'meter', description: 'High-quality safety hose', price: 200, stock: 80, lowStockThreshold: 15, status: 'Inactive' },
 ];
 
 const agents: Agent[] = [

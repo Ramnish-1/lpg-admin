@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,10 +10,15 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Product } from '@/lib/types';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 
 interface EditProductDialogProps {
   product: Product;
@@ -22,67 +27,147 @@ interface EditProductDialogProps {
   onProductUpdate: (product: Product) => void;
 }
 
+const productSchema = z.object({
+  name: z.string().min(1, "Product name is required."),
+  unit: z.string().min(1, "Unit is required."),
+  description: z.string().min(1, "Description is required."),
+  price: z.coerce.number().min(0, "Price must be a positive number."),
+  stock: z.coerce.number().int().min(0, "Stock must be a whole number."),
+  lowStockThreshold: z.coerce.number().int().min(0, "Threshold must be a whole number."),
+});
+
+type ProductFormValues = z.infer<typeof productSchema>;
+
 export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpdate }: EditProductDialogProps) {
-  const [price, setPrice] = useState(String(product.price));
-  const [stock, setStock] = useState(String(product.stock));
+  const form = useForm<ProductFormValues>({
+    resolver: zodResolver(productSchema),
+    defaultValues: product,
+  });
 
   useEffect(() => {
     if (isOpen) {
-      setPrice(String(product.price));
-      setStock(String(product.stock));
+      form.reset(product);
     }
-  }, [product, isOpen]);
+  }, [product, isOpen, form]);
 
-  const handleSubmit = () => {
+  const handleSubmit = (values: ProductFormValues) => {
     const updatedProduct = {
       ...product,
-      price: Number(price),
-      stock: Number(stock),
+      ...values,
     };
     onProductUpdate(updatedProduct);
   };
+  
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      form.reset(product);
+    }
+    onOpenChange(open);
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle>Edit Product</DialogTitle>
           <DialogDescription>
-            Update price and stock for {product.name}.
+            Update the details for {product.name}.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="price" className="text-right">
-              Price (₹)
-            </Label>
-            <Input 
-              id="price" 
-              type="number"
-              value={price} 
-              onChange={(e) => setPrice(e.target.value)} 
-              className="col-span-3"
-              placeholder="e.g. 1100" 
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="stock" className="text-right">
-              Stock
-            </Label>
-            <Input 
-              id="stock" 
-              type="number"
-              value={stock} 
-              onChange={(e) => setStock(e.target.value)} 
-              className="col-span-3"
-              placeholder="e.g. 150" 
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSubmit}>Save Changes</Button>
-        </DialogFooter>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} noValidate>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="unit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unit</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Price (₹)</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="stock"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Stock</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+               <FormField
+                control={form.control}
+                name="lowStockThreshold"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Low Stock Threshold</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline" type="button">Cancel</Button>
+              </DialogClose>
+              <Button type="submit">Save Changes</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

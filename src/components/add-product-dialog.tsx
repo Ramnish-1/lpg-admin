@@ -27,6 +27,7 @@ interface AddProductDialogProps {
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required."),
+  unit: z.string().min(1, "Unit is required."),
   description: z.string().min(1, "Description is required."),
   price: z.coerce.number().min(0, "Price must be a positive number."),
   stock: z.coerce.number().int().min(0, "Stock must be a whole number."),
@@ -40,6 +41,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '',
+      unit: '',
       description: '',
       price: 0,
       stock: 0,
@@ -72,19 +74,34 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} noValidate>
             <div className="grid gap-4 py-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Product Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. LPG Cylinder 19kg" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. LPG Cylinder" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="unit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unit</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. 14.2kg or meter" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <FormField
                 control={form.control}
                 name="description"

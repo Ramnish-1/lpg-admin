@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import type { Product } from '@/lib/types';
-import { IndianRupee, Package, PackageCheck, AlertCircle, Info } from 'lucide-react';
+import { IndianRupee, Package, PackageCheck, AlertCircle, Info, Beaker } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 interface ProductDetailsDialogProps {
@@ -41,6 +41,10 @@ export function ProductDetailsDialog({ product, isOpen, onOpenChange }: ProductD
           <div className="flex items-center gap-3">
             <Info className="h-5 w-5 text-muted-foreground" />
             <p className="text-sm">{product.description}</p>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-muted-foreground flex items-center gap-2"><Beaker className="h-4 w-4"/>Unit</span>
+            <span className="font-medium">{product.unit}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="text-muted-foreground flex items-center gap-2"><IndianRupee className="h-4 w-4"/>Price</span>

@@ -19,6 +19,7 @@ export interface Product {
   description: string;
   price: number;
   stock: number;
+  unit: string;
   status: 'Active' | 'Inactive';
   lowStockThreshold: number;
   history?: { date: Date; type: 'price_change' | 'stock_update', oldValue: number, newValue: number }[];

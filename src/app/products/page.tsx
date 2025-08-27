@@ -139,6 +139,7 @@ export default function ProductsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Product Name</TableHead>
+                <TableHead>Unit</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead>Status</TableHead>
@@ -158,6 +159,7 @@ export default function ProductsPage() {
                     })}
                   >
                     <TableCell className="font-medium" onClick={() => handleShowDetails(product)}>{product.name}</TableCell>
+                    <TableCell onClick={() => handleShowDetails(product)}>{product.unit}</TableCell>
                     <TableCell onClick={() => handleShowDetails(product)}>₹{product.price.toLocaleString()}</TableCell>
                     <TableCell onClick={() => handleShowDetails(product)}>
                       <div className="flex items-center gap-2">
@@ -199,7 +201,7 @@ export default function ProductsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                            <DropdownMenuItem onClick={() => handleShowDetails(product)}>View Details</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditProduct(product)}>Edit Price/Stock</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditProduct(product)}>Edit</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -259,5 +261,3 @@ export default function ProductsPage() {
     </AppShell>
   );
 }
-
-    
