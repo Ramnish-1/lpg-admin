@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,16 +9,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { ProfileContext } from '@/context/profile-context';
 
 export default function ProfilePage() {
-  const [name, setName] = useState('Admin');
+  const { profile, setProfile } = useContext(ProfileContext);
+  const [name, setName] = useState(profile.name);
   const [email, setEmail] = useState('admin@gastrack.com');
   const [phone, setPhone] = useState('+91 99999 88888');
-  const [photoUrl, setPhotoUrl] = useState('https://picsum.photos/100');
+  const [photoUrl, setPhotoUrl] = useState(profile.photoUrl);
   const { toast } = useToast();
 
+  useEffect(() => {
+    setName(profile.name);
+    setPhotoUrl(profile.photoUrl);
+  }, [profile]);
+
   const handleSaveChanges = () => {
-    // Here you would typically call an API to save the data
+    setProfile({ name, photoUrl });
     toast({
       title: 'Profile Updated',
       description: 'Your profile details have been saved successfully.',
@@ -26,9 +33,10 @@ export default function ProfilePage() {
   };
 
   const handleChangePhoto = () => {
-    // Simulate changing photo by getting a new random image
     const newPhotoId = Math.floor(Math.random() * 1000);
-    setPhotoUrl(`https://picsum.photos/seed/${newPhotoId}/100`);
+    const newPhotoUrl = `https://picsum.photos/seed/${newPhotoId}/100`;
+    setPhotoUrl(newPhotoUrl);
+    setProfile({ name, photoUrl: newPhotoUrl });
     toast({
       title: 'Photo Changed',
       description: 'Your profile picture has been updated.',
@@ -47,7 +55,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-6">
             <Avatar className="h-24 w-24">
               <AvatarImage src={photoUrl} alt="@admin" data-ai-hint="manager portrait"/>
-              <AvatarFallback>AD</AvatarFallback>
+              <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <Button variant="outline" onClick={handleChangePhoto}>Change Photo</Button>
           </div>

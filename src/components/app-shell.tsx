@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { ProfileContext } from '@/context/profile-context';
 
 const GasPump = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -58,6 +59,7 @@ const navItems = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { toast } = useToast();
+  const { profile } = React.useContext(ProfileContext);
 
   const handleLogout = () => {
     toast({
@@ -125,17 +127,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 flex items-center gap-2">
                  <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://picsum.photos/100" alt="@admin" data-ai-hint="manager portrait" />
-                  <AvatarFallback>AD</AvatarFallback>
+                  <AvatarImage src={profile.photoUrl} alt="@admin" data-ai-hint="manager portrait" />
+                  <AvatarFallback>{profile.name.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                <span>Admin</span>
+                <span>{profile.name}</span>
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">Admin</p>
+                  <p className="text-sm font-medium leading-none">{profile.name}</p>
                   <p className="text-xs leading-none text-muted-foreground">
                     admin@gastrack.com
                   </p>
