@@ -46,35 +46,35 @@ export const SettingsContext = createContext<SettingsContextType>({
 });
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettingsState] = useState<Settings>(() => {
-    if (typeof window === 'undefined') {
-      return defaultSettings;
-    }
-    try {
-      const savedSettings = window.localStorage.getItem('gastrack-settings');
-      // Deep merge to handle nested availability object
-      const parsed = savedSettings ? JSON.parse(savedSettings) : {};
-      const mergedSettings = {
-        ...defaultSettings,
-        ...parsed,
-        availability: {
-          ...defaultSettings.availability,
-          ...(parsed.availability || {}),
-        }
-      };
-      return mergedSettings;
-    } catch (error) {
-      console.error('Error reading settings from localStorage', error);
-      return defaultSettings;
-    }
-  });
-  
-  const [tempSettings, setTempSettingsState] = useState<Settings>(settings);
+  const [settings, setSettingsState] = useState<Settings>(defaultSettings);
+  const [tempSettings, setTempSettingsState] = useState<Settings>(defaultSettings);
   const { toast } = useToast();
 
   useEffect(() => {
-    setTempSettingsState(settings);
-  }, [settings]);
+    try {
+      const savedSettings = window.localStorage.getItem('gastrack-settings');
+      if (savedSettings) {
+        const parsed = savedSettings ? JSON.parse(savedSettings) : {};
+        const mergedSettings = {
+          ...defaultSettings,
+          ...parsed,
+          availability: {
+            ...defaultSettings.availability,
+            ...(parsed.availability || {}),
+          }
+        };
+        setSettingsState(mergedSettings);
+        setTempSettingsState(mergedSettings);
+      } else {
+        setSettingsState(defaultSettings);
+        setTempSettingsState(defaultSettings);
+      }
+    } catch (error) {
+      console.error('Error reading settings from localStorage', error);
+      setSettingsState(defaultSettings);
+      setTempSettingsState(defaultSettings);
+    }
+  }, []);
 
   const setSettings = (newSettingsData: Partial<Settings>) => {
     setSettingsState(prevSettings => {
