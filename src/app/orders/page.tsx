@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MoreHorizontal, FileDown, ChevronDown } from 'lucide-react';
+import { MoreHorizontal, FileDown, ChevronDown, Search } from 'lucide-react';
 import { getOrdersData, getAgentsData } from '@/lib/data';
 import type { Order, Agent } from '@/lib/types';
 import { useEffect, useState, useMemo } from 'react';
@@ -19,6 +19,7 @@ import { CancelOrderDialog } from '@/components/cancel-order-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { ReturnOrderDialog } from '@/components/return-order-dialog';
+import { Input } from '@/components/ui/input';
 
 const ORDERS_STORAGE_KEY = 'gastrack-orders';
 const AGENTS_STORAGE_KEY = 'gastrack-agents';
@@ -182,6 +183,7 @@ function OrdersTable({
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -206,15 +208,18 @@ export default function OrdersPage() {
                     createdAt: new Date(o.createdAt),
                 }));
                 setOrders(parsedOrders);
+                setFilteredOrders(parsedOrders);
             } else {
                 const data = await getOrdersData();
                 setOrders(data);
+                setFilteredOrders(data);
                 window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(data));
             }
         } catch (error) {
             console.error("Failed to load orders from localStorage", error);
             const data = await getOrdersData();
             setOrders(data);
+            setFilteredOrders(data);
         }
     };
     const fetchAgents = async () => {
@@ -243,11 +248,33 @@ export default function OrdersPage() {
   
   const updateOrdersStateAndStorage = (newOrders: Order[]) => {
     setOrders(newOrders);
+    
+    // Also update filtered orders based on the current search term
+    const searchTerm = (document.querySelector('input[placeholder="Search by customer or agent..."]') as HTMLInputElement)?.value || '';
+    if (searchTerm) {
+        const filtered = newOrders.filter(o =>
+            o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (o.agentName && o.agentName.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+        setFilteredOrders(filtered);
+    } else {
+        setFilteredOrders(newOrders);
+    }
+
     try {
         window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(newOrders));
     } catch (error) {
         console.error("Failed to save orders to localStorage", error);
     }
+  };
+  
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const searchTerm = event.target.value.toLowerCase();
+    const filtered = orders.filter(order =>
+        order.customerName.toLowerCase().includes(searchTerm) ||
+        (order.agentName && order.agentName.toLowerCase().includes(searchTerm))
+    );
+    setFilteredOrders(filtered);
   };
 
 
@@ -333,12 +360,12 @@ export default function OrdersPage() {
 
 
   const getOrderCount = (status: Order['status']) => {
-    return orders.filter(o => o.status === status).length;
+    return filteredOrders.filter(o => o.status === status).length;
   }
   
   const handleExport = () => {
     const csvHeader = "Order ID,Customer Name,Customer Phone,Agent Name,Agent Phone,Status,Total Amount,Date,Products\n";
-    const csvRows = orders.map(o => {
+    const csvRows = filteredOrders.map(o => {
         const productList = o.products.map(p => `${p.name} (x${p.quantity})`).join('; ');
         const row = [
             o.id,
@@ -377,7 +404,16 @@ export default function OrdersPage() {
     <AppShell>
       <PageHeader title="Orders Management">
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" className="h-8 gap-1" onClick={handleExport}>
+           <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search by customer or agent..."
+                className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
+                onChange={handleSearch}
+              />
+            </div>
+          <Button size="sm" variant="outline" className="h-9 gap-1" onClick={handleExport}>
             <FileDown className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
               Export
@@ -408,7 +444,7 @@ export default function OrdersPage() {
                        'bg-red-100 text-red-800': status === 'Cancelled' || status === 'Returned',
                      })}
                   >
-                    {count > 9 ? '9+' : count}
+                    {count}
                   </Badge>
                 </TabsTrigger>
               )
@@ -418,7 +454,7 @@ export default function OrdersPage() {
         {orderStatuses.map(status => (
           <TabsContent key={status} value={status} className="mt-4">
             <OrdersTable 
-              orders={orders.filter(o => o.status === status)}
+              orders={filteredOrders.filter(o => o.status === status)}
               onShowDetails={handleShowDetails}
               onAssignAgent={handleAssignAgent}
               onStatusChange={handleStatusChange}
@@ -436,5 +472,3 @@ export default function OrdersPage() {
     </AppShell>
   );
 }
-
-    
