@@ -1,8 +1,10 @@
 
+
 export interface User {
   id: string;
   name: string;
   email: string;
+  password?: string; // Should be handled securely on a backend
   phone: string;
   address: string;
   status: 'Active' | 'Blocked';

@@ -60,12 +60,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = (email: string, password: string): boolean => {
     const users = getStoredUsers();
-    // In a real app, you would also check the hashed password.
-    const foundUser = users.find(u => u.email === email);
+    const foundUser = users.find(u => u.email === email && u.password === password);
 
     if (foundUser) {
-        // This is a mock authentication. In a real app, passwords would be hashed.
-        // For simplicity, we just check if the user exists.
         setUser(foundUser);
         setIsAuthenticated(true);
         window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(foundUser));
@@ -77,7 +74,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
-    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    if (typeof window !== 'undefined') {
+      const keysToRemove = [AUTH_STORAGE_KEY, 'gastrack-profile', 'gastrack-settings', 'gastrack-agents', 'gastrack-orders', 'gastrack-products', 'gastrack-users'];
+      keysToRemove.forEach(key => {
+        window.localStorage.removeItem(key);
+      });
+      window.location.href = '/login';
+    }
   }
 
   const signup = (name: string, email: string, password: string): boolean => {
@@ -90,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: `usr_${Date.now()}`,
         name,
         email,
-        // password should be hashed in a real app
+        password, // In a real app, this would be hashed
         phone: '',
         address: '',
         status: 'Active',
