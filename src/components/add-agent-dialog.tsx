@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
+  DialogClose
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -69,7 +70,7 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[480px] grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Add New Agent</DialogTitle>
           <DialogDescription>
@@ -77,9 +78,9 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} noValidate>
-            <ScrollArea className="max-h-[70vh] pr-6">
-              <div className="grid gap-4 py-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} noValidate className="overflow-hidden flex flex-col">
+             <ScrollArea className="pr-6 flex-1">
+              <div className="grid gap-4 py-4 ">
                 <FormField
                   control={form.control}
                   name="name"
