@@ -12,6 +12,7 @@ import { getAgentsData } from '@/lib/data';
 import type { Agent } from '@/lib/types';
 import { useEffect, useState } from 'react';
 import { EditAgentDialog } from '@/components/edit-agent-dialog';
+import { AddAgentDialog } from '@/components/add-agent-dialog';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -28,6 +29,7 @@ export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
@@ -56,6 +58,21 @@ export default function AgentsPage() {
     setSelectedAgent(null);
   }
 
+  const handleAgentAdd = (newAgent: Omit<Agent, 'id' | 'createdAt' | 'status'>) => {
+    const agentToAdd: Agent = {
+      ...newAgent,
+      id: `agt_${Date.now()}`,
+      createdAt: new Date(),
+      status: 'Offline',
+    }
+    setAgents(prev => [...prev, agentToAdd]);
+     toast({
+      title: 'Agent Added',
+      description: `${agentToAdd.name} has been successfully added.`,
+    });
+    setIsAddDialogOpen(false);
+  }
+
   const confirmDelete = () => {
     if (selectedAgent) {
       setAgents(agents.filter(a => a.id !== selectedAgent.id));
@@ -73,7 +90,7 @@ export default function AgentsPage() {
   return (
     <AppShell>
       <PageHeader title="Delivery Agent Management">
-        <Button size="sm" className="h-8 gap-1">
+        <Button size="sm" className="h-8 gap-1" onClick={() => setIsAddDialogOpen(true)}>
           <PlusCircle className="h-3.5 w-3.5" />
           <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
             Add Agent
@@ -136,6 +153,13 @@ export default function AgentsPage() {
           </Table>
         </CardContent>
       </Card>
+      
+      <AddAgentDialog 
+        isOpen={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onAgentAdd={handleAgentAdd}
+      />
+
       {selectedAgent && (
         <EditAgentDialog 
           agent={selectedAgent} 
