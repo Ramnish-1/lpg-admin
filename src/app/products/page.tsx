@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
 import { ProductDetailsDialog } from '@/components/product-details-dialog';
 import { EditProductDialog } from '@/components/edit-product-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { AddProductDialog } from '@/components/add-product-dialog';
 
 const PRODUCTS_STORAGE_KEY = 'gastrack-products';
 
@@ -23,6 +24,7 @@ export default function ProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -72,11 +74,25 @@ export default function ProductsPage() {
     setSelectedProduct(null);
   }
 
+  const handleProductAdd = (newProduct: Omit<Product, 'id'>) => {
+    const productToAdd: Product = {
+      ...newProduct,
+      id: `prod_${Date.now()}`,
+    };
+    const newProducts = [...products, productToAdd];
+    updateProductsStateAndStorage(newProducts);
+    toast({
+      title: 'Product Added',
+      description: `${productToAdd.name} has been successfully added.`,
+    });
+    setIsAddOpen(false);
+  }
+
 
   return (
     <AppShell>
       <PageHeader title="Product & Inventory">
-        <Button size="sm" className="h-8 gap-1">
+        <Button size="sm" className="h-8 gap-1" onClick={() => setIsAddOpen(true)}>
           <PlusCircle className="h-3.5 w-3.5" />
           <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
             Add Product
@@ -153,6 +169,11 @@ export default function ProductsPage() {
           onProductUpdate={handleProductUpdate}
         />
       )}
+       <AddProductDialog
+        isOpen={isAddOpen}
+        onOpenChange={setIsAddOpen}
+        onProductAdd={handleProductAdd}
+      />
     </AppShell>
   );
 }
