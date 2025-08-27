@@ -136,13 +136,6 @@ function OrdersTable({
                               </DropdownMenuRadioGroup>
                             </DropdownMenuSubContent>
                           </DropdownMenuSub>
-
-                         {order.status !== 'Cancelled' && order.status !== 'Delivered' && (
-                           <DropdownMenuItem onClick={() => onCancelOrder(order)} className="text-destructive focus:text-destructive">
-                             <Ban className="mr-2 h-4 w-4" />
-                             <span>Cancel Order</span>
-                           </DropdownMenuItem>
-                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -407,6 +400,7 @@ export default function OrdersPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure you want to cancel this order?</AlertDialogTitle>
+
             <AlertDialogDescription>
               This action cannot be undone. This will mark the order as cancelled.
             </AlertDialogDescription>
@@ -423,3 +417,5 @@ export default function OrdersPage() {
     </AppShell>
   );
 }
+
+    
