@@ -22,10 +22,23 @@ import {
   Package,
   CreditCard,
   Menu,
-  GasPump,
   ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const GasPump = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    {...props}
+  >
+    <path d="M14 11h2v8h-2v-3.5a1.5 1.5 0 0 0-3 0V19H9v-8h2v1.5c.5-.83 1.5-1.5 2.5-1.5zM4 3h15v2H4z" />
+    <path d="M18.5 6H10a1 1 0 0 0-1 1v12h10V7a1 1 0 0 0-1-1h-.5zM12 9h6v2h-6V9z" />
+    <path d="M8 7H5v12h3V7zm-2 2h1v2H6V9z" />
+  </svg>
+);
+
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
