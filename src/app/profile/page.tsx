@@ -14,20 +14,24 @@ import { ProfileContext } from '@/context/profile-context';
 
 export default function ProfilePage() {
   const { profile, setProfile } = useContext(ProfileContext);
+  
   const [name, setName] = useState(profile.name);
-  const [email, setEmail] = useState('admin@gastrack.com');
-  const [phone, setPhone] = useState('+91 99999 88888');
+  const [email, setEmail] = useState(profile.email);
+  const [phone, setPhone] = useState(profile.phone);
   const [photoUrl, setPhotoUrl] = useState(profile.photoUrl);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     setName(profile.name);
     setPhotoUrl(profile.photoUrl);
+    setEmail(profile.email);
+    setPhone(profile.phone);
   }, [profile]);
 
   const handleSaveChanges = () => {
-    setProfile({ name, photoUrl });
+    setProfile({ name, email, phone, photoUrl });
     toast({
       title: 'Profile Updated',
       description: 'Your profile details have been saved successfully.',
@@ -45,7 +49,7 @@ export default function ProfilePage() {
       reader.onloadend = () => {
         const newPhotoUrl = reader.result as string;
         setPhotoUrl(newPhotoUrl);
-        setProfile({ name, photoUrl: newPhotoUrl });
+        setProfile({ photoUrl: newPhotoUrl });
         toast({
           title: 'Photo Changed',
           description: 'Your profile picture has been updated.',

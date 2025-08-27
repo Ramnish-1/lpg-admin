@@ -139,7 +139,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">{profile.name}</p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    admin@gastrack.com
+                    {profile.email}
                   </p>
                 </div>
               </DropdownMenuLabel>
