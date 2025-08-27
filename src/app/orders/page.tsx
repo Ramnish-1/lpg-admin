@@ -163,8 +163,9 @@ export default function OrdersPage() {
   };
 
   const handleAgentAssigned = (orderId: string, agentId: string, agentName: string) => {
+    const agent = agents.find(a => a.id === agentId);
     const newOrders = orders.map(o => 
-      o.id === orderId ? { ...o, assignedAgentId: agentId, agentName, status: 'In-progress' } : o
+      o.id === orderId ? { ...o, assignedAgentId: agentId, agentName, agentPhone: agent?.phone, status: 'In-progress' } : o
     );
     updateOrdersStateAndStorage(newOrders);
   };

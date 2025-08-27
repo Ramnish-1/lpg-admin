@@ -32,11 +32,13 @@ export interface Order {
   id: string;
   customerId: string;
   customerName: string;
+  customerPhone?: string;
   products: { productId: string; name: string; quantity: number }[];
   totalAmount: number;
   status: 'Pending' | 'In-progress' | 'Delivered' | 'Cancelled';
   assignedAgentId: string | null;
   agentName?: string;
+  agentPhone?: string;
   createdAt: Date;
   deliveryType: 'Home Delivery' | 'Pickup';
   paymentType: 'COD';

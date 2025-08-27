@@ -76,11 +76,20 @@ export async function getRecentOrders() {
 export async function getUsersData() { return users; }
 
 // Orders
-export async function getOrdersData() {
-  return orders.map(o => ({
-    ...o,
-    agentName: agents.find(a => a.id === o.assignedAgentId)?.name
-  }));
+export async function getOrdersData(): Promise<Order[]> {
+  const enrichedOrders = orders.map(order => {
+    const customer = users.find(u => u.id === order.customerId);
+    const agent = agents.find(a => a.id === order.assignedAgentId);
+
+    return {
+      ...order,
+      customerName: customer?.name || order.customerName,
+      customerPhone: customer?.phone,
+      agentName: agent?.name,
+      agentPhone: agent?.phone,
+    };
+  });
+  return enrichedOrders;
 }
 
 // Agents

@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import type { Order } from '@/lib/types';
-import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package } from 'lucide-react';
+import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package, Phone } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 interface OrderDetailsDialogProps {
@@ -46,18 +46,21 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetails
             <div className="p-4 rounded-lg border bg-muted/20">
                 <h3 className="font-semibold mb-3 text-foreground">Customer & Agent</h3>
                 <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                        <User className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex items-start gap-3">
+                        <User className="h-5 w-5 text-muted-foreground mt-1" />
                         <div className="text-sm">
                             <div className="font-medium">{order.customerName}</div>
                             <div className="text-muted-foreground">Customer</div>
+                            {order.customerPhone && <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><Phone className="h-3 w-3"/>{order.customerPhone}</div>}
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <Truck className="h-5 w-5 text-muted-foreground" />
+                    <Separator className="my-2" />
+                    <div className="flex items-start gap-3">
+                        <Truck className="h-5 w-5 text-muted-foreground mt-1" />
                         <div className="text-sm">
                             <div className="font-medium">{order.agentName || 'Unassigned'}</div>
                             <div className="text-muted-foreground">Delivery Agent</div>
+                             {order.agentPhone && <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><Phone className="h-3 w-3"/>{order.agentPhone}</div>}
                         </div>
                     </div>
                 </div>
@@ -108,4 +111,3 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetails
     </Dialog>
   );
 }
-
