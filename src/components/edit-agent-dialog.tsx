@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,10 +12,13 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Agent } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 
 interface EditAgentDialogProps {
   agent: Agent;
@@ -24,53 +27,49 @@ interface EditAgentDialogProps {
   onAgentUpdate: (agent: Agent) => void;
 }
 
+const agentSchema = z.object({
+  name: z.string().min(1, { message: "Name is required." }),
+  email: z.string().email({ message: "Invalid email address." }),
+  phone: z.string().min(10, { message: "Phone number must be at least 10 digits." }),
+  vehicleDetails: z.string().min(1, { message: "Vehicle details are required." }),
+  panCard: z.string().min(1, { message: "PAN card is required." }),
+  aadharCard: z.string().min(1, { message: "Aadhar card is required." }),
+  accountDetails: z.string().min(1, { message: "Account details are required." }),
+});
+
+type AgentFormValues = z.infer<typeof agentSchema>;
+
 export function EditAgentDialog({ agent, isOpen, onOpenChange, onAgentUpdate }: EditAgentDialogProps) {
-  const [name, setName] = useState(agent.name);
-  const [phone, setPhone] = useState(agent.phone);
-  const [email, setEmail] = useState(agent.email);
-  const [vehicle, setVehicle] = useState(agent.vehicleDetails);
-  const [pan, setPan] = useState(agent.panCard);
-  const [aadhar, setAadhar] = useState(agent.aadharCard);
-  const [account, setAccount] = useState(agent.accountDetails);
   const { toast } = useToast();
 
+  const form = useForm<AgentFormValues>({
+    resolver: zodResolver(agentSchema),
+    defaultValues: agent,
+  });
 
   useEffect(() => {
     if (isOpen) {
-      setName(agent.name);
-      setPhone(agent.phone);
-      setEmail(agent.email);
-      setVehicle(agent.vehicleDetails);
-      setPan(agent.panCard);
-      setAadhar(agent.aadharCard);
-      setAccount(agent.accountDetails);
+      form.reset(agent);
     }
-  }, [agent, isOpen]);
+  }, [agent, isOpen, form]);
 
-  const handleSubmit = () => {
-    if (!name || !phone || !email || !vehicle || !pan || !aadhar || !account) {
-       toast({
-        title: 'Missing Fields',
-        description: 'Please fill out all the required fields.',
-        variant: 'destructive',
-      });
-      return;
-    }
+  const handleSubmit = (values: AgentFormValues) => {
     const updatedAgent = {
       ...agent,
-      name,
-      phone,
-      email,
-      vehicleDetails: vehicle,
-      panCard: pan,
-      aadharCard: aadhar,
-      accountDetails: account,
+      ...values,
     };
     onAgentUpdate(updatedAgent);
   };
+  
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      form.reset(agent);
+    }
+    onOpenChange(open);
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
        <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle>Edit Agent Details</DialogTitle>
@@ -78,42 +77,109 @@ export function EditAgentDialog({ agent, isOpen, onOpenChange, onAgentUpdate }: 
             Update the details for the delivery agent.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="max-h-[70vh] pr-6">
-          <div className="grid gap-4 py-4">
-             <div className="space-y-2">
-              <Label htmlFor="name-edit">Name</Label>
-              <Input id="name-edit" value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-             <div className="space-y-2">
-              <Label htmlFor="email-edit">Email</Label>
-              <Input id="email-edit" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-             <div className="space-y-2">
-              <Label htmlFor="phone-edit">Phone</Label>
-              <Input id="phone-edit" value={phone} onChange={(e) => setPhone(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="vehicle-edit">Vehicle</Label>
-              <Input id="vehicle-edit" value={vehicle} onChange={(e) => setVehicle(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="pan-edit">PAN Card</Label>
-              <Input id="pan-edit" value={pan} onChange={(e) => setPan(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="aadhar-edit">Aadhar Card</Label>
-              <Input id="aadhar-edit" value={aadhar} onChange={(e) => setAadhar(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="account-edit">Bank Account Details</Label>
-              <Input id="account-edit" value={account} onChange={(e) => setAccount(e.target.value)} />
-            </div>
-          </div>
-        </ScrollArea>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSubmit}>Save Changes</Button>
-        </DialogFooter>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} noValidate>
+            <ScrollArea className="max-h-[70vh] pr-6">
+              <div className="grid gap-4 py-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="vehicleDetails"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Vehicle</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="panCard"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>PAN Card</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="aadharCard"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Aadhar Card</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="accountDetails"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bank Account Details</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </ScrollArea>
+            <DialogFooter className="mt-4">
+              <Button variant="outline" type="button" onClick={() => handleOpenChange(false)}>Cancel</Button>
+              <Button type="submit">Save Changes</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
