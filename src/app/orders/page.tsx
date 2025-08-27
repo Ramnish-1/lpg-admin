@@ -162,18 +162,26 @@ export default function OrdersPage() {
     setIsCancelOpen(true);
   };
 
-  const handleAgentAssigned = (orderId: string, agentId: string, agentName: string) => {
+  const handleAgentAssigned = (orderId: string, agentId: string) => {
     const agent = agents.find(a => a.id === agentId);
-    const newOrders = orders.map(o => 
-      o.id === orderId ? { ...o, assignedAgentId: agentId, agentName, agentPhone: agent?.phone, status: 'In-progress' } : o
-    );
-    updateOrdersStateAndStorage(newOrders);
+    if (agent) {
+        const newOrders = orders.map(o => 
+            o.id === orderId 
+            ? { ...o, assignedAgentId: agentId, agentName: agent.name, agentPhone: agent.phone, status: 'In-progress' as const } 
+            : o
+        );
+        updateOrdersStateAndStorage(newOrders);
+        toast({
+          title: "Agent Assigned",
+          description: `${agent.name} has been assigned to order #${orderId.slice(0, 6)}.`,
+        });
+    }
   };
   
   const confirmCancelOrder = () => {
     if (selectedOrder) {
       const newOrders = orders.map(o => 
-        o.id === selectedOrder.id ? { ...o, status: 'Cancelled', reason: 'Cancelled by admin' } : o
+        o.id === selectedOrder.id ? { ...o, status: 'Cancelled' as const, reason: 'Cancelled by admin' } : o
       );
       updateOrdersStateAndStorage(newOrders);
       toast({

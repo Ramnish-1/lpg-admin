@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -24,7 +25,7 @@ interface AssignAgentDialogProps {
   order: Order | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onAgentAssigned: (orderId: string, agentId: string, agentName: string) => void;
+  onAgentAssigned: (orderId: string, agentId: string) => void;
   agents: Agent[];
 }
 
@@ -41,15 +42,8 @@ export function AssignAgentDialog({ order, isOpen, onOpenChange, onAgentAssigned
 
   const handleAssign = () => {
     if (order && selectedAgentId) {
-      const agent = onlineAgents.find(a => a.id === selectedAgentId);
-      if (agent) {
-        onAgentAssigned(order.id, agent.id, agent.name);
-        toast({
-          title: "Agent Assigned",
-          description: `${agent.name} has been assigned to order #${order.id.slice(0, 6)}.`,
-        });
-        onOpenChange(false);
-      }
+      onAgentAssigned(order.id, selectedAgentId);
+      onOpenChange(false);
     }
   };
 

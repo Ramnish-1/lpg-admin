@@ -1,3 +1,4 @@
+
 import type { User, Product, Agent, Order, Payment } from './types';
 
 // Dummy Data
@@ -18,12 +19,29 @@ const agents: Agent[] = [
   { id: 'agt_2', name: 'Deepak Verma', phone: '8765432108', vehicleDetails: 'MH-02-CD-5678', status: 'Offline', createdAt: new Date('2023-02-01') },
 ];
 
-const orders: Order[] = [
-  { id: 'ord_1', customerId: 'usr_1', customerName: 'Arjun Kumar', products: [{ productId: 'prod_1', name: 'LPG Cylinder 14.2kg', quantity: 1 }], totalAmount: 1100, status: 'Delivered', assignedAgentId: 'agt_1', agentName: 'Suresh Singh', createdAt: new Date('2024-05-20'), deliveryType: 'Home Delivery', paymentType: 'COD' },
-  { id: 'ord_2', customerId: 'usr_2', customerName: 'Priya Sharma', products: [{ productId: 'prod_2', name: 'LPG Cylinder 5kg', quantity: 1 }, { productId: 'prod_3', name: 'LPG Pipe', quantity: 1 }], totalAmount: 650, status: 'In-progress', assignedAgentId: 'agt_1', agentName: 'Suresh Singh', createdAt: new Date(), deliveryType: 'Home Delivery', paymentType: 'COD' },
-  { id: 'ord_3', customerId: 'usr_1', customerName: 'Arjun Kumar', products: [{ productId: 'prod_1', name: 'LPG Cylinder 14.2kg', quantity: 1 }], totalAmount: 1100, status: 'Pending', assignedAgentId: null, createdAt: new Date(new Date().setDate(new Date().getDate() - 1)), deliveryType: 'Pickup', paymentType: 'COD' },
-  { id: 'ord_4', customerId: 'usr_2', customerName: 'Priya Sharma', products: [{ productId: 'prod_1', name: 'LPG Cylinder 14.2kg', quantity: 1 }], totalAmount: 1100, status: 'Cancelled', assignedAgentId: null, createdAt: new Date(new Date().setDate(new Date().getDate() - 2)), deliveryType: 'Home Delivery', paymentType: 'COD', reason: 'Customer request' },
+const baseOrders: Omit<Order, 'customerName' | 'agentName' | 'agentPhone' | 'customerPhone'>[] = [
+  { id: 'ord_1', customerId: 'usr_1', products: [{ productId: 'prod_1', name: 'LPG Cylinder 14.2kg', quantity: 1 }], totalAmount: 1100, status: 'Delivered', assignedAgentId: 'agt_1', createdAt: new Date('2024-05-20'), deliveryType: 'Home Delivery', paymentType: 'COD' },
+  { id: 'ord_2', customerId: 'usr_2', products: [{ productId: 'prod_2', name: 'LPG Cylinder 5kg', quantity: 1 }, { productId: 'prod_3', name: 'LPG Pipe', quantity: 1 }], totalAmount: 650, status: 'In-progress', assignedAgentId: 'agt_1', createdAt: new Date(), deliveryType: 'Home Delivery', paymentType: 'COD' },
+  { id: 'ord_3', customerId: 'usr_1', products: [{ productId: 'prod_1', name: 'LPG Cylinder 14.2kg', quantity: 1 }], totalAmount: 1100, status: 'Pending', assignedAgentId: null, createdAt: new Date(new Date().setDate(new Date().getDate() - 1)), deliveryType: 'Pickup', paymentType: 'COD' },
+  { id: 'ord_4', customerId: 'usr_2', products: [{ productId: 'prod_1', name: 'LPG Cylinder 14.2kg', quantity: 1 }], totalAmount: 1100, status: 'Cancelled', assignedAgentId: null, createdAt: new Date(new Date().setDate(new Date().getDate() - 2)), deliveryType: 'Home Delivery', paymentType: 'COD', reason: 'Customer request' },
 ];
+
+const enrichOrders = (ordersToEnrich: any[]): Order[] => {
+  return ordersToEnrich.map(order => {
+    const customer = users.find(u => u.id === order.customerId);
+    const agent = agents.find(a => a.id === order.assignedAgentId);
+    return {
+      ...order,
+      customerName: customer?.name || 'Unknown Customer',
+      customerPhone: customer?.phone,
+      agentName: agent?.name,
+      agentPhone: agent?.phone,
+    };
+  });
+};
+
+const orders: Order[] = enrichOrders(baseOrders);
+
 
 const payments: Payment[] = [
   { id: 'pay_1', orderId: 'ord_1', amount: 1100, status: 'Success', type: 'COD', timestamp: new Date('2024-05-20') },
@@ -77,19 +95,7 @@ export async function getUsersData() { return users; }
 
 // Orders
 export async function getOrdersData(): Promise<Order[]> {
-  const enrichedOrders = orders.map(order => {
-    const customer = users.find(u => u.id === order.customerId);
-    const agent = agents.find(a => a.id === order.assignedAgentId);
-
-    return {
-      ...order,
-      customerName: customer?.name || order.customerName,
-      customerPhone: customer?.phone,
-      agentName: agent?.name,
-      agentPhone: agent?.phone,
-    };
-  });
-  return enrichedOrders;
+  return orders;
 }
 
 // Agents
