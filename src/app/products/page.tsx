@@ -32,21 +32,24 @@ export default function ProductsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    try {
-      const savedProducts = window.localStorage.getItem(PRODUCTS_STORAGE_KEY);
-      if (savedProducts) {
-        setProducts(JSON.parse(savedProducts));
-      } else {
-        getProductsData().then(data => {
+    const fetchProducts = async () => {
+      try {
+        const savedProducts = window.localStorage.getItem(PRODUCTS_STORAGE_KEY);
+        if (savedProducts) {
+          setProducts(JSON.parse(savedProducts));
+        } else {
+          const data = await getProductsData();
           setProducts(data);
           window.localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(data));
-        });
+        }
+      } catch (error) {
+        console.error("Failed to load products from localStorage", error);
+        const data = await getProductsData();
+        setProducts(data);
       }
-    } catch (error) {
-      console.error("Failed to load products from localStorage", error);
-      getProductsData().then(setProducts);
-    }
-  }, [])
+    };
+    fetchProducts();
+  }, []);
 
   const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
 
@@ -146,7 +149,6 @@ export default function ProductsPage() {
             </TableHeader>
             <TableBody>
               {paginatedProducts.map((product: Product) => {
-                const isLowStockLegacy = product.stock < product.lowStockThreshold;
                 const isLowStock = product.stock < LOW_STOCK_THRESHOLD;
                 return (
                   <TableRow 
@@ -160,11 +162,6 @@ export default function ProductsPage() {
                     <TableCell onClick={() => handleShowDetails(product)}>
                       <div className="flex items-center gap-2">
                         <span>{product.stock}</span>
-                        {isLowStockLegacy && !isLowStock && (
-                          <Badge variant="destructive" className="flex items-center gap-1 bg-orange-400 hover:bg-orange-500">
-                            <AlertCircle className="h-3 w-3" /> Alert
-                          </Badge>
-                        )}
                          {isLowStock && (
                           <Badge variant="destructive" className="flex items-center gap-1">
                             <AlertCircle className="h-3 w-3" /> Low
