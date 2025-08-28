@@ -48,14 +48,9 @@ export default function DashboardPage() {
         }
         setAgents(agentData);
 
-        const { stats: fetchedStats, ordersByDay: fetchedOrdersByDay } = await getDashboardData();
-        const activeAgents = agentData.filter(a => a.status === 'Online').length;
+        const { stats: fetchedStats, ordersByDay: fetchedOrdersByDay } = await getDashboardData(agentData);
         
-        setStats({
-          ...fetchedStats,
-          activeAgents: activeAgents,
-          totalAgents: agentData.length,
-        });
+        setStats(fetchedStats);
 
         setOrdersByDay(fetchedOrdersByDay);
 

@@ -114,11 +114,11 @@ const payments: Payment[] = [
 // Data Access Functions (simulating API calls)
 
 // Dashboard
-export async function getDashboardData() {
+export async function getDashboardData(agentData: Agent[]) {
   const totalUsers = users.length;
   const totalOrders = orders.length;
-  const activeAgents = agents.filter(a => a.status === 'Online').length;
-  const totalAgents = agents.length;
+  const activeAgents = agentData.filter(a => a.status === 'Online').length;
+  const totalAgents = agentData.length;
   const totalRevenue = orders.filter(o => o.status === 'Delivered').reduce((sum, order) => sum + order.totalAmount, 0);
 
   const today = new Date();

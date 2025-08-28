@@ -41,7 +41,7 @@ const WavingCylinder = (props: React.SVGProps<SVGSVGElement>) => (
         <path d="M65,110 Q75,125 85,110" stroke="black" strokeWidth="2" fill="none" />
 
         {/* Waving Arm */}
-        <g className="animate-wave origin-bottom">
+        <g className="animate-wave">
              <path d="M20,100 C10,120 10,140 25,160" stroke="#B71C1C" strokeWidth="8" fill="none" strokeLinecap="round" />
             <circle cx="28" cy="165" r="10" fill="#F44336" stroke="#B71C1C" strokeWidth="2" />
         </g>
