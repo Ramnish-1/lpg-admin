@@ -38,7 +38,7 @@ export const ProfileContext = createContext<ProfileContextType>({
 });
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
-  const { token, isAuthenticated, user: authUser } = useContext(AuthContext);
+  const { token, isAuthenticated } = useContext(AuthContext);
   const [profile, setProfileState] = useState<Profile>(defaultProfile);
   const [isFetchingProfile, setIsFetchingProfile] = useState(true);
 
@@ -68,7 +68,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         setIsFetchingProfile(false);
       }
     } else {
-      // If not authenticated, set a default/empty state
       setProfileState(defaultProfile);
       setIsFetchingProfile(false);
     }
@@ -98,8 +97,14 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         const result = await response.json();
         
         if (result.success) {
-            // Re-fetch profile to get the latest data, including new image URL
-            await fetchProfile();
+            const userData = result.data.user;
+            setProfileState({
+                name: userData.name || '',
+                email: userData.email,
+                phone: userData.phone || '',
+                role: userData.role || 'User',
+                photoUrl: userData.profileImage || '',
+            });
             return true;
         }
         return false;

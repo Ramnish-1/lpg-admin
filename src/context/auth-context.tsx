@@ -13,7 +13,6 @@ interface AuthContextType {
   signup: (name: string, email: string, password: string, phone: string) => Promise<boolean>;
 }
 
-const AUTH_STORAGE_KEY = 'gastrack-auth';
 const TOKEN_STORAGE_KEY = 'gastrack-token';
 
 
@@ -25,16 +24,6 @@ export const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
   signup: async () => false,
 });
-
-const getStoredAuth = (): User | null => {
-    if (typeof window === 'undefined') return null;
-    try {
-        const auth = window.localStorage.getItem(AUTH_STORAGE_KEY);
-        return auth ? JSON.parse(auth) : null;
-    } catch (error) {
-        return null;
-    }
-}
 
 const getStoredToken = (): string | null => {
     if (typeof window === 'undefined') return null;
@@ -55,10 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isClient) {
-      const storedAuth = getStoredAuth();
       const storedToken = getStoredToken();
-      if (storedAuth && storedToken) {
-          setUser(storedAuth);
+      if (storedToken) {
           setToken(storedToken);
           setIsAuthenticated(true);
       }
@@ -77,15 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const result = await response.json();
 
         if (result.success) {
-            const loggedInUser: User = {
-                ...result.data.user,
-                name: result.data.user.name || result.data.user.email.split('@')[0],
-            };
+            const loggedInUser: User = result.data.user;
 
             setUser(loggedInUser);
             setToken(result.data.token);
             setIsAuthenticated(true);
-            window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(loggedInUser));
             window.localStorage.setItem(TOKEN_STORAGE_KEY, result.data.token);
             return true;
         }
@@ -116,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setIsAuthenticated(false);
     if (typeof window !== 'undefined') {
-      const keysToRemove = [AUTH_STORAGE_KEY, TOKEN_STORAGE_KEY, 'gastrack-profile', 'gastrack-settings', 'gastrack-agents', 'gastrack-orders', 'gastrack-products', 'gastrack-customers', 'gastrack-users-db'];
+      const keysToRemove = [TOKEN_STORAGE_KEY, 'gastrack-profile', 'gastrack-settings', 'gastrack-agents', 'gastrack-orders', 'gastrack-products', 'gastrack-customers', 'gastrack-users-db'];
       keysToRemove.forEach(key => {
         window.localStorage.removeItem(key);
       });
