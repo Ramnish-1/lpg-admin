@@ -111,7 +111,7 @@ export default function AgentsPage() {
   const handleAgentUpdate = async (updatedAgent: Agent) => {
     if (!token) return;
     try {
-      const { id, ...payload } = updatedAgent;
+      const { id, createdAt, joinedAt, updatedAt, report, ...payload } = updatedAgent;
       const response = await fetch(`http://localhost:5000/api/delivery-agents/${id}`, {
         method: 'PUT',
         headers: {
@@ -399,5 +399,7 @@ export default function AgentsPage() {
     </AppShell>
   );
 }
+
+    
 
     
