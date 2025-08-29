@@ -34,7 +34,7 @@ const agentSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }).min(1, { message: "Email is required." }),
   phone: z.string().min(10, { message: "Phone number must be at least 10 digits." }),
   vehicleNumber: z.string().min(1, { message: "Vehicle details are required." }),
-  panCardNumber: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, { message: "Invalid PAN card format." }),
+  panCardNumber: z.string().length(10, { message: "PAN card must be 10 characters long." }),
   aadharCardNumber: z.string().min(1, { message: "Aadhar card is required." }),
   drivingLicence: z.string().min(1, { message: "Driving license is required." }),
   bankDetails: z.string().min(1, { message: "Account details are required." }),
@@ -158,6 +158,7 @@ export function EditAgentDialog({ agent, isOpen, onOpenChange, onAgentUpdate }: 
                             const upperValue = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
                             field.onChange(upperValue);
                           }}
+                          maxLength={10}
                         />
                       </FormControl>
                       <FormMessage />
