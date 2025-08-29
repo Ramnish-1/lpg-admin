@@ -16,8 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { EditPaymentMethodDialog } from '@/components/edit-payment-method-dialog';
 
-const PAYMENTS_STORAGE_KEY = 'gastrack-payments-db';
-const PAYMENT_METHODS_STORAGE_KEY = 'gastrack-payment-methods-db';
+
 const ITEMS_PER_PAGE = 10;
 
 export default function PaymentsPage() {
@@ -31,8 +30,7 @@ export default function PaymentsPage() {
   useEffect(() => {
     const fetchPayments = async () => {
       try {
-        const savedData = window.localStorage.getItem(PAYMENTS_STORAGE_KEY);
-        setPayments(savedData ? JSON.parse(savedData) : await getPaymentsData());
+        setPayments(await getPaymentsData());
       } catch (e) {
         setPayments(await getPaymentsData());
       }
@@ -40,8 +38,7 @@ export default function PaymentsPage() {
     
     const fetchMethods = async () => {
        try {
-        const savedData = window.localStorage.getItem(PAYMENT_METHODS_STORAGE_KEY);
-        setPaymentMethods(savedData ? JSON.parse(savedData) : await getPaymentMethodsData());
+        setPaymentMethods(await getPaymentMethodsData());
       } catch (e) {
         setPaymentMethods(await getPaymentMethodsData());
       }
@@ -71,11 +68,6 @@ export default function PaymentsPage() {
 
   const updatePaymentMethods = (newMethods: PaymentMethod[]) => {
     setPaymentMethods(newMethods);
-    try {
-      window.localStorage.setItem(PAYMENT_METHODS_STORAGE_KEY, JSON.stringify(newMethods));
-    } catch (e) {
-      console.error("Failed to save payment methods", e);
-    }
   }
 
   const handleToggleStatus = (methodId: string) => {

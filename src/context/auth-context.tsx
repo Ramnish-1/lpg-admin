@@ -99,8 +99,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setIsAuthenticated(false);
     if (typeof window !== 'undefined') {
-      window.localStorage.clear();
-      window.location.href = '/login';
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('gastrack-') && key !== 'gastrack-settings') {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        window.location.href = '/login';
     }
   }
 

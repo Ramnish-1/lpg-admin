@@ -26,22 +26,9 @@ import {
 import { UserDetailsDialog } from '@/components/user-details-dialog';
 import { AddUserDialog } from '@/components/add-user-dialog';
 
-const USERS_DB_KEY = 'gastrack-users-db';
+
 const ITEMS_PER_PAGE = 10;
 
-const getUsersFromDb = (): User[] => {
-    if (typeof window === 'undefined') return [];
-    try {
-        const users = window.localStorage.getItem(USERS_DB_KEY);
-        if (users) {
-            return JSON.parse(users).map((u: any) => ({ ...u, createdAt: new Date(u.createdAt) }));
-        }
-        return [];
-    } catch (error) {
-        console.error("Failed to load users from DB", error);
-        return [];
-    }
-};
 
 export default function ManageUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -55,9 +42,11 @@ export default function ManageUsersPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const allUsers = getUsersFromDb();
-    setUsers(allUsers);
-    setFilteredUsers(allUsers);
+    // NOTE: This page still uses mock data.
+    // Replace with API call to fetch admin users.
+    const initialUsers: User[] = []; 
+    setUsers(initialUsers);
+    setFilteredUsers(initialUsers);
   }, []);
   
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
@@ -69,7 +58,7 @@ export default function ManageUsersPage() {
   }, [filteredUsers, currentPage]);
 
 
-  const updateUsersStateAndStorage = (newUsers: User[]) => {
+  const updateUsersState = (newUsers: User[]) => {
     setUsers(newUsers);
     const currentSearchTerm = (document.querySelector('input[placeholder="Search users..."]') as HTMLInputElement)?.value || '';
     if (currentSearchTerm) {
@@ -81,12 +70,6 @@ export default function ManageUsersPage() {
         setFilteredUsers(filtered);
     } else {
         setFilteredUsers(newUsers);
-    }
-
-    try {
-      window.localStorage.setItem(USERS_DB_KEY, JSON.stringify(newUsers));
-    } catch (error) {
-      console.error("Failed to save users to localStorage", error);
     }
   };
   
@@ -132,7 +115,7 @@ export default function ManageUsersPage() {
         toastVariant = action === 'Block' ? 'destructive' : 'default';
       }
       
-      updateUsersStateAndStorage(updatedUsers);
+      updateUsersState(updatedUsers);
       
       toast({
         title: toastTitle,
@@ -146,7 +129,7 @@ export default function ManageUsersPage() {
     }
   }
 
-  const handleAddUser = (newUser: Omit<User, 'id' | 'createdAt' | 'status' | 'orderHistory' | 'location' | 'address'>) => {
+  const handleAddUser = (newUser: Omit<User, 'id' | 'createdAt' | 'status' | 'orderHistory' | 'location' | 'address'>): boolean => {
      const userExists = users.some(u => u.email === newUser.email);
       if (userExists) {
         toast({
@@ -167,7 +150,7 @@ export default function ManageUsersPage() {
         address: ''
       };
       const newUsers = [...users, userToAdd];
-      updateUsersStateAndStorage(newUsers);
+      updateUsersState(newUsers);
       toast({
         title: 'User Created',
         description: `${newUser.name} has been added successfully.`,

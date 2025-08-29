@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { UserDetailsDialog } from '@/components/user-details-dialog';
 
-const USERS_STORAGE_KEY = 'gastrack-users';
+
 const ITEMS_PER_PAGE = 10;
 
 export default function CustomersPage() {
@@ -42,29 +42,20 @@ export default function CustomersPage() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const savedUsers = window.localStorage.getItem(USERS_STORAGE_KEY);
-        if (savedUsers) {
-          const parsedUsers = JSON.parse(savedUsers).map((u: any) => ({
-            ...u,
-            createdAt: new Date(u.createdAt),
-          }));
-          setUsers(parsedUsers);
-          setFilteredUsers(parsedUsers);
-        } else {
-          const data = await getUsersData();
-          setUsers(data);
-          setFilteredUsers(data);
-          window.localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(data));
-        }
-      } catch (error) {
-        console.error("Failed to load users from localStorage", error);
         const data = await getUsersData();
         setUsers(data);
         setFilteredUsers(data);
+      } catch (error) {
+        console.error("Failed to load users", error);
+        toast({
+            variant: 'destructive',
+            title: 'Failed to load customers',
+            description: 'Could not fetch customer data. Please try again later.'
+        });
       }
     };
     fetchUsers();
-  }, []);
+  }, [toast]);
   
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
 
@@ -87,12 +78,6 @@ export default function CustomersPage() {
         setFilteredUsers(filtered);
     } else {
         setFilteredUsers(newUsers);
-    }
-
-    try {
-      window.localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(newUsers));
-    } catch (error) {
-      console.error("Failed to save users to localStorage", error);
     }
   };
   

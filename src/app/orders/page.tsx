@@ -21,8 +21,6 @@ import { cn } from '@/lib/utils';
 import { ReturnOrderDialog } from '@/components/return-order-dialog';
 import { Input } from '@/components/ui/input';
 
-const ORDERS_STORAGE_KEY = 'gastrack-orders';
-const AGENTS_STORAGE_KEY = 'gastrack-agents';
 const ITEMS_PER_PAGE = 10;
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -205,52 +203,44 @@ export default function OrdersPage() {
     if (!isClient) return;
     const fetchOrders = async () => {
         try {
-            const savedOrders = window.localStorage.getItem(ORDERS_STORAGE_KEY);
-            if (savedOrders) {
-                const parsedOrders = JSON.parse(savedOrders).map((o: any) => ({
-                    ...o,
-                    createdAt: new Date(o.createdAt),
-                }));
-                setOrders(parsedOrders);
-                setFilteredOrders(parsedOrders);
-            } else {
-                const data = await getOrdersData();
-                setOrders(data);
-                setFilteredOrders(data);
-                window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(data));
-            }
-        } catch (error) {
-            console.error("Failed to load orders from localStorage", error);
             const data = await getOrdersData();
-            setOrders(data);
-            setFilteredOrders(data);
+            const parsedOrders = data.map((o: any) => ({
+                ...o,
+                createdAt: new Date(o.createdAt),
+            }));
+            setOrders(parsedOrders);
+            setFilteredOrders(parsedOrders);
+        } catch (error) {
+            console.error("Failed to load orders", error);
+            toast({
+                variant: 'destructive',
+                title: 'Failed to load orders',
+                description: 'Could not fetch order data. Please try again later.'
+            });
         }
     };
     const fetchAgents = async () => {
        try {
-        const savedAgents = window.localStorage.getItem(AGENTS_STORAGE_KEY);
-        if (savedAgents) {
-          const parsedAgents = JSON.parse(savedAgents).map((a: any) => ({
-            ...a,
-            createdAt: new Date(a.createdAt),
-          }));
-          setAgents(parsedAgents);
-        } else {
-          const data = await getAgentsData();
-          setAgents(data);
-          window.localStorage.setItem(AGENTS_STORAGE_KEY, JSON.stringify(data));
-        }
-      } catch (error) {
-        console.error("Failed to load agents from localStorage", error);
         const data = await getAgentsData();
-        setAgents(data);
+        const parsedAgents = data.map((a: any) => ({
+          ...a,
+          createdAt: new Date(a.createdAt),
+        }));
+        setAgents(parsedAgents);
+      } catch (error) {
+        console.error("Failed to load agents", error);
+        toast({
+            variant: 'destructive',
+            title: 'Failed to load agents',
+            description: 'Could not fetch agent data. Please try again later.'
+        });
       }
     };
     fetchOrders();
     fetchAgents();
-  }, [isClient]);
+  }, [isClient, toast]);
   
-  const updateOrdersStateAndStorage = (newOrders: Order[]) => {
+  const updateOrdersState = (newOrders: Order[]) => {
     setOrders(newOrders);
     
     // Also update filtered orders based on the current search term
@@ -263,12 +253,6 @@ export default function OrdersPage() {
         setFilteredOrders(filtered);
     } else {
         setFilteredOrders(newOrders);
-    }
-
-    try {
-        window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(newOrders));
-    } catch (error) {
-        console.error("Failed to save orders to localStorage", error);
     }
   };
   
@@ -310,7 +294,7 @@ export default function OrdersPage() {
             ? { ...o, assignedAgentId: agentId, agentName: agent.name, agentPhone: agent.phone, status: 'In-progress' as const } 
             : o
         );
-        updateOrdersStateAndStorage(newOrders);
+        updateOrdersState(newOrders);
         toast({
           title: "Agent Assigned",
           description: `${agent.name} has been assigned to order #${orderId.slice(0, 6)}. Status updated to In-progress.`,
@@ -327,7 +311,7 @@ export default function OrdersPage() {
     }
 
     const newOrders = orders.map(o => o.id === order.id ? { ...o, status: newStatus } : o);
-    updateOrdersStateAndStorage(newOrders);
+    updateOrdersState(newOrders);
     toast({
       title: 'Order Status Updated',
       description: `Order #${order.id.slice(0,6)} has been marked as ${newStatus}.`
@@ -337,7 +321,7 @@ export default function OrdersPage() {
   const confirmCancelOrder = (reason: string) => {
     if (selectedOrder) {
       const newOrders = orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'Cancelled' as const, cancellationReason: reason } : o);
-      updateOrdersStateAndStorage(newOrders);
+      updateOrdersState(newOrders);
       toast({
         title: 'Order Cancelled',
         description: `Order #${selectedOrder.id.slice(0,6)} has been cancelled.`,
@@ -351,7 +335,7 @@ export default function OrdersPage() {
   const confirmReturnOrder = (reason: string) => {
     if (selectedOrder) {
       const newOrders = orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'Returned' as const, returnReason: reason } : o);
-      updateOrdersStateAndStorage(newOrders);
+      updateOrdersState(newOrders);
       toast({
         title: 'Order Returned',
         description: `Order #${selectedOrder.id.slice(0,6)} has been marked as returned.`,
@@ -370,7 +354,7 @@ export default function OrdersPage() {
   const handleExport = () => {
     const csvHeader = "Order ID,Customer Name,Customer Phone,Agent Name,Agent Phone,Status,Total Amount,Date,Products\n";
     const csvRows = filteredOrders.map(o => {
-        const productList = o.products.map(p => `${p.name} (x${p.quantity})`).join('; ');
+        const productList = o.products.map(p => `${p.productName} (x${p.quantity})`).join('; ');
         const row = [
             o.id,
             `"${o.customerName}"`,

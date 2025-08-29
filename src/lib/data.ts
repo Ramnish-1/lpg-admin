@@ -191,12 +191,3 @@ export async function getProductsData(): Promise<Product[]> { return products; }
 // Payments
 export async function getPaymentsData(): Promise<Payment[]> { return payments; }
 export async function getPaymentMethodsData(): Promise<PaymentMethod[]> { return paymentMethods; }
-
-
-// This is a utility function to update localStorage, not an API call
-export function updateLocalStorage(key: string, data: any) {
-  if (typeof window !== 'undefined') {
-    window.localStorage.setItem(key, JSON.stringify(data));
-  }
-}
-
