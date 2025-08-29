@@ -75,6 +75,17 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const setProfile = async (newProfileData: Partial<Profile>): Promise<boolean> => {
     if (!token) return false;
     
+    // The API expects 'image' but our state uses 'photoUrl'
+    const payload: Record<string, any> = {
+      name: newProfileData.name,
+      email: newProfileData.email,
+      phone: newProfileData.phone,
+    };
+
+    if (newProfileData.photoUrl) {
+      payload.image = newProfileData.photoUrl;
+    }
+
     try {
         const response = await fetch('http://localhost:5000/api/auth/profile', {
             method: 'PUT',
@@ -82,7 +93,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify(newProfileData)
+            body: JSON.stringify(payload)
         });
         const result = await response.json();
         

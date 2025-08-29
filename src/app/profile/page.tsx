@@ -36,7 +36,7 @@ export default function ProfilePage() {
 
   const handleSaveChanges = async () => {
     setIsSaving(true);
-    const success = await setProfile({ name, email, phone });
+    const success = await setProfile({ name, email, phone, photoUrl });
     if (success) {
         toast({
             title: 'Profile Updated',
@@ -67,7 +67,7 @@ export default function ProfilePage() {
         // For now, we'll just update it visually
         toast({
           title: "Photo Updated (Locally)",
-          description: "Photo uploads are not yet implemented with the API."
+          description: "Photo will be saved to the server when you click 'Save Changes'."
         })
       };
       reader.readAsDataURL(file);
