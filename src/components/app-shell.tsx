@@ -148,13 +148,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="w-full flex-1" />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 flex items-center gap-2">
+              <Button variant="ghost" className="relative h-10 flex items-center gap-2 px-2 rounded-md hover:bg-background/80 border border-transparent hover:border-border">
                  <Avatar className="h-8 w-8">
                   <AvatarImage src={displayPhotoUrl} alt="@admin" data-ai-hint="manager portrait" />
                   <AvatarFallback>{profile.name.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                <span>{profile.name}</span>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <div className="flex flex-col items-start">
+                    <span className="text-sm font-medium">{profile.name}</span>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground ml-1" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
