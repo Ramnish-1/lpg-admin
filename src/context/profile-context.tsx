@@ -13,9 +13,13 @@ interface Profile extends Omit<User, 'id' | 'createdAt' | 'orderHistory' | 'loca
   photoUrl: string;
 }
 
+interface ProfileUpdatePayload extends Partial<Omit<Profile, 'photoUrl'>> {
+  photoFile?: File;
+}
+
 interface ProfileContextType {
   profile: Profile;
-  setProfile: (profile: Partial<Profile>) => Promise<boolean>;
+  setProfile: (profile: ProfileUpdatePayload) => Promise<boolean>;
   isFetchingProfile: boolean;
 }
 
@@ -72,28 +76,23 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     fetchProfile();
   }, [isAuthenticated, token]);
 
-  const setProfile = async (newProfileData: Partial<Profile>): Promise<boolean> => {
+  const setProfile = async (newProfileData: ProfileUpdatePayload): Promise<boolean> => {
     if (!token) return false;
     
-    // The API expects 'image' but our state uses 'photoUrl'
-    const payload: Record<string, any> = {
-      name: newProfileData.name,
-      email: newProfileData.email,
-      phone: newProfileData.phone,
-    };
-
-    if (newProfileData.photoUrl) {
-      payload.image = newProfileData.photoUrl;
-    }
+    const formData = new FormData();
+    if(newProfileData.name) formData.append('name', newProfileData.name);
+    if(newProfileData.email) formData.append('email', newProfileData.email);
+    if(newProfileData.phone) formData.append('phone', newProfileData.phone);
+    if(newProfileData.photoFile) formData.append('image', newProfileData.photoFile);
 
     try {
         const response = await fetch('http://localhost:5000/api/auth/profile', {
             method: 'PUT',
             headers: {
-                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
+                // No 'Content-Type' header, the browser will set it to 'multipart/form-data'
             },
-            body: JSON.stringify(payload)
+            body: formData
         });
         const result = await response.json();
         

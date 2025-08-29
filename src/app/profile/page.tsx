@@ -20,6 +20,7 @@ export default function ProfilePage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -36,12 +37,13 @@ export default function ProfilePage() {
 
   const handleSaveChanges = async () => {
     setIsSaving(true);
-    const success = await setProfile({ name, email, phone, photoUrl });
+    const success = await setProfile({ name, email, phone, photoFile: photoFile || undefined });
     if (success) {
         toast({
             title: 'Profile Updated',
             description: 'Your profile details have been saved successfully.',
         });
+        setPhotoFile(null); // Clear the file after successful upload
     } else {
          toast({
             variant: 'destructive',
@@ -59,18 +61,9 @@ export default function ProfilePage() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const newPhotoUrl = reader.result as string;
-        setPhotoUrl(newPhotoUrl);
-        // Here you would typically upload the file and update the profile with the new URL
-        // For now, we'll just update it visually
-        toast({
-          title: "Photo Updated (Locally)",
-          description: "Photo will be saved to the server when you click 'Save Changes'."
-        })
-      };
-      reader.readAsDataURL(file);
+      setPhotoFile(file);
+      const newPhotoUrl = URL.createObjectURL(file);
+      setPhotoUrl(newPhotoUrl);
     }
   };
 
