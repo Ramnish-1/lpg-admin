@@ -60,7 +60,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
               email: userData.email,
               phone: userData.phone || '',
               role: userData.role || 'User',
-              photoUrl: userData.profileImage || `https://picsum.photos/seed/${userData.id}/100`,
+              photoUrl: userData.profileImage ? `http://localhost:5000${userData.profileImage}` : `https://picsum.photos/seed/${userData.id}/100`,
             });
           }
         } catch (error) {
@@ -90,7 +90,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`
-                // No 'Content-Type' header, the browser will set it to 'multipart/form-data'
             },
             body: formData
         });
@@ -98,12 +97,13 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         
         if (result.success) {
             const userData = result.data.user;
+            const imageUrl = result.data.imageUrl;
              setProfileState({
               name: userData.name || '',
               email: userData.email,
               phone: userData.phone || '',
               role: userData.role || 'User',
-              photoUrl: userData.profileImage || `https://picsum.photos/seed/${userData.id}/100`,
+              photoUrl: imageUrl ? `http://localhost:5000${imageUrl}` : profile.photoUrl,
             });
             // Also update the auth context user data if needed, to keep them in sync
              try {
