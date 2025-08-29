@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {
@@ -144,7 +145,7 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetails
                 <div className="space-y-2">
                 {order.products.map(p => (
                     <div key={p.productId} className="flex justify-between items-center p-2 rounded-md bg-muted/40 text-sm">
-                        <span>{p.name}</span>
+                        <span>{p.productName}</span>
                         <span className="text-muted-foreground">x{p.quantity}</span>
                     </div>
                 ))}
@@ -172,3 +173,4 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetails
     </Dialog>
   );
 }
+

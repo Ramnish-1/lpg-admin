@@ -10,14 +10,14 @@ const users: User[] = [
 ];
 
 const products: Product[] = [
-    { id: 'prod_1', name: 'LPG Cylinder', unit: '14.2kg', description: 'Standard domestic cylinder', price: 1100, stock: 150, lowStockThreshold: 20, status: 'Active', history: [
+    { id: 'prod_1', productName: 'LPG Cylinder', unit: '14.2kg', description: 'Standard domestic cylinder', price: 1100, stock: 150, lowStockThreshold: 20, status: 'Active', history: [
         { date: new Date('2023-04-10'), type: 'price_change', oldValue: 1050, newValue: 1100 },
         { date: new Date('2023-05-15'), type: 'stock_update', oldValue: 200, newValue: 150 },
     ] },
-    { id: 'prod_2', name: 'LPG Cylinder', unit: '5kg', description: 'Small portable cylinder', price: 450, stock: 8, lowStockThreshold: 10, status: 'Active', history: [
+    { id: 'prod_2', productName: 'LPG Cylinder', unit: '5kg', description: 'Small portable cylinder', price: 450, stock: 8, lowStockThreshold: 10, status: 'Active', history: [
         { date: new Date('2023-03-20'), type: 'price_change', oldValue: 440, newValue: 450 },
     ] },
-    { id: 'prod_3', name: 'LPG Pipe', unit: 'meter', description: 'High-quality safety hose', price: 200, stock: 80, lowStockThreshold: 15, status: 'Inactive' },
+    { id: 'prod_3', productName: 'LPG Pipe', unit: 'meter', description: 'High-quality safety hose', price: 200, stock: 80, lowStockThreshold: 15, status: 'Inactive' },
 ];
 
 const agents: Agent[] = [
@@ -26,13 +26,15 @@ const agents: Agent[] = [
     name: 'Suresh Singh', 
     phone: '8765432109',
     email: 'suresh@example.com',
-    vehicleDetails: 'KA-01-AB-1234',
-    panCard: 'ABCDE1234F',
-    aadharCard: '1234 5678 9012',
-    drivingLicense: 'DL1420110012345',
-    accountDetails: 'SBI - 1234567890',
+    vehicleNumber: 'KA-01-AB-1234',
+    panCardNumber: 'ABCDE1234F',
+    aadharCardNumber: '1234 5678 9012',
+    drivingLicence: 'DL1420110012345',
+    bankDetails: 'SBI - 1234567890',
     status: 'Online', 
     createdAt: new Date('2023-01-05'),
+    updatedAt: new Date('2023-01-05'),
+    joinedAt: new Date('2023-01-05'),
     currentLocation: { lat: 12.973, lng: 77.61 }, // Near MG Road, Bangalore
     report: {
       totalDeliveries: 124,
@@ -52,13 +54,15 @@ const agents: Agent[] = [
     name: 'Deepak Verma', 
     phone: '8765432108',
     email: 'deepak@example.com',
-    vehicleDetails: 'MH-02-CD-5678', 
-    panCard: 'FGHIJ5678K',
-    aadharCard: '9876 5432 1098',
-    drivingLicense: 'MH0220120012345',
-    accountDetails: 'HDFC - 0987654321',
+    vehicleNumber: 'MH-02-CD-5678', 
+    panCardNumber: 'FGHIJ5678K',
+    aadharCardNumber: '9876 5432 1098',
+    drivingLicence: 'MH0220120012345',
+    bankDetails: 'HDFC - 0987654321',
     status: 'Offline', 
     createdAt: new Date('2023-02-01'),
+    updatedAt: new Date('2023-02-01'),
+    joinedAt: new Date('2023-02-01'),
     currentLocation: { lat: 19.07, lng: 72.87 }, // Near Bandra, Mumbai
     report: {
       totalDeliveries: 95,
@@ -76,10 +80,10 @@ const agents: Agent[] = [
 ];
 
 const baseOrders: Omit<Order, 'customerName' | 'agentName' | 'agentPhone' | 'customerPhone'>[] = [
-  { id: 'ord_1', customerId: 'usr_1', products: [{ productId: 'prod_1', name: 'LPG Cylinder 14.2kg', quantity: 1 }], totalAmount: 1100, status: 'Delivered', assignedAgentId: 'agt_1', createdAt: new Date('2024-05-20'), deliveryType: 'Home Delivery', paymentType: 'COD' },
-  { id: 'ord_2', customerId: 'usr_2', products: [{ productId: 'prod_2', name: 'LPG Cylinder 5kg', quantity: 1 }, { productId: 'prod_3', name: 'LPG Pipe', quantity: 1 }], totalAmount: 650, status: 'In-progress', assignedAgentId: 'agt_1', createdAt: new Date(), deliveryType: 'Home Delivery', paymentType: 'COD' },
-  { id: 'ord_3', customerId: 'usr_1', products: [{ productId: 'prod_1', name: 'LPG Cylinder 14.2kg', quantity: 1 }], totalAmount: 1100, status: 'Pending', assignedAgentId: null, createdAt: new Date(new Date().setDate(new Date().getDate() - 1)), deliveryType: 'Pickup', paymentType: 'COD' },
-  { id: 'ord_4', customerId: 'usr_2', products: [{ productId: 'prod_1', name: 'LPG Cylinder 14.2kg', quantity: 1 }], totalAmount: 1100, status: 'Cancelled', assignedAgentId: null, createdAt: new Date(new Date().setDate(new Date().getDate() - 2)), deliveryType: 'Home Delivery', paymentType: 'COD', cancellationReason: 'Customer requested cancellation' },
+  { id: 'ord_1', customerId: 'usr_1', products: [{ productId: 'prod_1', productName: 'LPG Cylinder 14.2kg', quantity: 1 }], totalAmount: 1100, status: 'Delivered', assignedAgentId: 'agt_1', createdAt: new Date('2024-05-20'), deliveryType: 'Home Delivery', paymentType: 'COD' },
+  { id: 'ord_2', customerId: 'usr_2', products: [{ productId: 'prod_2', productName: 'LPG Cylinder 5kg', quantity: 1 }, { productId: 'prod_3', productName: 'LPG Pipe', quantity: 1 }], totalAmount: 650, status: 'In-progress', assignedAgentId: 'agt_1', createdAt: new Date(), deliveryType: 'Home Delivery', paymentType: 'COD' },
+  { id: 'ord_3', customerId: 'usr_1', products: [{ productId: 'prod_1', productName: 'LPG Cylinder 14.2kg', quantity: 1 }], totalAmount: 1100, status: 'Pending', assignedAgentId: null, createdAt: new Date(new Date().setDate(new Date().getDate() - 1)), deliveryType: 'Pickup', paymentType: 'COD' },
+  { id: 'ord_4', customerId: 'usr_2', products: [{ productId: 'prod_1', productName: 'LPG Cylinder 14.2kg', quantity: 1 }], totalAmount: 1100, status: 'Cancelled', assignedAgentId: null, createdAt: new Date(new Date().setDate(new Date().getDate() - 2)), deliveryType: 'Home Delivery', paymentType: 'COD', cancellationReason: 'Customer requested cancellation' },
 ];
 
 const enrichOrders = (ordersToEnrich: any[]): Order[] => {
@@ -195,3 +199,4 @@ export function updateLocalStorage(key: string, data: any) {
     window.localStorage.setItem(key, JSON.stringify(data));
   }
 }
+

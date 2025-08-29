@@ -30,7 +30,7 @@ export function ProductDetailsDialog({ product, isOpen, onOpenChange }: ProductD
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-6 w-6 text-primary" />
-            <span>{product.name}</span>
+            <span>{product.productName}</span>
           </DialogTitle>
           <DialogDescription>
             Details for product ID #{product.id.slice(0, 6)}
@@ -48,7 +48,7 @@ export function ProductDetailsDialog({ product, isOpen, onOpenChange }: ProductD
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="text-muted-foreground flex items-center gap-2"><IndianRupee className="h-4 w-4"/>Price</span>
-            <span className="font-medium">₹{product.price.toLocaleString()}</span>
+            <span className="font-medium">₹{Number(product.price).toLocaleString()}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="text-muted-foreground flex items-center gap-2"><PackageCheck className="h-4 w-4"/>Current Stock</span>
@@ -70,3 +70,4 @@ export function ProductDetailsDialog({ product, isOpen, onOpenChange }: ProductD
     </Dialog>
   );
 }
+

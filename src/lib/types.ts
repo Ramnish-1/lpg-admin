@@ -17,13 +17,15 @@ export interface User {
 
 export interface Product {
   id: string;
-  name: string;
+  productName: string;
   description: string;
   price: number;
   stock: number;
   unit: string;
-  status: 'Active' | 'Inactive';
+  status: 'active' | 'inactive' | 'Active' | 'Inactive';
   lowStockThreshold: number;
+  createdAt?: string;
+  updatedAt?: string;
   history?: { date: Date; type: 'price_change' | 'stock_update', oldValue: number, newValue: number }[];
 }
 
@@ -59,7 +61,7 @@ export interface Order {
   customerId: string;
   customerName: string;
   customerPhone?: string;
-  products: { productId: string; name: string; quantity: number }[];
+  products: { productId: string; productName: string; quantity: number }[];
   totalAmount: number;
   status: 'Pending' | 'In-progress' | 'Delivered' | 'Cancelled' | 'Returned';
   assignedAgentId: string | null;
@@ -104,3 +106,4 @@ export interface Availability {
   saturday: DayAvailability;
   sunday: DayAvailability;
 }
+

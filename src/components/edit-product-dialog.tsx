@@ -19,6 +19,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface EditProductDialogProps {
   product: Product;
@@ -28,12 +29,13 @@ interface EditProductDialogProps {
 }
 
 const productSchema = z.object({
-  name: z.string().min(1, "Product name is required."),
+  productName: z.string().min(1, "Product name is required."),
   unit: z.string().min(1, "Unit is required."),
   description: z.string().min(1, "Description is required."),
   price: z.coerce.number().min(0, "Price must be a positive number."),
   stock: z.coerce.number().int().min(0, "Stock must be a whole number."),
   lowStockThreshold: z.coerce.number().int().min(0, "Threshold must be a whole number."),
+  status: z.enum(['active', 'inactive', 'Active', 'Inactive']),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -41,12 +43,18 @@ type ProductFormValues = z.infer<typeof productSchema>;
 export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpdate }: EditProductDialogProps) {
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
-    defaultValues: product,
+    defaultValues: {
+      ...product,
+      status: product.status.toLowerCase() as 'active' | 'inactive'
+    },
   });
 
   useEffect(() => {
     if (isOpen) {
-      form.reset(product);
+      form.reset({
+        ...product,
+        status: product.status.toLowerCase() as 'active' | 'inactive'
+      });
     }
   }, [product, isOpen, form]);
 
@@ -54,6 +62,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     const updatedProduct = {
       ...product,
       ...values,
+      status: values.status as 'active' | 'inactive',
     };
     onProductUpdate(updatedProduct);
   };
@@ -71,7 +80,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
         <DialogHeader>
           <DialogTitle>Edit Product</DialogTitle>
           <DialogDescription>
-            Update the details for {product.name}.
+            Update the details for {product.productName}.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -80,7 +89,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="name"
+                  name="productName"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Product Name</FormLabel>
@@ -159,6 +168,27 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                   </FormItem>
                 )}
               />
+               <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value.toLowerCase()}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
             </div>
             <DialogFooter>
               <DialogClose asChild>
@@ -172,3 +202,4 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     </Dialog>
   );
 }
+

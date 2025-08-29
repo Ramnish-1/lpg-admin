@@ -19,14 +19,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 
+type AddProductPayload = Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'history'>;
+
 interface AddProductDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onProductAdd: (product: Omit<Product, 'id' | 'status'>) => void;
+  onProductAdd: (product: AddProductPayload) => Promise<boolean>;
 }
 
 const productSchema = z.object({
-  name: z.string().min(1, "Product name is required."),
+  productName: z.string().min(1, "Product name is required."),
   unit: z.string().min(1, "Unit is required."),
   description: z.string().min(1, "Description is required."),
   price: z.coerce.number().min(0, "Price must be a positive number."),
@@ -40,7 +42,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: '',
+      productName: '',
       unit: '',
       description: '',
       price: 0,
@@ -49,10 +51,12 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     }
   });
   
-  const handleSubmit = (values: ProductFormValues) => {
-    onProductAdd(values);
-    form.reset();
-    onOpenChange(false);
+  const handleSubmit = async (values: ProductFormValues) => {
+    const success = await onProductAdd(values);
+    if (success) {
+      form.reset();
+      onOpenChange(false);
+    }
   };
   
   const handleOpenChange = (open: boolean) => {
@@ -77,7 +81,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="name"
+                  name="productName"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Product Name</FormLabel>
@@ -161,7 +165,9 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                <DialogClose asChild>
                 <Button variant="outline" type="button">Cancel</Button>
               </DialogClose>
-              <Button type="submit">Add Product</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'Adding...' : 'Add Product'}
+              </Button>
             </DialogFooter>
           </form>
         </Form>
@@ -169,3 +175,4 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     </Dialog>
   );
 }
+

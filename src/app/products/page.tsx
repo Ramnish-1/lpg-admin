@@ -8,48 +8,56 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, AlertCircle, ChevronDown } from 'lucide-react';
-import { getProductsData } from '@/lib/data';
+import { MoreHorizontal, PlusCircle, AlertCircle, ChevronDown, Loader2, Trash2 } from 'lucide-react';
 import type { Product } from '@/lib/types';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useContext } from 'react';
 import { ProductDetailsDialog } from '@/components/product-details-dialog';
 import { EditProductDialog } from '@/components/edit-product-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { AddProductDialog } from '@/components/add-product-dialog';
 import { cn } from '@/lib/utils';
+import { AuthContext } from '@/context/auth-context';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-const PRODUCTS_STORAGE_KEY = 'gastrack-products';
+
 const ITEMS_PER_PAGE = 10;
 const LOW_STOCK_THRESHOLD = 10;
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
+  const { token } = useContext(AuthContext);
+
+  const fetchProducts = async () => {
+    if (!token) return;
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/products', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setProducts(result.data.products);
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch products.' });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch products.' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const savedProducts = window.localStorage.getItem(PRODUCTS_STORAGE_KEY);
-        if (savedProducts) {
-          setProducts(JSON.parse(savedProducts));
-        } else {
-          const data = await getProductsData();
-          setProducts(data);
-          window.localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(data));
-        }
-      } catch (error) {
-        console.error("Failed to load products from localStorage", error);
-        const data = await getProductsData();
-        setProducts(data);
-      }
-    };
     fetchProducts();
-  }, []);
+  }, [token]);
 
   const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
 
@@ -59,15 +67,6 @@ export default function ProductsPage() {
     return products.slice(startIndex, endIndex);
   }, [products, currentPage]);
   
-  const updateProductsStateAndStorage = (newProducts: Product[]) => {
-    setProducts(newProducts);
-    try {
-      window.localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(newProducts));
-    } catch (error) {
-      console.error("Failed to save products to localStorage", error);
-    }
-  };
-
   const handleShowDetails = (product: Product) => {
     setSelectedProduct(product);
     setIsDetailsOpen(true);
@@ -77,43 +76,114 @@ export default function ProductsPage() {
     setSelectedProduct(product);
     setIsEditOpen(true);
   };
-
-  const handleToggleStatus = (product: Product) => {
-    const newStatus = product.status === 'Active' ? 'Inactive' : 'Active';
-    const updatedProducts = products.map(p => 
-      p.id === product.id ? { ...p, status: newStatus } : p
-    );
-    updateProductsStateAndStorage(updatedProducts);
-    toast({
-        title: 'Product Status Updated',
-        description: `${product.name} is now ${newStatus}.`,
-    });
+  
+  const handleDeleteProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setIsDeleteOpen(true);
   };
 
-  const handleProductUpdate = (updatedProduct: Product) => {
-    const newProducts = products.map(p => p.id === updatedProduct.id ? updatedProduct : p);
-    updateProductsStateAndStorage(newProducts);
-    toast({
-      title: 'Product Updated',
-      description: `${updatedProduct.name} has been successfully updated.`,
-    });
-    setIsEditOpen(false);
-    setSelectedProduct(null);
+  const confirmDeleteProduct = async () => {
+    if (!selectedProduct || !token) return;
+    try {
+      const response = await fetch(`http://localhost:5000/api/products/${selectedProduct.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        toast({ title: 'Product Deleted', description: `${selectedProduct.productName} has been deleted.` });
+        fetchProducts(); // Re-fetch
+      } else {
+        const result = await response.json();
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to delete product.' });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete product.' });
+    } finally {
+      setIsDeleteOpen(false);
+      setSelectedProduct(null);
+    }
   }
 
-  const handleProductAdd = (newProduct: Omit<Product, 'id' | 'status'>) => {
-    const productToAdd: Product = {
-      ...newProduct,
-      id: `prod_${Date.now()}`,
-      status: 'Active',
-    };
-    const newProducts = [...products, productToAdd];
-    updateProductsStateAndStorage(newProducts);
-    toast({
-      title: 'Product Added',
-      description: `${productToAdd.name} has been successfully added.`,
-    });
-    setIsAddOpen(false);
+  const handleToggleStatus = async (product: Product) => {
+    if (!token) return;
+    const newStatus = product.status.toLowerCase() === 'active' ? 'inactive' : 'active';
+    try {
+        const response = await fetch(`http://localhost:5000/api/products/${product.id}/status`, {
+            method: 'PUT',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+        const result = await response.json();
+        if (result.success) {
+            toast({
+                title: 'Product Status Updated',
+                description: `${product.productName} is now ${newStatus}.`,
+            });
+            fetchProducts();
+        } else {
+             toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
+        }
+    } catch (error) {
+         toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
+    }
+  };
+
+  const handleProductUpdate = async (updatedProduct: Product) => {
+    if(!token) return;
+    
+    const { id, createdAt, updatedAt, ...payload } = updatedProduct;
+
+    try {
+        const response = await fetch(`http://localhost:5000/api/products/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (result.success) {
+            toast({ title: 'Product Updated', description: `${updatedProduct.productName} has been successfully updated.` });
+            fetchProducts();
+            setIsEditOpen(false);
+            setSelectedProduct(null);
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update product.' });
+        }
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update product.' });
+    }
+  }
+
+  const handleProductAdd = async (newProduct: Omit<Product, 'id' | 'status'>) => {
+    if(!token) return false;
+    try {
+        const payload = { ...newProduct, status: 'active' };
+        const response = await fetch(`http://localhost:5000/api/products`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if(result.success) {
+            toast({ title: 'Product Added', description: `${newProduct.productName} has been successfully added.` });
+            fetchProducts();
+            return true;
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to add product.' });
+            return false;
+        }
+    } catch (error) {
+         toast({ variant: 'destructive', title: 'Error', description: 'Failed to add product.' });
+         return false;
+    }
   }
 
 
@@ -135,81 +205,91 @@ export default function ProductsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product Name</TableHead>
-                <TableHead>Unit</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedProducts.map((product: Product) => {
-                const isLowStock = product.stock < LOW_STOCK_THRESHOLD;
-                return (
-                  <TableRow 
-                    key={product.id} 
-                    className={cn({
-                      "bg-red-100 hover:bg-red-100/80 dark:bg-red-900/20 dark:hover:bg-red-900/30": isLowStock
-                    })}
-                  >
-                    <TableCell className="font-medium" onClick={() => handleShowDetails(product)}>{product.name}</TableCell>
-                    <TableCell onClick={() => handleShowDetails(product)}>{product.unit}</TableCell>
-                    <TableCell onClick={() => handleShowDetails(product)}>₹{product.price.toLocaleString()}</TableCell>
-                    <TableCell onClick={() => handleShowDetails(product)}>
-                      <div className="flex items-center gap-2">
-                        <span>{product.stock}</span>
-                         {isLowStock && (
-                          <Badge variant="destructive" className="flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" /> Low
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                     <TableCell>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product Name</TableHead>
+                  <TableHead>Unit</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Stock</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedProducts.map((product: Product) => {
+                  const isLowStock = product.stock < product.lowStockThreshold;
+                  return (
+                    <TableRow 
+                      key={product.id} 
+                      className={cn({
+                        "bg-red-100 hover:bg-red-100/80 dark:bg-red-900/20 dark:hover:bg-red-900/30": isLowStock
+                      })}
+                    >
+                      <TableCell className="font-medium" onClick={() => handleShowDetails(product)}>{product.productName}</TableCell>
+                      <TableCell onClick={() => handleShowDetails(product)}>{product.unit}</TableCell>
+                      <TableCell onClick={() => handleShowDetails(product)}>₹{Number(product.price).toLocaleString()}</TableCell>
+                      <TableCell onClick={() => handleShowDetails(product)}>
+                        <div className="flex items-center gap-2">
+                          <span>{product.stock}</span>
+                          {isLowStock && (
+                            <Badge variant="destructive" className="flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3" /> Low
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                          <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                  <Button variant="outline" size="sm" className="w-28 justify-between capitalize" onClick={(e) => e.stopPropagation()}>
+                                      <span className={cn({
+                                          'text-green-600': product.status.toLowerCase() === 'active',
+                                          'text-gray-500': product.status.toLowerCase() === 'inactive'
+                                      })}>
+                                          {product.status}
+                                      </span>
+                                      <ChevronDown className="h-4 w-4 text-muted-foreground"/>
+                                  </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+                                  <DropdownMenuItem onClick={() => handleToggleStatus(product)}>
+                                      Set as {product.status.toLowerCase() === 'active' ? 'Inactive' : 'Active'}
+                                  </DropdownMenuItem>
+                              </DropdownMenuContent>
+                          </DropdownMenu>
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="w-28 justify-between">
-                                    <span className={cn({
-                                        'text-green-600': product.status === 'Active',
-                                        'text-gray-500': product.status === 'Inactive'
-                                    })}>
-                                        {product.status}
-                                    </span>
-                                    <ChevronDown className="h-4 w-4 text-muted-foreground"/>
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start">
-                                <DropdownMenuItem onClick={() => handleToggleStatus(product)}>
-                                    {product.status === 'Active' ? 'Set as Inactive' : 'Set as Active'}
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
+                          <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleShowDetails(product)}>View Details</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditProduct(product)}>Edit</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteProduct(product)}>
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
                         </DropdownMenu>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                           <DropdownMenuItem onClick={() => handleShowDetails(product)}>View Details</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditProduct(product)}>Edit</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
         {totalPages > 1 && (
             <CardFooter className="flex justify-between">
@@ -240,6 +320,23 @@ export default function ProductsPage() {
             </CardFooter>
         )}
       </Card>
+
+      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the product
+              &quot;{selectedProduct?.productName}&quot;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteProduct} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <ProductDetailsDialog
         product={selectedProduct}
         isOpen={isDetailsOpen}
@@ -261,3 +358,4 @@ export default function ProductsPage() {
     </AppShell>
   );
 }
+
