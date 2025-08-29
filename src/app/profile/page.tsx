@@ -29,7 +29,8 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!isFetchingProfile) {
       setName(profile.name);
-      setPhotoUrl(profile.photoUrl);
+      // Construct the full URL for display if photoUrl is a relative path
+      setPhotoUrl(profile.photoUrl.startsWith('blob:') ? profile.photoUrl : (profile.photoUrl ? `http://localhost:5000/uploads/${profile.photoUrl}` : ''));
       setEmail(profile.email);
       setPhone(profile.phone);
     }

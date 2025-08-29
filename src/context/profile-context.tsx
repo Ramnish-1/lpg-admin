@@ -25,7 +25,7 @@ interface ProfileContextType {
 
 const defaultProfile: Profile = { 
   name: 'Admin', 
-  photoUrl: 'https://picsum.photos/100',
+  photoUrl: '',
   email: 'admin@gastrack.com',
   phone: '+91 99999 88888',
   role: 'Administrator'
@@ -59,7 +59,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
             email: userData.email,
             phone: userData.phone || '',
             role: userData.role || 'User',
-            photoUrl: userData.profileImage ? `http://localhost:5000/uploads/${userData.profileImage}` : `https://picsum.photos/seed/${userData.id}/100`,
+            photoUrl: userData.profileImage || '',
           });
         }
       } catch (error) {
@@ -68,6 +68,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         setIsFetchingProfile(false);
       }
     } else {
+      // If not authenticated, set a default/empty state
+      setProfileState(defaultProfile);
       setIsFetchingProfile(false);
     }
   }, [isAuthenticated, token]);
@@ -96,15 +98,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         const result = await response.json();
         
         if (result.success) {
-            await fetchProfile(); // Re-fetch profile to get the latest data, including new image URL
-            
-            try {
-                const storedAuthUser = JSON.parse(window.localStorage.getItem('gastrack-auth') || '{}');
-                const updatedAuthUser = { ...storedAuthUser, ...result.data.user };
-                window.localStorage.setItem('gastrack-auth', JSON.stringify(updatedAuthUser));
-            } catch (error) {
-                console.error('Error writing to localStorage', error);
-            }
+            // Re-fetch profile to get the latest data, including new image URL
+            await fetchProfile();
             return true;
         }
         return false;
