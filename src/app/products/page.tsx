@@ -109,7 +109,7 @@ export default function ProductsPage() {
     const newStatus = product.status.toLowerCase() === 'active' ? 'inactive' : 'active';
     try {
         const response = await fetch(`http://localhost:5000/api/products/${product.id}/status`, {
-            method: 'PUT',
+            method: 'PATCH',
             headers: { 
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}` 
@@ -159,7 +159,7 @@ export default function ProductsPage() {
     }
   }
 
-  const handleProductAdd = async (newProduct: Omit<Product, 'id' | 'status'>) => {
+  const handleProductAdd = async (newProduct: Omit<Product, 'id' | 'status'>): Promise<boolean> => {
     if(!token) return false;
     try {
         const payload = { ...newProduct, status: 'active' };
@@ -358,4 +358,3 @@ export default function ProductsPage() {
     </AppShell>
   );
 }
-
