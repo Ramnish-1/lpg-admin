@@ -7,32 +7,25 @@ import type { User } from '@/lib/types';
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
-  login: (email: string, password: string) => boolean;
+  token: string | null;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  signup: (name: string, email: string, password: string, phone: string) => boolean;
+  signup: (name: string, email: string, password: string, phone: string) => Promise<boolean>;
 }
 
 const AUTH_STORAGE_KEY = 'gastrack-auth';
-const USERS_DB_KEY = 'gastrack-users-db';
+const TOKEN_STORAGE_KEY = 'gastrack-token';
 
 
 export const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   user: null,
-  login: () => false,
+  token: null,
+  login: async () => false,
   logout: () => {},
-  signup: () => false,
+  signup: async () => false,
 });
 
-const getStoredUsers = (): User[] => {
-    if (typeof window === 'undefined') return [];
-    try {
-        const users = window.localStorage.getItem(USERS_DB_KEY);
-        return users ? JSON.parse(users) : [];
-    } catch (error) {
-        return [];
-    }
-}
 const getStoredAuth = (): User | null => {
     if (typeof window === 'undefined') return null;
     try {
@@ -43,9 +36,15 @@ const getStoredAuth = (): User | null => {
     }
 }
 
+const getStoredToken = (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return window.localStorage.getItem(TOKEN_STORAGE_KEY);
+}
+
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
@@ -57,65 +56,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isClient) {
       const storedAuth = getStoredAuth();
-      if (storedAuth) {
+      const storedToken = getStoredToken();
+      if (storedAuth && storedToken) {
           setUser(storedAuth);
+          setToken(storedToken);
           setIsAuthenticated(true);
       }
       setIsLoading(false);
     }
   }, [isClient]);
 
-  const login = (email: string, password: string): boolean => {
-    const users = getStoredUsers();
-    const foundUser = users.find(u => u.email === email && u.password === password);
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+        const response = await fetch('http://localhost:5000/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+        });
+        
+        const result = await response.json();
 
-    if (foundUser) {
-        setUser(foundUser);
-        setIsAuthenticated(true);
-        window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(foundUser));
-        return true;
+        if (result.success) {
+            const loggedInUser = {
+                ...result.data.user,
+                name: result.data.user.name || result.data.user.email.split('@')[0], // Add default name if not present
+                phone: result.data.user.phone || '',
+            };
+
+            setUser(loggedInUser);
+            setToken(result.data.token);
+            setIsAuthenticated(true);
+            window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(loggedInUser));
+            window.localStorage.setItem(TOKEN_STORAGE_KEY, result.data.token);
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error("Login API call failed", error);
+        return false;
     }
-    return false;
   }
 
   const logout = () => {
     setUser(null);
+    setToken(null);
     setIsAuthenticated(false);
     if (typeof window !== 'undefined') {
-      const keysToRemove = [AUTH_STORAGE_KEY, 'gastrack-profile', 'gastrack-settings', 'gastrack-agents', 'gastrack-orders', 'gastrack-products', 'gastrack-customers'];
+      const keysToRemove = [AUTH_STORAGE_KEY, TOKEN_STORAGE_KEY, 'gastrack-profile', 'gastrack-settings', 'gastrack-agents', 'gastrack-orders', 'gastrack-products', 'gastrack-customers', 'gastrack-users-db'];
       keysToRemove.forEach(key => {
         window.localStorage.removeItem(key);
       });
-      window.localStorage.removeItem(USERS_DB_KEY); // Also clear the user DB for consistency
       window.location.href = '/login';
     }
   }
 
-  const signup = (name: string, email: string, password: string, phone: string): boolean => {
-    const users = getStoredUsers();
-    if (users.find(u => u.email === email)) {
-        return false; // User already exists
+  const signup = async (name: string, email: string, password: string, phone: string): Promise<boolean> => {
+    try {
+        const response = await fetch('http://localhost:5000/api/auth/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password, phone }),
+        });
+
+        const result = await response.json();
+        return result.success;
+    } catch (error) {
+        console.error("Signup API call failed", error);
+        return false;
     }
-
-    const newUser: User = {
-        id: `usr_${Date.now()}`,
-        name,
-        email,
-        password, // In a real app, this would be hashed
-        phone: phone,
-        address: '',
-        status: 'Active',
-        orderHistory: [],
-        createdAt: new Date(),
-        location: { lat: 0, lng: 0 }
-    };
-
-    const updatedUsers = [...users, newUser];
-    window.localStorage.setItem(USERS_DB_KEY, JSON.stringify(updatedUsers));
-    // Also save this new user to the main user list for the Customers page
-     window.localStorage.setItem('gastrack-customers', JSON.stringify(updatedUsers));
-
-    return true;
   }
   
   if (isLoading) {
@@ -124,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, signup }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, token, login, logout, signup }}>
       {children}
     </AuthContext.Provider>
   );

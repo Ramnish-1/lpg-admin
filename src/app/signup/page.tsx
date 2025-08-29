@@ -35,11 +35,12 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const { signup } = useAuth();
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !password || !confirmPassword || !phone) {
       toast({
@@ -59,8 +60,11 @@ export default function SignupPage() {
       return;
     }
 
+    setIsLoading(true);
+    const success = await signup(name, email, password, phone);
+    setIsLoading(false);
 
-    if (signup(name, email, password, phone)) {
+    if (success) {
       toast({
         title: 'Signup Successful',
         description: 'You can now log in with your new account.',
@@ -70,7 +74,7 @@ export default function SignupPage() {
        toast({
         variant: 'destructive',
         title: 'Signup Failed',
-        description: 'An account with this email already exists.',
+        description: 'An account with this email may already exist, or the server could not be reached.',
       });
     }
   };
@@ -98,6 +102,7 @@ export default function SignupPage() {
                 required 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <div className="grid gap-2">
@@ -109,6 +114,7 @@ export default function SignupPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <div className="grid gap-2">
@@ -120,6 +126,7 @@ export default function SignupPage() {
                 required 
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <div className="grid gap-2">
@@ -131,6 +138,7 @@ export default function SignupPage() {
                   required 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
                 />
                  <Button 
                   type="button"
@@ -152,6 +160,7 @@ export default function SignupPage() {
                   required 
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={isLoading}
                 />
                  <Button 
                   type="button"
@@ -164,8 +173,8 @@ export default function SignupPage() {
                 </Button>
               </div>
             </div>
-            <Button type="submit" className="w-full">
-              Create an account
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Creating Account...' : 'Create an account'}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
