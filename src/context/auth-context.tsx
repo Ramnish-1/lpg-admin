@@ -9,7 +9,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   signup: (name: string, email: string, password: string, phone: string) => Promise<boolean>;
 }
 
@@ -22,7 +22,7 @@ export const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
   login: async () => false,
-  logout: () => {},
+  logout: async () => {},
   signup: async () => false,
 });
 
@@ -97,7 +97,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const logout = () => {
+  const logout = async (): Promise<void> => {
+    const currentToken = getStoredToken();
+    if (currentToken) {
+        try {
+            await fetch('http://localhost:5000/api/auth/logout', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentToken}`
+                },
+            });
+            // We proceed with client-side logout regardless of API response
+        } catch (error) {
+            console.error("Logout API call failed", error);
+        }
+    }
+
     setUser(null);
     setToken(null);
     setIsAuthenticated(false);
