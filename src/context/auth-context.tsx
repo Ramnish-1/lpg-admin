@@ -79,8 +79,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (result.success) {
             const loggedInUser = {
                 ...result.data.user,
-                name: result.data.user.name || result.data.user.email.split('@')[0], // Add default name if not present
+                name: result.data.user.name || result.data.user.email.split('@')[0],
                 phone: result.data.user.phone || '',
+                photoUrl: result.data.user.profileImage ? `http://localhost:5000/uploads/${result.data.user.profileImage}` : `https://picsum.photos/seed/${result.data.user.id}/100`,
             };
 
             setUser(loggedInUser);
@@ -108,7 +109,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     'Authorization': `Bearer ${currentToken}`
                 },
             });
-            // We proceed with client-side logout regardless of API response
         } catch (error) {
             console.error("Logout API call failed", error);
         }

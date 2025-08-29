@@ -38,7 +38,7 @@ export const ProfileContext = createContext<ProfileContextType>({
 });
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
-  const { token, isAuthenticated } = useContext(AuthContext);
+  const { token, isAuthenticated, user: authUser } = useContext(AuthContext);
   const [profile, setProfileState] = useState<Profile>(defaultProfile);
   const [isFetchingProfile, setIsFetchingProfile] = useState(true);
 
@@ -47,6 +47,16 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       if (isAuthenticated && token) {
         setIsFetchingProfile(true);
         try {
+          // If authUser is already populated from login, use it initially
+          if (authUser && authUser.name) {
+              setProfileState({
+                name: authUser.name,
+                email: authUser.email,
+                phone: authUser.phone,
+                role: authUser.role || 'User',
+                photoUrl: authUser.profileImage ? `http://localhost:5000/uploads/${authUser.profileImage}` : (authUser as any).photoUrl || `https://picsum.photos/seed/${authUser.id}/100`,
+            });
+          }
           const response = await fetch('http://localhost:5000/api/auth/profile', {
             headers: {
               'Authorization': `Bearer ${token}`
@@ -60,7 +70,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
               email: userData.email,
               phone: userData.phone || '',
               role: userData.role || 'User',
-              photoUrl: userData.profileImage ? `http://localhost:5000${userData.profileImage}` : `https://picsum.photos/seed/${userData.id}/100`,
+              photoUrl: userData.profileImage ? `http://localhost:5000/uploads/${userData.profileImage}` : `https://picsum.photos/seed/${userData.id}/100`,
             });
           }
         } catch (error) {
@@ -74,7 +84,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     };
 
     fetchProfile();
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, token, authUser]);
 
   const setProfile = async (newProfileData: ProfileUpdatePayload): Promise<boolean> => {
     if (!token) return false;
@@ -107,8 +117,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
             });
             // Also update the auth context user data if needed, to keep them in sync
              try {
-                const authUser = JSON.parse(window.localStorage.getItem('gastrack-auth') || '{}');
-                const updatedAuthUser = { ...authUser, name: userData.name, email: userData.email, phone: userData.phone };
+                const storedAuthUser = JSON.parse(window.localStorage.getItem('gastrack-auth') || '{}');
+                const updatedAuthUser = { ...storedAuthUser, name: userData.name, email: userData.email, phone: userData.phone, profileImage: userData.profileImage };
                 window.localStorage.setItem('gastrack-auth', JSON.stringify(updatedAuthUser));
               } catch (error) {
                 console.error('Error writing to localStorage', error);
