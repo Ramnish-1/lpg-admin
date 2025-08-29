@@ -1,7 +1,7 @@
 
 "use client";
 
-import { createContext, useState, useEffect, ReactNode, useContext } from 'react';
+import { createContext, useState, useEffect, ReactNode, useContext, useCallback } from 'react';
 import { AuthContext } from './auth-context';
 import { User } from '@/lib/types';
 
@@ -42,49 +42,39 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfileState] = useState<Profile>(defaultProfile);
   const [isFetchingProfile, setIsFetchingProfile] = useState(true);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (isAuthenticated && token) {
-        setIsFetchingProfile(true);
-        try {
-          // If authUser is already populated from login, use it initially
-          if (authUser && authUser.name) {
-              setProfileState({
-                name: authUser.name,
-                email: authUser.email,
-                phone: authUser.phone,
-                role: authUser.role || 'User',
-                photoUrl: authUser.profileImage ? `http://localhost:5000/uploads/${authUser.profileImage}` : (authUser as any).photoUrl || `https://picsum.photos/seed/${authUser.id}/100`,
-            });
+  const fetchProfile = useCallback(async () => {
+    if (isAuthenticated && token) {
+      setIsFetchingProfile(true);
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
           }
-          const response = await fetch('http://localhost:5000/api/auth/profile', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
+        });
+        const result = await response.json();
+        if (result.success) {
+          const userData = result.data.user;
+          setProfileState({
+            name: userData.name || '',
+            email: userData.email,
+            phone: userData.phone || '',
+            role: userData.role || 'User',
+            photoUrl: userData.profileImage ? `http://localhost:5000/uploads/${userData.profileImage}` : `https://picsum.photos/seed/${userData.id}/100`,
           });
-          const result = await response.json();
-          if (result.success) {
-            const userData = result.data.user;
-            setProfileState({
-              name: userData.name || '',
-              email: userData.email,
-              phone: userData.phone || '',
-              role: userData.role || 'User',
-              photoUrl: userData.profileImage ? `http://localhost:5000/uploads/${userData.profileImage}` : `https://picsum.photos/seed/${userData.id}/100`,
-            });
-          }
-        } catch (error) {
-          console.error("Failed to fetch profile", error);
-        } finally {
-          setIsFetchingProfile(false);
         }
-      } else {
+      } catch (error) {
+        console.error("Failed to fetch profile", error);
+      } finally {
         setIsFetchingProfile(false);
       }
-    };
+    } else {
+      setIsFetchingProfile(false);
+    }
+  }, [isAuthenticated, token]);
 
+  useEffect(() => {
     fetchProfile();
-  }, [isAuthenticated, token, authUser]);
+  }, [fetchProfile, authUser]);
 
   const setProfile = async (newProfileData: ProfileUpdatePayload): Promise<boolean> => {
     if (!token) return false;
@@ -108,13 +98,18 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         if (result.success) {
             const userData = result.data.user;
             const imageUrl = result.data.imageUrl;
-             setProfileState({
+            
+            const newPhotoUrl = imageUrl ? `http://localhost:5000${imageUrl}` : profile.photoUrl;
+
+            // Update state immediately with the response from the PUT request
+            setProfileState({
               name: userData.name || '',
               email: userData.email,
               phone: userData.phone || '',
               role: userData.role || 'User',
-              photoUrl: imageUrl ? `http://localhost:5000${imageUrl}` : profile.photoUrl,
+              photoUrl: newPhotoUrl,
             });
+            
             // Also update the auth context user data if needed, to keep them in sync
              try {
                 const storedAuthUser = JSON.parse(window.localStorage.getItem('gastrack-auth') || '{}');
