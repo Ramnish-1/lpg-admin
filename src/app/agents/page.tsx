@@ -133,8 +133,8 @@ export default function AgentsPage() {
     }
   }
 
-  const handleAgentAdd = async (newAgent: Omit<Agent, 'id' | 'createdAt' | 'status' | 'report' | 'currentLocation'>) => {
-     if (!token) return;
+  const handleAgentAdd = async (newAgent: Omit<Agent, 'id' | 'createdAt' | 'status' | 'report' | 'currentLocation' | 'vehicleDetails' | 'panCard' | 'aadharCard' | 'drivingLicense' | 'accountDetails' | 'updatedAt' >): Promise<boolean> => {
+     if (!token) return false;
      try {
         const payload = {
             ...newAgent,
@@ -153,12 +153,14 @@ export default function AgentsPage() {
         if (result.success) {
             toast({ title: 'Agent Added', description: `${newAgent.name} has been successfully added.` });
             fetchAgents();
-            setIsAddDialogOpen(false);
+            return true;
         } else {
             toast({ variant: 'destructive', title: 'Error', description: result.message });
+            return false;
         }
      } catch (error) {
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to add agent.' });
+        return false;
      }
   }
 

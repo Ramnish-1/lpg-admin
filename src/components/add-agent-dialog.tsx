@@ -20,13 +20,13 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Textarea } from './ui/textarea';
 
-type NewAgentPayload = Omit<Agent, 'id' | 'joinedAt' | 'createdAt' | 'status' | 'report' | 'currentLocation' | 'updatedAt'>;
+type NewAgentPayload = Omit<Agent, 'id' | 'joinedAt' | 'createdAt' | 'status' | 'report' | 'currentLocation' | 'updatedAt' | 'vehicleDetails' | 'panCard' | 'aadharCard' | 'drivingLicense' | 'accountDetails'>;
 
 
 interface AddAgentDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onAgentAdd: (agent: NewAgentPayload) => void;
+  onAgentAdd: (agent: NewAgentPayload) => Promise<boolean>;
 }
 
 const agentSchema = z.object({
@@ -57,9 +57,12 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
     }
   });
 
-  const handleSubmit = (values: AgentFormValues) => {
-    onAgentAdd(values);
-    form.reset();
+  const handleSubmit = async (values: AgentFormValues) => {
+    const success = await onAgentAdd(values);
+    if (success) {
+      form.reset();
+      onOpenChange(false);
+    }
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -199,7 +202,9 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
               <DialogClose asChild>
                 <Button variant="outline" type="button">Cancel</Button>
               </DialogClose>
-              <Button type="submit">Add Agent</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'Adding...' : 'Add Agent'}
+              </Button>
             </DialogFooter>
           </form>
         </Form>
