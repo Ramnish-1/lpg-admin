@@ -96,7 +96,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onAddUser }: AddUserDialog
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="priya@example.com" {...field} />
+                        <Input type="email" placeholder="e.g. priya@example.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -109,7 +109,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onAddUser }: AddUserDialog
                     <FormItem>
                       <FormLabel>Phone</FormLabel>
                       <FormControl>
-                        <Input type="tel" placeholder="9876543210" {...field} />
+                        <Input type="tel" placeholder="e.g. 9876543210" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

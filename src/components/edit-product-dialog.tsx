@@ -53,6 +53,9 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     if (isOpen) {
       form.reset({
         ...product,
+        price: product.price ?? undefined,
+        stock: product.stock ?? undefined,
+        lowStockThreshold: product.lowStockThreshold ?? undefined,
         status: product.status.toLowerCase() as 'active' | 'inactive'
       });
     }
@@ -94,7 +97,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                     <FormItem>
                       <FormLabel>Product Name</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input placeholder="e.g. LPG Cylinder" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -107,7 +110,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                     <FormItem>
                       <FormLabel>Unit</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input placeholder="e.g. 14.2kg" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -121,7 +124,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea {...field} />
+                      <Textarea placeholder="e.g. Commercial cylinder for restaurants" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -135,7 +138,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                     <FormItem>
                       <FormLabel>Price (₹)</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input type="number" placeholder="e.g. 1100" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -148,7 +151,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                     <FormItem>
                       <FormLabel>Stock</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input type="number" placeholder="e.g. 150" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -162,7 +165,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                   <FormItem>
                     <FormLabel>Low Stock Threshold</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input type="number" placeholder="e.g. 20" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -202,4 +205,3 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     </Dialog>
   );
 }
-

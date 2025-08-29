@@ -99,7 +99,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                     <FormItem>
                       <FormLabel>Unit</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. 14.2kg or meter" {...field} />
+                        <Input placeholder="e.g. 14.2kg" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
