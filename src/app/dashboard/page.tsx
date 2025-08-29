@@ -1,14 +1,14 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import Link from 'next/link';
 import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { getDashboardData, getRecentOrders, getAgentsData } from '@/lib/data';
+import { getDashboardData, getRecentOrders } from '@/lib/data';
 import { Users, ShoppingCart, Truck, IndianRupee } from 'lucide-react';
 import type { Order, Agent } from '@/lib/types';
 import { DashboardChart } from '@/components/dashboard-chart';
@@ -16,10 +16,12 @@ import { UserHoverCard } from '@/components/user-hover-card';
 import { OrderHoverCard } from '@/components/order-hover-card';
 import { AgentHoverCard } from '@/components/agent-hover-card';
 import { OrderDetailsDialog } from '@/components/order-details-dialog';
-
-const AGENTS_STORAGE_KEY = 'gastrack-agents';
+import { AuthContext } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
 
 export default function DashboardPage() {
+  const { token } = useContext(AuthContext);
+  const { toast } = useToast();
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalOrders: 0,
@@ -36,33 +38,46 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient || !token) return;
+
+    const fetchAgents = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/delivery-agents', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await response.json();
+        if (result.success) {
+          const agentData = result.data.agents;
+          setAgents(agentData);
+          return agentData;
+        } else {
+          toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch agent data for dashboard.' });
+          return [];
+        }
+      } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch agent data for dashboard.' });
+        return [];
+      }
+    };
+    
     const fetchDashboardData = async () => {
       try {
-        const savedAgents = window.localStorage.getItem(AGENTS_STORAGE_KEY);
-        let agentData: Agent[];
-        if (savedAgents) {
-          agentData = JSON.parse(savedAgents);
-        } else {
-          agentData = await getAgentsData();
-          window.localStorage.setItem(AGENTS_STORAGE_KEY, JSON.stringify(agentData));
-        }
-        setAgents(agentData);
-
+        const agentData = await fetchAgents();
         const { stats: fetchedStats, ordersByDay: fetchedOrdersByDay } = await getDashboardData(agentData);
-        
         setStats(fetchedStats);
-
         setOrdersByDay(fetchedOrdersByDay);
-
         const fetchedRecentOrders = await getRecentOrders();
         setRecentOrders(fetchedRecentOrders);
-
       } catch (error) {
         console.error("Failed to load dashboard data", error);
       }
     };
+
     fetchDashboardData();
-  }, []);
+  }, [isClient, token, toast]);
 
   const handleShowDetails = (order: Order) => {
     setSelectedOrder(order);
