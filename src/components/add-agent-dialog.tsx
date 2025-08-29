@@ -77,9 +77,6 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
       <DialogContent className="sm:max-w-[480px] grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh] p-0">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>Add New Agent</DialogTitle>
-          <DialogDescription>
-            Enter the details for the new delivery agent. All fields are required.
-          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} noValidate className="overflow-hidden flex flex-col h-full">
