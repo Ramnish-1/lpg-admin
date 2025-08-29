@@ -32,9 +32,6 @@ export function ProductDetailsDialog({ product, isOpen, onOpenChange }: ProductD
             <Package className="h-6 w-6 text-primary" />
             <span>{product.productName}</span>
           </DialogTitle>
-          <DialogDescription>
-            Details for product ID #{product.id.slice(0, 6)}
-          </DialogDescription>
         </DialogHeader>
         <Separator />
         <div className="space-y-4 pt-2">
