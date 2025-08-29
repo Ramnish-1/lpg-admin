@@ -45,8 +45,8 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
       productName: '',
       unit: '',
       description: '',
-      price: 0,
-      stock: 0,
+      price: undefined,
+      stock: undefined,
       lowStockThreshold: 10,
     }
   });
@@ -175,4 +175,3 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     </Dialog>
   );
 }
-
