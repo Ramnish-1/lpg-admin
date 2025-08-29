@@ -67,19 +67,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       } finally {
         setIsFetchingProfile(false);
       }
-    } else if (authUser) {
-        setProfileState({
-            name: authUser.name || '',
-            email: authUser.email,
-            phone: authUser.phone || '',
-            role: authUser.role || 'User',
-            photoUrl: authUser.profileImage ? `http://localhost:5000/uploads/${authUser.profileImage}` : `https://picsum.photos/seed/${authUser.id}/100`,
-        });
-        setIsFetchingProfile(false);
     } else {
       setIsFetchingProfile(false);
     }
-  }, [isAuthenticated, token, authUser]);
+  }, [isAuthenticated, token]);
 
   useEffect(() => {
     fetchProfile();
@@ -105,25 +96,15 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         const result = await response.json();
         
         if (result.success) {
-            const userData = result.data.user;
+            await fetchProfile(); // Re-fetch profile to get the latest data, including new image URL
             
-            const newPhotoUrl = userData.profileImage ? `http://localhost:5000/uploads/${userData.profileImage}` : profile.photoUrl;
-
-            setProfileState({
-              name: userData.name || '',
-              email: userData.email,
-              phone: userData.phone || '',
-              role: userData.role || 'User',
-              photoUrl: newPhotoUrl,
-            });
-            
-             try {
+            try {
                 const storedAuthUser = JSON.parse(window.localStorage.getItem('gastrack-auth') || '{}');
-                const updatedAuthUser = { ...storedAuthUser, name: userData.name, email: userData.email, phone: userData.phone, profileImage: userData.profileImage };
+                const updatedAuthUser = { ...storedAuthUser, ...result.data.user };
                 window.localStorage.setItem('gastrack-auth', JSON.stringify(updatedAuthUser));
-              } catch (error) {
+            } catch (error) {
                 console.error('Error writing to localStorage', error);
-              }
+            }
             return true;
         }
         return false;
