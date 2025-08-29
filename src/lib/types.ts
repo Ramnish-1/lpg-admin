@@ -11,6 +11,8 @@ export interface User {
   orderHistory: string[];
   createdAt: Date;
   location: { lat: number; lng: number };
+  role?: string;
+  profileImage?: string | null;
 }
 
 export interface Product {

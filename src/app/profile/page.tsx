@@ -4,38 +4,52 @@
 import { useState, useContext, useEffect, useRef } from 'react';
 import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { ProfileContext } from '@/context/profile-context';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProfilePage() {
-  const { profile, setProfile } = useContext(ProfileContext);
+  const { profile, setProfile, isFetchingProfile } = useContext(ProfileContext);
   
-  const [name, setName] = useState(profile.name);
-  const [email, setEmail] = useState(profile.email);
-  const [phone, setPhone] = useState(profile.phone);
-  const [photoUrl, setPhotoUrl] = useState(profile.photoUrl);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    setName(profile.name);
-    setPhotoUrl(profile.photoUrl);
-    setEmail(profile.email);
-    setPhone(profile.phone);
-  }, [profile]);
+    if (!isFetchingProfile) {
+      setName(profile.name);
+      setPhotoUrl(profile.photoUrl);
+      setEmail(profile.email);
+      setPhone(profile.phone);
+    }
+  }, [profile, isFetchingProfile]);
 
-  const handleSaveChanges = () => {
-    setProfile({ name, email, phone, photoUrl });
-    toast({
-      title: 'Profile Updated',
-      description: 'Your profile details have been saved successfully.',
-    });
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    const success = await setProfile({ name, email, phone });
+    if (success) {
+        toast({
+            title: 'Profile Updated',
+            description: 'Your profile details have been saved successfully.',
+        });
+    } else {
+         toast({
+            variant: 'destructive',
+            title: 'Update Failed',
+            description: 'Could not save your profile. Please try again.',
+        });
+    }
+    setIsSaving(false);
   };
 
   const handleChangePhotoClick = () => {
@@ -49,10 +63,57 @@ export default function ProfilePage() {
       reader.onloadend = () => {
         const newPhotoUrl = reader.result as string;
         setPhotoUrl(newPhotoUrl);
+        // Here you would typically upload the file and update the profile with the new URL
+        // For now, we'll just update it visually
+        toast({
+          title: "Photo Updated (Locally)",
+          description: "Photo uploads are not yet implemented with the API."
+        })
       };
       reader.readAsDataURL(file);
     }
   };
+
+  if (isFetchingProfile) {
+    return (
+        <AppShell>
+            <PageHeader title="My Profile" />
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-48" />
+                    <Skeleton className="h-4 w-64" />
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="flex items-center gap-6">
+                        <Skeleton className="h-24 w-24 rounded-full" />
+                        <Skeleton className="h-10 w-28" />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                           <Skeleton className="h-4 w-16" />
+                           <Skeleton className="h-10 w-full" />
+                        </div>
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                        <div className="space-y-2">
+                           <Skeleton className="h-4 w-24" />
+                           <Skeleton className="h-10 w-full" />
+                        </div>
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-12" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                    </div>
+                </CardContent>
+                <CardFooter className="flex justify-end">
+                    <Skeleton className="h-10 w-32" />
+                </CardFooter>
+            </Card>
+        </AppShell>
+    )
+  }
 
 
   return (
@@ -67,7 +128,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-6">
             <Avatar className="h-24 w-24">
               <AvatarImage src={photoUrl} alt="@admin" data-ai-hint="manager portrait"/>
-              <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
+              <AvatarFallback>{name?.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <Button variant="outline" onClick={handleChangePhotoClick}>Change Photo</Button>
             <input 
@@ -81,25 +142,27 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isSaving} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} disabled={isSaving}/>
             </div>
              <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
-              <Input id="role" defaultValue="Administrator" disabled />
+              <Input id="role" value={profile.role} disabled />
             </div>
           </div>
-           <div className="flex justify-end">
-              <Button onClick={handleSaveChanges}>Save Changes</Button>
-            </div>
         </CardContent>
+        <CardFooter className="flex justify-end">
+          <Button onClick={handleSaveChanges} disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </CardFooter>
       </Card>
     </AppShell>
   );

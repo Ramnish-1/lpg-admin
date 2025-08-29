@@ -5,69 +5,115 @@ import { createContext, useState, useEffect, ReactNode, useContext } from 'react
 import { AuthContext } from './auth-context';
 import { User } from '@/lib/types';
 
-interface Profile {
+interface Profile extends Omit<User, 'id' | 'createdAt' | 'orderHistory' | 'location' | 'address' | 'status'> {
   name: string;
-  photoUrl: string;
   email: string;
   phone: string;
+  role?: string;
+  photoUrl: string;
 }
 
 interface ProfileContextType {
   profile: Profile;
-  setProfile: (profile: Partial<Profile>) => void;
+  setProfile: (profile: Partial<Profile>) => Promise<boolean>;
+  isFetchingProfile: boolean;
 }
 
 const defaultProfile: Profile = { 
   name: 'Admin', 
   photoUrl: 'https://picsum.photos/100',
   email: 'admin@gastrack.com',
-  phone: '+91 99999 88888'
+  phone: '+91 99999 88888',
+  role: 'Administrator'
 };
 
 export const ProfileContext = createContext<ProfileContextType>({
   profile: defaultProfile,
-  setProfile: () => {},
+  setProfile: async () => false,
+  isFetchingProfile: true,
 });
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
-  const { user, isAuthenticated } = useContext(AuthContext);
+  const { token, isAuthenticated } = useContext(AuthContext);
   const [profile, setProfileState] = useState<Profile>(defaultProfile);
+  const [isFetchingProfile, setIsFetchingProfile] = useState(true);
 
   useEffect(() => {
-    if (isAuthenticated && user) {
-       setProfileState({
-         name: user.name || user.email.split('@')[0], // Use a default name if not provided
-         email: user.email,
-         phone: user.phone || '',
-         photoUrl: `https://picsum.photos/seed/${user.id}/100`, // Use a consistent avatar
-       });
-    }
-  }, [user, isAuthenticated]);
-
-
-  const setProfile = (newProfileData: Partial<Profile>) => {
-    if (!user) return;
-
-    // This part of the logic would need to be replaced with an API call to update the user profile
-    // on the backend. For now, we'll optimistically update the UI and local state.
-    
-    setProfileState(prevProfile => {
-      const updatedProfile = { ...prevProfile, ...newProfileData };
-      
-      try {
-        const authUser = JSON.parse(window.localStorage.getItem('gastrack-auth') || '{}');
-        const updatedAuthUser = { ...authUser, ...newProfileData };
-        window.localStorage.setItem('gastrack-auth', JSON.stringify(updatedAuthUser));
-      } catch (error) {
-        console.error('Error writing to localStorage', error);
+    const fetchProfile = async () => {
+      if (isAuthenticated && token) {
+        setIsFetchingProfile(true);
+        try {
+          const response = await fetch('http://localhost:5000/api/auth/profile', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          const result = await response.json();
+          if (result.success) {
+            const userData = result.data.user;
+            setProfileState({
+              name: userData.name || '',
+              email: userData.email,
+              phone: userData.phone || '',
+              role: userData.role || 'User',
+              photoUrl: userData.profileImage || `https://picsum.photos/seed/${userData.id}/100`,
+            });
+          }
+        } catch (error) {
+          console.error("Failed to fetch profile", error);
+        } finally {
+          setIsFetchingProfile(false);
+        }
+      } else {
+        setIsFetchingProfile(false);
       }
-      
-      return updatedProfile;
-    });
+    };
+
+    fetchProfile();
+  }, [isAuthenticated, token]);
+
+  const setProfile = async (newProfileData: Partial<Profile>): Promise<boolean> => {
+    if (!token) return false;
+    
+    try {
+        const response = await fetch('http://localhost:5000/api/auth/profile', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(newProfileData)
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            const userData = result.data.user;
+             setProfileState({
+              name: userData.name || '',
+              email: userData.email,
+              phone: userData.phone || '',
+              role: userData.role || 'User',
+              photoUrl: userData.profileImage || `https://picsum.photos/seed/${userData.id}/100`,
+            });
+            // Also update the auth context user data if needed, to keep them in sync
+             try {
+                const authUser = JSON.parse(window.localStorage.getItem('gastrack-auth') || '{}');
+                const updatedAuthUser = { ...authUser, name: userData.name, email: userData.email, phone: userData.phone };
+                window.localStorage.setItem('gastrack-auth', JSON.stringify(updatedAuthUser));
+              } catch (error) {
+                console.error('Error writing to localStorage', error);
+              }
+            return true;
+        }
+        return false;
+    } catch(error) {
+        console.error("Failed to update profile", error);
+        return false;
+    }
   }
 
   return (
-    <ProfileContext.Provider value={{ profile, setProfile }}>
+    <ProfileContext.Provider value={{ profile, setProfile, isFetchingProfile }}>
       {children}
     </ProfileContext.Provider>
   );
