@@ -77,11 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const result = await response.json();
 
         if (result.success) {
-            const loggedInUser = {
+            const loggedInUser: User = {
                 ...result.data.user,
                 name: result.data.user.name || result.data.user.email.split('@')[0],
-                phone: result.data.user.phone || '',
-                photoUrl: result.data.user.profileImage ? `http://localhost:5000/uploads/${result.data.user.profileImage}` : `https://picsum.photos/seed/${result.data.user.id}/100`,
             };
 
             setUser(loggedInUser);

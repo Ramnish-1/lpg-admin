@@ -5,7 +5,7 @@ import { createContext, useState, useEffect, ReactNode, useContext, useCallback 
 import { AuthContext } from './auth-context';
 import { User } from '@/lib/types';
 
-interface Profile extends Omit<User, 'id' | 'createdAt' | 'orderHistory' | 'location' | 'address' | 'status'> {
+interface Profile {
   name: string;
   email: string;
   phone: string;
@@ -67,14 +67,23 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       } finally {
         setIsFetchingProfile(false);
       }
+    } else if (authUser) {
+        setProfileState({
+            name: authUser.name || '',
+            email: authUser.email,
+            phone: authUser.phone || '',
+            role: authUser.role || 'User',
+            photoUrl: authUser.profileImage ? `http://localhost:5000/uploads/${authUser.profileImage}` : `https://picsum.photos/seed/${authUser.id}/100`,
+        });
+        setIsFetchingProfile(false);
     } else {
       setIsFetchingProfile(false);
     }
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, token, authUser]);
 
   useEffect(() => {
     fetchProfile();
-  }, [fetchProfile, authUser]);
+  }, [fetchProfile]);
 
   const setProfile = async (newProfileData: ProfileUpdatePayload): Promise<boolean> => {
     if (!token) return false;
@@ -97,11 +106,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         
         if (result.success) {
             const userData = result.data.user;
-            const imageUrl = result.data.imageUrl;
             
-            const newPhotoUrl = imageUrl ? `http://localhost:5000${imageUrl}` : profile.photoUrl;
+            const newPhotoUrl = userData.profileImage ? `http://localhost:5000/uploads/${userData.profileImage}` : profile.photoUrl;
 
-            // Update state immediately with the response from the PUT request
             setProfileState({
               name: userData.name || '',
               email: userData.email,
@@ -110,7 +117,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
               photoUrl: newPhotoUrl,
             });
             
-            // Also update the auth context user data if needed, to keep them in sync
              try {
                 const storedAuthUser = JSON.parse(window.localStorage.getItem('gastrack-auth') || '{}');
                 const updatedAuthUser = { ...storedAuthUser, name: userData.name, email: userData.email, phone: userData.phone, profileImage: userData.profileImage };
