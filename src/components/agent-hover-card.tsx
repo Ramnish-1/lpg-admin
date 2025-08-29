@@ -9,6 +9,8 @@ import { Badge } from './ui/badge';
 import { AuthContext } from '@/context/auth-context';
 import { Separator } from './ui/separator';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export function AgentHoverCard({ children }: { children: React.ReactNode }) {
   const [agents, setAgents] = useState<Agent[]>([]);
   const { token } = useContext(AuthContext);
@@ -17,7 +19,7 @@ export function AgentHoverCard({ children }: { children: React.ReactNode }) {
     const fetchAgents = async () => {
       if (!token) return;
       try {
-        const response = await fetch('http://localhost:5000/api/delivery-agents', {
+        const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const result = await response.json();

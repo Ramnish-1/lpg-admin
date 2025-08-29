@@ -22,6 +22,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 const ITEMS_PER_PAGE = 10;
 const LOW_STOCK_THRESHOLD = 10;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -39,7 +40,7 @@ export default function ProductsPage() {
     if (!token) return;
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/products', {
+      const response = await fetch(`${API_BASE_URL}/api/products`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await response.json();
@@ -85,7 +86,7 @@ export default function ProductsPage() {
   const confirmDeleteProduct = async () => {
     if (!selectedProduct || !token) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/products/${selectedProduct.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/products/${selectedProduct.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -108,7 +109,7 @@ export default function ProductsPage() {
     if (!token) return;
     const newStatus = product.status.toLowerCase() === 'active' ? 'inactive' : 'active';
     try {
-        const response = await fetch(`http://localhost:5000/api/products/${product.id}/status`, {
+        const response = await fetch(`${API_BASE_URL}/api/products/${product.id}/status`, {
             method: 'PATCH',
             headers: { 
               'Content-Type': 'application/json',
@@ -137,7 +138,7 @@ export default function ProductsPage() {
     const { id, createdAt, updatedAt, ...payload } = updatedProduct;
 
     try {
-        const response = await fetch(`http://localhost:5000/api/products/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/products/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -163,7 +164,7 @@ export default function ProductsPage() {
     if(!token) return false;
     try {
         const payload = { ...newProduct, status: 'active' };
-        const response = await fetch(`http://localhost:5000/api/products`, {
+        const response = await fetch(`${API_BASE_URL}/api/products`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { ProfileContext } from '@/context/profile-context';
 import { Skeleton } from '@/components/ui/skeleton';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export default function ProfilePage() {
   const { profile, setProfile, isFetchingProfile } = useContext(ProfileContext);
   
@@ -30,7 +32,7 @@ export default function ProfilePage() {
     if (!isFetchingProfile) {
       setName(profile.name);
       // Construct the full URL for display if photoUrl is a relative path
-      setPhotoUrl(profile.photoUrl.startsWith('blob:') ? profile.photoUrl : (profile.photoUrl ? `http://localhost:5000/uploads/${profile.photoUrl}` : ''));
+      setPhotoUrl(profile.photoUrl.startsWith('blob:') ? profile.photoUrl : (profile.photoUrl ? `${API_BASE_URL}/uploads/${profile.photoUrl}` : ''));
       setEmail(profile.email);
       setPhone(profile.phone);
     }

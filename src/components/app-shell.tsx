@@ -49,6 +49,7 @@ const GasPump = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -107,7 +108,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return null; // or a loading spinner
   }
 
-  const displayPhotoUrl = profile.photoUrl ? `http://localhost:5000/uploads/${profile.photoUrl}` : '';
+  const displayPhotoUrl = profile.photoUrl ? `${API_BASE_URL}/uploads/${profile.photoUrl}` : '';
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">

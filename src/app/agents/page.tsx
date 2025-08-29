@@ -29,6 +29,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AuthContext } from '@/context/auth-context';
 
 const ITEMS_PER_PAGE = 10;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg
@@ -60,7 +61,7 @@ export default function AgentsPage() {
     if (!token) return;
     setIsLoading(true);
     try {
-        const response = await fetch('http://localhost:5000/api/delivery-agents', {
+        const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const result = await response.json();
@@ -112,7 +113,7 @@ export default function AgentsPage() {
     if (!token) return;
     try {
       const { id, createdAt, joinedAt, updatedAt, report, ...payload } = updatedAgent;
-      const response = await fetch(`http://localhost:5000/api/delivery-agents/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/delivery-agents/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -142,7 +143,7 @@ export default function AgentsPage() {
             status: 'offline',
             joinedAt: new Date().toISOString()
         };
-        const response = await fetch('http://localhost:5000/api/delivery-agents', {
+        const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -172,7 +173,7 @@ export default function AgentsPage() {
     
     try {
       const deletePromises = idsToDelete.map(id => 
-        fetch(`http://localhost:5000/api/delivery-agents/${id}`, {
+        fetch(`${API_BASE_URL}/api/delivery-agents/${id}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
         })

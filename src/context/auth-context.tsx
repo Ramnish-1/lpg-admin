@@ -14,7 +14,7 @@ interface AuthContextType {
 }
 
 const TOKEN_STORAGE_KEY = 'gastrack-token';
-
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-        const response = await fetch('http://localhost:5000/api/auth/login', {
+        const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const currentToken = getStoredToken();
     if (currentToken) {
         try {
-            await fetch('http://localhost:5000/api/auth/logout', {
+            await fetch(`${API_BASE_URL}/api/auth/logout`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -113,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signup = async (name: string, email: string, password: string, phone: string): Promise<boolean> => {
     try {
-        const response = await fetch('http://localhost:5000/api/auth/signup', {
+        const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, email, password, phone }),

@@ -19,6 +19,8 @@ import { OrderDetailsDialog } from '@/components/order-details-dialog';
 import { AuthContext } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export default function DashboardPage() {
   const { token } = useContext(AuthContext);
   const { toast } = useToast();
@@ -45,7 +47,7 @@ export default function DashboardPage() {
 
     const fetchAgents = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/delivery-agents', {
+        const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const result = await response.json();

@@ -31,6 +31,8 @@ const defaultProfile: Profile = {
   role: 'Administrator'
 };
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export const ProfileContext = createContext<ProfileContextType>({
   profile: defaultProfile,
   setProfile: async () => false,
@@ -46,7 +48,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     if (isAuthenticated && token) {
       setIsFetchingProfile(true);
       try {
-        const response = await fetch('http://localhost:5000/api/auth/profile', {
+        const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -87,7 +89,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     if(newProfileData.photoFile) formData.append('image', newProfileData.photoFile);
 
     try {
-        const response = await fetch('http://localhost:5000/api/auth/profile', {
+        const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`

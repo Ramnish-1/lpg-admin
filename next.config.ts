@@ -28,6 +28,12 @@ const nextConfig: NextConfig = {
         hostname: 'localhost',
         port: '5000',
         pathname: '/uploads/**',
+      },
+       {
+        protocol: 'https',
+        hostname: 'c5d511eb9159.ngrok-free.app',
+        port: '',
+        pathname: '/uploads/**',
       }
     ],
   },
