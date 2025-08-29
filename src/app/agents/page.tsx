@@ -155,7 +155,7 @@ export default function AgentsPage() {
             fetchAgents();
             return true;
         } else {
-            toast({ variant: 'destructive', title: 'Error', description: result.message });
+            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to add agent.' });
             return false;
         }
      } catch (error) {
