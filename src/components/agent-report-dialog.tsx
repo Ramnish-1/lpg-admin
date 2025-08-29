@@ -61,7 +61,7 @@ export function AgentReportDialog({ agent, isOpen, onOpenChange }: AgentReportDi
             </Avatar>
             <div>
                 <DialogTitle className="text-2xl flex items-center gap-2">
-                    <span>{agent.name}'s Report</span>
+                    <span>{agent.name} Report</span>
                 </DialogTitle>
                 <DialogDescription>
                     Performance and personal details for this delivery agent.
