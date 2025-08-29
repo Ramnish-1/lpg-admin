@@ -99,10 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setIsAuthenticated(false);
     if (typeof window !== 'undefined') {
-      const keysToRemove = [TOKEN_STORAGE_KEY, 'gastrack-profile', 'gastrack-settings', 'gastrack-agents', 'gastrack-orders', 'gastrack-products', 'gastrack-customers', 'gastrack-users-db'];
-      keysToRemove.forEach(key => {
-        window.localStorage.removeItem(key);
-      });
+      window.localStorage.clear();
       window.location.href = '/login';
     }
   }

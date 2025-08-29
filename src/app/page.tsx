@@ -17,8 +17,6 @@ import { OrderHoverCard } from '@/components/order-hover-card';
 import { AgentHoverCard } from '@/components/agent-hover-card';
 import { OrderDetailsDialog } from '@/components/order-details-dialog';
 
-const AGENTS_STORAGE_KEY = 'gastrack-agents';
-
 export default function DashboardPage() {
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -38,14 +36,8 @@ export default function DashboardPage() {
     setIsClient(true);
     const fetchDashboardData = async () => {
       try {
-        const savedAgents = window.localStorage.getItem(AGENTS_STORAGE_KEY);
-        let agentData: Agent[];
-        if (savedAgents) {
-          agentData = JSON.parse(savedAgents);
-        } else {
-          agentData = await getAgentsData();
-          window.localStorage.setItem(AGENTS_STORAGE_KEY, JSON.stringify(agentData));
-        }
+        
+        const agentData = await getAgentsData();
         setAgents(agentData);
 
         const { stats: fetchedStats, ordersByDay: fetchedOrdersByDay } = await getDashboardData(agentData);
