@@ -111,13 +111,14 @@ export default function AgentsPage() {
   const handleAgentUpdate = async (updatedAgent: Agent) => {
     if (!token) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/delivery-agents/${updatedAgent.id}`, {
+      const { id, ...payload } = updatedAgent;
+      const response = await fetch(`http://localhost:5000/api/delivery-agents/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(updatedAgent)
+        body: JSON.stringify(payload)
       });
       const result = await response.json();
       if (result.success) {
@@ -126,14 +127,14 @@ export default function AgentsPage() {
         setIsEditDialogOpen(false);
         setSelectedAgent(null);
       } else {
-        toast({ variant: 'destructive', title: 'Error', description: result.message });
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update agent.' });
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to update agent.' });
     }
   }
 
-  const handleAgentAdd = async (newAgent: Omit<Agent, 'id' | 'createdAt' | 'status' | 'report' | 'currentLocation' | 'vehicleDetails' | 'panCard' | 'aadharCard' | 'drivingLicense' | 'accountDetails' | 'updatedAt' >): Promise<boolean> => {
+  const handleAgentAdd = async (newAgent: Omit<Agent, 'id' | 'createdAt' | 'status' | 'report' | 'currentLocation' | 'vehicleDetails' | 'panCard' | 'aadharCard' | 'drivingLicense' | 'accountDetails' | 'updatedAt' | 'joinedAt' >): Promise<boolean> => {
      if (!token) return false;
      try {
         const payload = {
@@ -398,3 +399,5 @@ export default function AgentsPage() {
     </AppShell>
   );
 }
+
+    
