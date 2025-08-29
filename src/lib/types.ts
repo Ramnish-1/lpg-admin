@@ -4,7 +4,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  password?: string; // Should be handled securely on a backend
+  password?: string;
   phone: string;
   address: string;
   status: 'Active' | 'Blocked';
@@ -34,22 +34,25 @@ export interface AgentReport {
     monthlyDeliveries: { month: string; deliveries: number }[];
 }
 
-
 export interface Agent {
-  id:string;
+  id: string;
   name: string;
-  phone: string;
   email: string;
-  vehicleDetails: string;
-  panCard: string;
-  aadharCard: string;
-  drivingLicense: string;
-  accountDetails: string;
-  status: 'Online' | 'Offline';
+  phone: string;
+  vehicleNumber: string;
+  panCardNumber: string;
+  aadharCardNumber: string;
+  drivingLicence: string;
+  bankDetails: string;
+  status: 'online' | 'offline' | 'Online' | 'Offline';
+  joinedAt: Date;
   createdAt: Date;
-  report: AgentReport;
-  currentLocation: { lat: number; lng: number };
+  updatedAt: Date;
+  // Kept as optional since API doesn't provide it yet
+  report?: AgentReport; 
+  currentLocation?: { lat: number; lng: number };
 }
+
 
 export interface Order {
   id: string;

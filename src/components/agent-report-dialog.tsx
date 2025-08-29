@@ -45,7 +45,7 @@ export function AgentReportDialog({ agent, isOpen, onOpenChange }: AgentReportDi
         <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center">{icon}</div>
         <div className="ml-2">
             <div className="text-xs text-muted-foreground">{label}</div>
-            <div className="font-medium text-foreground">{value}</div>
+            <div className="font-medium text-foreground break-all">{value}</div>
         </div>
     </div>
 );
@@ -107,6 +107,7 @@ export function AgentReportDialog({ agent, isOpen, onOpenChange }: AgentReportDi
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
+                          {reportData.monthlyDeliveries.length > 0 ? (
                             <ChartContainer config={chartConfig} className="h-[150px] w-full">
                                 <BarChart accessibilityLayer data={reportData.monthlyDeliveries}>
                                     <CartesianGrid vertical={false} />
@@ -121,6 +122,11 @@ export function AgentReportDialog({ agent, isOpen, onOpenChange }: AgentReportDi
                                     <Bar dataKey="deliveries" fill="var(--color-deliveries)" radius={4} />
                                 </BarChart>
                             </ChartContainer>
+                            ) : (
+                              <div className="text-center text-muted-foreground text-sm py-8">
+                                No delivery data available.
+                              </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
@@ -133,15 +139,15 @@ export function AgentReportDialog({ agent, isOpen, onOpenChange }: AgentReportDi
                         <Separator />
                         <InfoRow icon={<Phone className="h-5 w-5 text-primary"/>} label="Phone" value={<a href={`tel:${agent.phone}`} className="hover:underline">{agent.phone}</a>} />
                         <Separator />
-                        <InfoRow icon={<Truck className="h-5 w-5 text-primary"/>} label="Vehicle Details" value={agent.vehicleDetails} />
+                        <InfoRow icon={<Truck className="h-5 w-5 text-primary"/>} label="Vehicle Number" value={agent.vehicleNumber} />
                         <Separator />
-                        <InfoRow icon={<User className="h-5 w-5 text-primary"/>} label="PAN Card" value={agent.panCard} />
+                        <InfoRow icon={<User className="h-5 w-5 text-primary"/>} label="PAN Card" value={agent.panCardNumber} />
                         <Separator />
-                        <InfoRow icon={<User className="h-5 w-5 text-primary"/>} label="Aadhar Card" value={agent.aadharCard} />
+                        <InfoRow icon={<User className="h-5 w-5 text-primary"/>} label="Aadhar Card" value={agent.aadharCardNumber} />
                         <Separator />
-                        <InfoRow icon={<BadgeCheck className="h-5 w-5 text-primary"/>} label="Driving License" value={agent.drivingLicense} />
+                        <InfoRow icon={<BadgeCheck className="h-5 w-5 text-primary"/>} label="Driving License" value={agent.drivingLicence} />
                         <Separator />
-                        <InfoRow icon={<Banknote className="h-5 w-5 text-primary"/>} label="Bank Account" value={agent.accountDetails} />
+                        <InfoRow icon={<Banknote className="h-5 w-5 text-primary"/>} label="Bank Account" value={<div className="whitespace-pre-wrap">{agent.bankDetails}</div>} />
                     </CardContent>
                  </Card>
             </div>

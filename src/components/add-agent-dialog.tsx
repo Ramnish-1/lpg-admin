@@ -20,21 +20,24 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Textarea } from './ui/textarea';
 
+type NewAgentPayload = Omit<Agent, 'id' | 'joinedAt' | 'createdAt' | 'status' | 'report' | 'currentLocation' | 'updatedAt'>;
+
+
 interface AddAgentDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onAgentAdd: (agent: Omit<Agent, 'id' | 'createdAt' | 'status' | 'report' | 'currentLocation'>) => void;
+  onAgentAdd: (agent: NewAgentPayload) => void;
 }
 
 const agentSchema = z.object({
   name: z.string().min(1, { message: "Name is required." }),
   email: z.string().email({ message: "Invalid email address." }).min(1, { message: "Email is required." }),
   phone: z.string().min(10, { message: "Phone number must be at least 10 digits." }),
-  vehicleDetails: z.string().min(1, { message: "Vehicle details are required." }),
-  panCard: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, { message: "Invalid PAN card format." }),
-  aadharCard: z.string().min(1, { message: "Aadhar card is required." }),
-  drivingLicense: z.string().min(1, { message: "Driving license is required." }),
-  accountDetails: z.string().min(1, { message: "Account details are required." }),
+  vehicleNumber: z.string().min(1, { message: "Vehicle details are required." }),
+  panCardNumber: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, { message: "Invalid PAN card format." }),
+  aadharCardNumber: z.string().min(1, { message: "Aadhar card is required." }),
+  drivingLicence: z.string().min(1, { message: "Driving license is required." }),
+  bankDetails: z.string().min(1, { message: "Account details are required." }),
 });
 
 type AgentFormValues = z.infer<typeof agentSchema>;
@@ -46,18 +49,17 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
       name: '',
       email: '',
       phone: '',
-      vehicleDetails: '',
-      panCard: '',
-      aadharCard: '',
-      drivingLicense: '',
-      accountDetails: '',
+      vehicleNumber: '',
+      panCardNumber: '',
+      aadharCardNumber: '',
+      drivingLicence: '',
+      bankDetails: '',
     }
   });
 
   const handleSubmit = (values: AgentFormValues) => {
     onAgentAdd(values);
     form.reset();
-    onOpenChange(false);
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -121,10 +123,10 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
                 />
                 <FormField
                   control={form.control}
-                  name="vehicleDetails"
+                  name="vehicleNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Vehicle</FormLabel>
+                      <FormLabel>Vehicle Number</FormLabel>
                       <FormControl>
                         <Input placeholder="e.g. KA-01-AB-1234" {...field} />
                       </FormControl>
@@ -134,7 +136,7 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
                 />
                 <FormField
                   control={form.control}
-                  name="panCard"
+                  name="panCardNumber"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>PAN Card</FormLabel>
@@ -154,10 +156,10 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
                 />
                 <FormField
                   control={form.control}
-                  name="aadharCard"
+                  name="aadharCardNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Aadhar Card</FormLabel>
+                      <FormLabel>Aadhar Card Number</FormLabel>
                       <FormControl>
                         <Input placeholder="e.g. 1234 5678 9012" {...field} />
                       </FormControl>
@@ -167,7 +169,7 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
                 />
                  <FormField
                   control={form.control}
-                  name="drivingLicense"
+                  name="drivingLicence"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Driving License</FormLabel>
@@ -180,7 +182,7 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
                 />
                 <FormField
                   control={form.control}
-                  name="accountDetails"
+                  name="bankDetails"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Bank Account Details</FormLabel>

@@ -20,6 +20,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Textarea } from './ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface EditAgentDialogProps {
   agent: Agent;
@@ -32,11 +33,12 @@ const agentSchema = z.object({
   name: z.string().min(1, { message: "Name is required." }),
   email: z.string().email({ message: "Invalid email address." }).min(1, { message: "Email is required." }),
   phone: z.string().min(10, { message: "Phone number must be at least 10 digits." }),
-  vehicleDetails: z.string().min(1, { message: "Vehicle details are required." }),
-  panCard: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, { message: "Invalid PAN card format." }),
-  aadharCard: z.string().min(1, { message: "Aadhar card is required." }),
-  drivingLicense: z.string().min(1, { message: "Driving license is required." }),
-  accountDetails: z.string().min(1, { message: "Account details are required." }),
+  vehicleNumber: z.string().min(1, { message: "Vehicle details are required." }),
+  panCardNumber: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, { message: "Invalid PAN card format." }),
+  aadharCardNumber: z.string().min(1, { message: "Aadhar card is required." }),
+  drivingLicence: z.string().min(1, { message: "Driving license is required." }),
+  bankDetails: z.string().min(1, { message: "Account details are required." }),
+  status: z.enum(['online', 'offline']),
 });
 
 type AgentFormValues = z.infer<typeof agentSchema>;
@@ -44,12 +46,18 @@ type AgentFormValues = z.infer<typeof agentSchema>;
 export function EditAgentDialog({ agent, isOpen, onOpenChange, onAgentUpdate }: EditAgentDialogProps) {
   const form = useForm<AgentFormValues>({
     resolver: zodResolver(agentSchema),
-    defaultValues: agent,
+    defaultValues: {
+      ...agent,
+      status: agent.status.toLowerCase() as 'online' | 'offline'
+    },
   });
 
   useEffect(() => {
     if (isOpen) {
-      form.reset(agent);
+      form.reset({
+        ...agent,
+        status: agent.status.toLowerCase() as 'online' | 'offline'
+      });
     }
   }, [agent, isOpen, form]);
 
@@ -57,13 +65,17 @@ export function EditAgentDialog({ agent, isOpen, onOpenChange, onAgentUpdate }: 
     const updatedAgent = {
       ...agent,
       ...values,
+      status: values.status as 'online' | 'offline',
     };
     onAgentUpdate(updatedAgent);
   };
   
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      form.reset(agent);
+      form.reset({
+        ...agent,
+        status: agent.status.toLowerCase() as 'online' | 'offline'
+      });
     }
     onOpenChange(open);
   }
@@ -122,10 +134,10 @@ export function EditAgentDialog({ agent, isOpen, onOpenChange, onAgentUpdate }: 
                 />
                 <FormField
                   control={form.control}
-                  name="vehicleDetails"
+                  name="vehicleNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Vehicle</FormLabel>
+                      <FormLabel>Vehicle Number</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -135,7 +147,7 @@ export function EditAgentDialog({ agent, isOpen, onOpenChange, onAgentUpdate }: 
                 />
                 <FormField
                   control={form.control}
-                  name="panCard"
+                  name="panCardNumber"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>PAN Card</FormLabel>
@@ -154,10 +166,10 @@ export function EditAgentDialog({ agent, isOpen, onOpenChange, onAgentUpdate }: 
                 />
                 <FormField
                   control={form.control}
-                  name="aadharCard"
+                  name="aadharCardNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Aadhar Card</FormLabel>
+                      <FormLabel>Aadhar Card Number</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -167,7 +179,7 @@ export function EditAgentDialog({ agent, isOpen, onOpenChange, onAgentUpdate }: 
                 />
                 <FormField
                   control={form.control}
-                  name="drivingLicense"
+                  name="drivingLicence"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Driving License</FormLabel>
@@ -180,13 +192,34 @@ export function EditAgentDialog({ agent, isOpen, onOpenChange, onAgentUpdate }: 
                 />
                 <FormField
                   control={form.control}
-                  name="accountDetails"
+                  name="bankDetails"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Bank Account Details</FormLabel>
                       <FormControl>
                         <Textarea {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="online">Online</SelectItem>
+                          <SelectItem value="offline">Offline</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

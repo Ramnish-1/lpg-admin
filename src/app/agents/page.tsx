@@ -8,10 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Trash2, Mail, BadgeCheck } from 'lucide-react';
-import { getAgentsData } from '@/lib/data';
+import { MoreHorizontal, PlusCircle, Trash2, Mail, Loader2 } from 'lucide-react';
 import type { Agent } from '@/lib/types';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useContext } from 'react';
 import { EditAgentDialog } from '@/components/edit-agent-dialog';
 import { AddAgentDialog } from '@/components/add-agent-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -27,8 +26,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { AgentReportDialog } from '@/components/agent-report-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { AuthContext } from '@/context/auth-context';
 
-const AGENTS_STORAGE_KEY = 'gastrack-agents';
 const ITEMS_PER_PAGE = 10;
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -46,6 +45,7 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -54,30 +54,31 @@ export default function AgentsPage() {
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
+  const { token } = useContext(AuthContext);
+
+  const fetchAgents = async () => {
+    if (!token) return;
+    setIsLoading(true);
+    try {
+        const response = await fetch('http://localhost:5000/api/delivery-agents', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await response.json();
+        if (result.success) {
+            setAgents(result.data.agents.map((a: any) => ({ ...a, joinedAt: new Date(a.joinedAt)})));
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.message });
+        }
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch agents.' });
+    } finally {
+        setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchAgents = async () => {
-      try {
-        const savedAgents = window.localStorage.getItem(AGENTS_STORAGE_KEY);
-        if (savedAgents) {
-          const parsedAgents = JSON.parse(savedAgents).map((a: any) => ({
-            ...a,
-            createdAt: new Date(a.createdAt),
-          }));
-          setAgents(parsedAgents);
-        } else {
-          const data = await getAgentsData();
-          setAgents(data);
-          window.localStorage.setItem(AGENTS_STORAGE_KEY, JSON.stringify(data));
-        }
-      } catch (error) {
-        console.error("Failed to load agents from localStorage", error);
-        const data = await getAgentsData();
-        setAgents(data);
-      }
-    };
     fetchAgents();
-  }, []);
+  }, [token]);
 
   const totalPages = Math.ceil(agents.length / ITEMS_PER_PAGE);
 
@@ -86,15 +87,6 @@ export default function AgentsPage() {
     const endIndex = startIndex + ITEMS_PER_PAGE;
     return agents.slice(startIndex, endIndex);
   }, [agents, currentPage]);
-
-  const updateAgentsStateAndStorage = (newAgents: Agent[]) => {
-    setAgents(newAgents);
-    try {
-      window.localStorage.setItem(AGENTS_STORAGE_KEY, JSON.stringify(newAgents));
-    } catch (error) {
-      console.error("Failed to save agents to localStorage", error);
-    }
-  };
 
   const handleEdit = (agent: Agent) => {
     setSelectedAgent(agent);
@@ -116,61 +108,94 @@ export default function AgentsPage() {
     setIsReportDialogOpen(true);
   };
 
-  const handleAgentUpdate = (updatedAgent: Agent) => {
-    const newAgents = agents.map(a => a.id === updatedAgent.id ? updatedAgent : a);
-    updateAgentsStateAndStorage(newAgents);
-    toast({
-      title: 'Agent Updated',
-      description: `${updatedAgent.name}'s details have been successfully updated.`,
-    });
-    setIsEditDialogOpen(false);
-    setSelectedAgent(null);
-  }
-
-  const handleAgentAdd = (newAgent: Omit<Agent, 'id' | 'createdAt' | 'status' | 'report' | 'currentLocation'>) => {
-    const agentToAdd: Agent = {
-      ...newAgent,
-      id: `agt_${Date.now()}`,
-      createdAt: new Date(),
-      status: 'Offline',
-      currentLocation: { lat: 12.9716, lng: 77.5946 }, // Default to Bangalore
-      report: {
-        totalDeliveries: 0,
-        totalEarnings: 0,
-        onTimeRate: 0,
-        monthlyDeliveries: [],
+  const handleAgentUpdate = async (updatedAgent: Agent) => {
+    if (!token) return;
+    try {
+      const response = await fetch(`http://localhost:5000/api/delivery-agents/${updatedAgent.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updatedAgent)
+      });
+      const result = await response.json();
+      if (result.success) {
+        toast({ title: 'Agent Updated', description: `${updatedAgent.name}'s details have been successfully updated.` });
+        fetchAgents(); // Re-fetch agents
+        setIsEditDialogOpen(false);
+        setSelectedAgent(null);
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.message });
       }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update agent.' });
     }
-    const newAgents = [...agents, agentToAdd];
-    updateAgentsStateAndStorage(newAgents);
-     toast({
-      title: 'Agent Added',
-      description: `${agentToAdd.name} has been successfully added.`,
-    });
-    setIsAddDialogOpen(false);
   }
 
-  const confirmDelete = () => {
-    if (selectedAgent) { // Single delete
-      const newAgents = agents.filter(a => a.id !== selectedAgent.id);
-      updateAgentsStateAndStorage(newAgents);
-      toast({
-        title: 'Agent Deleted',
-        description: `${selectedAgent.name} has been deleted.`,
-        variant: 'destructive'
-      });
-    } else if (selectedAgentIds.length > 0) { // Bulk delete
-      const newAgents = agents.filter(a => !selectedAgentIds.includes(a.id));
-      updateAgentsStateAndStorage(newAgents);
-      toast({
-        title: 'Agents Deleted',
-        description: `${selectedAgentIds.length} agent(s) have been deleted.`,
-        variant: 'destructive'
-      });
-      setSelectedAgentIds([]);
+  const handleAgentAdd = async (newAgent: Omit<Agent, 'id' | 'createdAt' | 'status' | 'report' | 'currentLocation'>) => {
+     if (!token) return;
+     try {
+        const payload = {
+            ...newAgent,
+            status: 'offline',
+            joinedAt: new Date().toISOString()
+        };
+        const response = await fetch('http://localhost:5000/api/delivery-agents', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (result.success) {
+            toast({ title: 'Agent Added', description: `${newAgent.name} has been successfully added.` });
+            fetchAgents();
+            setIsAddDialogOpen(false);
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.message });
+        }
+     } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to add agent.' });
+     }
+  }
+
+  const confirmDelete = async () => {
+    if (!token) return;
+    
+    const idsToDelete = selectedAgent ? [selectedAgent.id] : selectedAgentIds;
+    
+    try {
+      const deletePromises = idsToDelete.map(id => 
+        fetch(`http://localhost:5000/api/delivery-agents/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      );
+      
+      const responses = await Promise.all(deletePromises);
+      const successfulDeletes = responses.filter(res => res.ok).length;
+
+      if (successfulDeletes > 0) {
+        toast({
+          title: 'Agent(s) Deleted',
+          description: `${successfulDeletes} agent(s) have been deleted.`,
+          variant: 'destructive'
+        });
+        fetchAgents();
+        setSelectedAgentIds([]);
+      } else {
+         toast({ variant: 'destructive', title: 'Error', description: "Could not delete agent(s)." });
+      }
+
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'An error occurred during deletion.' });
+    } finally {
+        setIsDeleteDialogOpen(false);
+        setSelectedAgent(null);
     }
-    setIsDeleteDialogOpen(false);
-    setSelectedAgent(null);
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -194,7 +219,6 @@ export default function AgentsPage() {
     const cleanPhone = phone.replace(/[^0-9]/g, '');
     window.open(`https://wa.me/${cleanPhone}`, '_blank');
   };
-
 
   return (
     <AppShell>
@@ -223,12 +247,17 @@ export default function AgentsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
           <Table>
             <TableHeader>
               <TableRow>
                  <TableHead className="w-[40px]">
                   <Checkbox 
-                    checked={selectedAgentIds.length > 0 && selectedAgentIds.length === paginatedAgents.length}
+                    checked={selectedAgentIds.length > 0 && paginatedAgents.length > 0 && selectedAgentIds.length === paginatedAgents.length}
                     onCheckedChange={handleSelectAll}
                     aria-label="Select all"
                   />
@@ -269,14 +298,14 @@ export default function AgentsPage() {
                         </a>
                     </div>
                   </TableCell>
-                  <TableCell onClick={() => handleViewReport(agent)} className="hidden sm:table-cell">{agent.vehicleDetails}</TableCell>
+                  <TableCell onClick={() => handleViewReport(agent)} className="hidden sm:table-cell">{agent.vehicleNumber}</TableCell>
                   <TableCell onClick={() => handleViewReport(agent)} className="hidden md:table-cell">
-                    <Badge variant={agent.status === 'Online' ? 'default' : 'outline'} className={agent.status === 'Online' ? 'bg-green-500 text-white' : ''}>
-                      <span className={`inline-block w-2 h-2 mr-2 rounded-full ${agent.status === 'Online' ? 'bg-white' : 'bg-gray-400'}`}></span>
+                    <Badge variant={agent.status.toLowerCase() === 'online' ? 'default' : 'outline'} className={agent.status.toLowerCase() === 'online' ? 'bg-green-500 text-white' : ''}>
+                      <span className={`inline-block w-2 h-2 mr-2 rounded-full ${agent.status.toLowerCase() === 'online' ? 'bg-white' : 'bg-gray-400'}`}></span>
                       {agent.status}
                     </Badge>
                   </TableCell>
-                  <TableCell onClick={() => handleViewReport(agent)} className="hidden lg:table-cell">{new Date(agent.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell onClick={() => handleViewReport(agent)} className="hidden lg:table-cell">{new Date(agent.joinedAt).toLocaleDateString()}</TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -296,6 +325,7 @@ export default function AgentsPage() {
               ))}
             </TableBody>
           </Table>
+          )}
         </CardContent>
         {totalPages > 1 && (
           <CardFooter className="flex justify-between">
