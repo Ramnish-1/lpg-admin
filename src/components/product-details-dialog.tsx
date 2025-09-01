@@ -46,12 +46,11 @@ export function ProductDetailsDialog({ product, isOpen, onOpenChange }: ProductD
         
         <div className="grid gap-4 py-4">
            {product.images && product.images.length > 0 && (
-              <Carousel className="w-full max-w-sm mx-auto">
-                <CarouselContent>
+              <Carousel className="w-full">
+                <CarouselContent className="-ml-2">
                   {product.images.map((img, index) => (
-                    <CarouselItem key={index}>
-                      <div className="p-1">
-                          <div className="relative aspect-square">
+                    <CarouselItem key={index} className="pl-2 basis-1/3 sm:basis-1/4 md:basis-1/5">
+                      <div className="relative aspect-square group">
                             <Image 
                               src={img.startsWith('http') ? img : `${API_BASE_URL}${img}`} 
                               alt={`${product.productName} image ${index + 1}`}
@@ -59,15 +58,14 @@ export function ProductDetailsDialog({ product, isOpen, onOpenChange }: ProductD
                               className="rounded-md object-cover"
                               data-ai-hint="gas cylinder"
                           />
-                          </div>
                       </div>
                     </CarouselItem>
                   ))}
                 </CarouselContent>
-                {product.images.length > 1 && (
+                {product.images.length > 5 && (
                   <>
-                    <CarouselPrevious className="ml-12"/>
-                    <CarouselNext className="mr-12"/>
+                    <CarouselPrevious />
+                    <CarouselNext />
                   </>
                 )}
               </Carousel>
