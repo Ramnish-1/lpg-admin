@@ -122,7 +122,7 @@ export default function AgentsPage() {
     });
 
     if (image) {
-      formData.append('image', image);
+      formData.append('profileImage', image);
     }
     
     try {
@@ -157,7 +157,7 @@ export default function AgentsPage() {
      });
      
      if (image) {
-       formData.append('image', image);
+       formData.append('profileImage', image);
      }
      
      formData.append('status', 'offline');
@@ -420,3 +420,4 @@ export default function AgentsPage() {
     </AppShell>
   );
 }
+
