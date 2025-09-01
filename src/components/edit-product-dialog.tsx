@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -53,9 +53,10 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpdate }: EditProductDialogProps) {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [imageFiles, setImageFiles] = useState<FileList | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -73,9 +74,17 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
         status: product.status.toLowerCase() as 'active' | 'inactive',
       });
       setImagePreviews(product.images.map(img => img.startsWith('http') ? img : `${API_BASE_URL}${img}`));
-      setImageFiles(null);
+      setImageFiles([]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }, [product, isOpen, form]);
+
+  const getFileList = (files: File[]): FileList | undefined => {
+    if (files.length === 0) return undefined;
+    const dt = new DataTransfer();
+    files.forEach(file => dt.items.add(file));
+    return dt.files;
+  }
   
   const handleSubmit = (values: ProductFormValues) => {
     const updatedProduct = {
@@ -84,15 +93,16 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
       status: values.status as 'active' | 'inactive',
       images: [], // Images are handled separately via FormData
     };
-    onProductUpdate(updatedProduct, imageFiles || undefined);
+    onProductUpdate(updatedProduct, getFileList(imageFiles));
   };
   
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-        setImageFiles(files);
-        const newPreviews = Array.from(files).map(file => URL.createObjectURL(file));
-        setImagePreviews(newPreviews);
+        const newFiles = Array.from(files);
+        // In edit mode, new image selections replace old selections
+        setImageFiles(newFiles);
+        setImagePreviews(newFiles.map(file => URL.createObjectURL(file)));
     }
   };
   
@@ -142,7 +152,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                       <div>
                         <FormLabel>Product Images</FormLabel>
                         <FormControl>
-                            <Input id="image-upload-edit" type="file" multiple onChange={handleImageChange} className="mt-2" accept="image/*"/>
+                            <Input ref={fileInputRef} id="image-upload-edit" type="file" multiple onChange={handleImageChange} className="mt-2" accept="image/*"/>
                         </FormControl>
                          {imagePreviews.length > 0 && (
                             <Carousel className="w-full mt-4">
@@ -157,7 +167,6 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                                                 className="rounded-md object-cover cursor-pointer"
                                                 onClick={() => openImageViewer(src)}
                                             />
-                                            {/* The remove button is disabled in edit mode to prevent accidental removal of existing images. A more robust solution would be needed to handle deletes. */}
                                         </div>
                                     </CarouselItem>
                                     ))}

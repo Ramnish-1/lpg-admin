@@ -20,7 +20,7 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { PlusCircle, Trash2, X } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
 import { ImageViewerDialog } from './image-viewer-dialog';
@@ -50,9 +50,10 @@ type ProductFormValues = z.infer<typeof productSchema>;
 
 export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProductDialogProps) {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [imageFiles, setImageFiles] = useState<FileList | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -69,19 +70,26 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     name: "variants"
   });
   
+  const getFileList = (files: File[]): FileList => {
+    const dt = new DataTransfer();
+    files.forEach(file => dt.items.add(file));
+    return dt.files;
+  }
+
   const handleSubmit = async (values: ProductFormValues) => {
-    if (!imageFiles || imageFiles.length === 0) {
+    if (imageFiles.length === 0) {
       form.setError("root", { message: "At least one image is required." });
       return;
     }
 
     const payload = { ...values, status: 'active' as const, images: [] };
-    const success = await onProductAdd(payload, imageFiles);
+    const success = await onProductAdd(payload, getFileList(imageFiles));
     
     if (success) {
       form.reset();
       setImagePreviews([]);
-      setImageFiles(null);
+      setImageFiles([]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       onOpenChange(false);
     }
   };
@@ -90,7 +98,8 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     if (!open) {
       form.reset();
       setImagePreviews([]);
-      setImageFiles(null);
+      setImageFiles([]);
+       if (fileInputRef.current) fileInputRef.current.value = "";
     }
     onOpenChange(open);
   }
@@ -98,23 +107,23 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-        setImageFiles(files);
-        const newPreviews = Array.from(files).map(file => URL.createObjectURL(file));
-        setImagePreviews(newPreviews);
+        const newFiles = Array.from(files);
+        const newFilePreviews = newFiles.map(file => URL.createObjectURL(file));
+
+        setImageFiles(prevFiles => [...prevFiles, ...newFiles]);
+        setImagePreviews(prevPreviews => [...prevPreviews, ...newFilePreviews]);
     }
   };
   
   const removeImage = (index: number) => {
-    const newPreviews = [...imagePreviews];
-    newPreviews.splice(index, 1);
-    setImagePreviews(newPreviews);
+    setImagePreviews(previews => previews.filter((_, i) => i !== index));
+    setImageFiles(files => files.filter((_, i) => i !== index));
 
-    if (imageFiles) {
-        const dt = new DataTransfer();
-        const files = Array.from(imageFiles);
-        files.splice(index, 1);
-        files.forEach(file => dt.items.add(file));
-        setImageFiles(dt.files);
+    // Reset the file input if all images are removed
+    if (imageFiles.length === 1) {
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     }
   }
   
@@ -165,7 +174,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                       <div>
                         <FormLabel>Product Images</FormLabel>
                         <FormControl>
-                            <Input id="image-upload" type="file" multiple onChange={handleImageChange} className="mt-2" accept="image/*"/>
+                            <Input ref={fileInputRef} id="image-upload" type="file" multiple onChange={handleImageChange} className="mt-2" accept="image/*"/>
                         </FormControl>
                         {imagePreviews.length > 0 && (
                             <Carousel className="w-full mt-4">
@@ -217,3 +226,4 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     </>
   );
 }
+
