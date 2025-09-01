@@ -108,7 +108,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return null; // or a loading spinner
   }
 
-  const displayPhotoUrl = profile.photoUrl ? `${API_BASE_URL}/uploads/${profile.photoUrl}` : '';
+  const displayPhotoUrl = profile.photoUrl.startsWith('https://') 
+    ? profile.photoUrl 
+    : profile.photoUrl ? `${API_BASE_URL}/${profile.photoUrl}` : '';
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">

@@ -31,10 +31,9 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!isFetchingProfile) {
       setName(profile.name);
-      // Construct the full URL for display if photoUrl is a relative path
-      setPhotoUrl(profile.photoUrl.startsWith('blob:') ? profile.photoUrl : (profile.photoUrl ? `${API_BASE_URL}/uploads/${profile.photoUrl}` : ''));
       setEmail(profile.email);
       setPhone(profile.phone);
+      setPhotoUrl(profile.photoUrl || '');
     }
   }, [profile, isFetchingProfile]);
 
@@ -69,6 +68,10 @@ export default function ProfilePage() {
       setPhotoUrl(newPhotoUrl);
     }
   };
+  
+  const displayPhotoUrl = photoUrl.startsWith('https://') || photoUrl.startsWith('blob:')
+    ? photoUrl
+    : photoUrl ? `${API_BASE_URL}/${photoUrl}` : '';
 
   if (isFetchingProfile) {
     return (
@@ -123,7 +126,7 @@ export default function ProfilePage() {
         <CardContent className="space-y-6">
           <div className="flex items-center gap-6">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={photoUrl} alt="@admin" data-ai-hint="manager portrait"/>
+              <AvatarImage src={displayPhotoUrl} alt="@admin" data-ai-hint="manager portrait"/>
               <AvatarFallback>{name?.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <Button variant="outline" onClick={handleChangePhotoClick}>Change Photo</Button>
@@ -142,7 +145,7 @@ export default function ProfilePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled />
+              <Input id="email" type="email" value={email} disabled />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
