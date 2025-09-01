@@ -91,9 +91,8 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
       ...product,
       ...values,
       status: values.status as 'active' | 'inactive',
-      // We send the original images that are left in the preview, and the new files.
-      // The backend will need to handle this. For now, we clear images and send new ones.
-      images: [],
+      // Send back remaining original images
+      images: imagePreviews.filter(p => !p.startsWith('blob:')),
     };
     onProductUpdate(updatedProduct, getFileList(imageFiles));
   };
@@ -104,9 +103,8 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
         const newFiles = Array.from(files);
         const newFilePreviews = newFiles.map(file => URL.createObjectURL(file));
 
-        // When editing, we replace the entire set of images with the new selection.
-        setImageFiles(newFiles);
-        setImagePreviews(newFilePreviews);
+        setImageFiles(prevFiles => [...prevFiles, ...newFiles]);
+        setImagePreviews(prevPreviews => [...prevPreviews, ...newFilePreviews]);
     }
   };
 
@@ -115,15 +113,15 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     setIsViewerOpen(true);
   };
   
-  const removeImage = (index: number) => {
+  const removeImage = (index: number, previewUrl: string) => {
     setImagePreviews(previews => previews.filter((_, i) => i !== index));
-    // This assumes that new file uploads will replace all images.
-    // If you add a file, it clears previews, so we only need to handle clearing files.
-    // To handle removing old and adding new is more complex.
-    // For now, we just clear the "new files" if they exist.
-    setImageFiles([]); 
-    if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+
+    // If it's a blob URL, it's a new file that needs to be removed from the files state
+    if (previewUrl.startsWith('blob:')) {
+        const fileIndexToRemove = imagePreviews.filter(p => p.startsWith('blob:')).findIndex(p => p === previewUrl);
+        if (fileIndexToRemove !== -1) {
+            setImageFiles(files => files.filter((_, i) => i !== fileIndexToRemove));
+        }
     }
   };
 
@@ -188,7 +186,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                                                 variant="destructive" 
                                                 size="icon" 
                                                 className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                                onClick={() => removeImage(index)}
+                                                onClick={() => removeImage(index, src)}
                                             >
                                                 <X className="h-4 w-4"/>
                                             </Button>
@@ -200,7 +198,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                                 <CarouselNext />
                             </Carousel>
                         )}
-                        <p className="text-xs text-muted-foreground mt-2">Uploading new images will replace all existing ones for this product.</p>
+                        <p className="text-xs text-muted-foreground mt-2">Uploading new images will be added to the existing ones.</p>
                       </div>
 
                   </div>
@@ -221,3 +219,5 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     </>
   );
 }
+
+    
