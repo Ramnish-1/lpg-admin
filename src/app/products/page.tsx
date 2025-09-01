@@ -57,7 +57,9 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
-    fetchProducts();
+    if (token) {
+        fetchProducts();
+    }
   }, [token]);
 
   const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
@@ -132,19 +134,27 @@ export default function ProductsPage() {
     }
   };
 
-  const handleProductUpdate = async (updatedProduct: Product) => {
+  const handleProductUpdate = async (updatedProduct: Product, images?: FileList) => {
     if(!token) return;
     
-    const { id, createdAt, updatedAt, ...payload } = updatedProduct;
+    const formData = new FormData();
+    formData.append('productName', updatedProduct.productName);
+    formData.append('description', updatedProduct.description);
+    formData.append('status', updatedProduct.status);
+    formData.append('lowStockThreshold', updatedProduct.lowStockThreshold.toString());
+    formData.append('variants', JSON.stringify(updatedProduct.variants));
+    
+    if (images) {
+      Array.from(images).forEach(file => {
+        formData.append('images', file);
+      });
+    }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/products/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/products/${updatedProduct.id}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(payload)
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData,
         });
         const result = await response.json();
         if (result.success) {
@@ -160,17 +170,25 @@ export default function ProductsPage() {
     }
   }
 
-  const handleProductAdd = async (newProduct: Omit<Product, 'id' | 'status'>): Promise<boolean> => {
+  const handleProductAdd = async (newProduct: Omit<Product, 'id'>, images: FileList): Promise<boolean> => {
     if(!token) return false;
+
+    const formData = new FormData();
+    formData.append('productName', newProduct.productName);
+    formData.append('description', newProduct.description);
+    formData.append('status', newProduct.status);
+    formData.append('lowStockThreshold', newProduct.lowStockThreshold.toString());
+    formData.append('variants', JSON.stringify(newProduct.variants));
+
+    Array.from(images).forEach(file => {
+        formData.append('images', file);
+    });
+
     try {
-        const payload = { ...newProduct, status: 'active' };
         const response = await fetch(`${API_BASE_URL}/api/products`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(payload)
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
         });
         const result = await response.json();
         if(result.success) {
@@ -215,9 +233,8 @@ export default function ProductsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Product Name</TableHead>
-                  <TableHead>Unit</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Stock</TableHead>
+                  <TableHead>Variants</TableHead>
+                  <TableHead>Total Stock</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>
                     <span className="sr-only">Actions</span>
@@ -226,7 +243,8 @@ export default function ProductsPage() {
               </TableHeader>
               <TableBody>
                 {paginatedProducts.map((product: Product) => {
-                  const isLowStock = product.stock < product.lowStockThreshold;
+                  const totalStock = product.variants.reduce((sum, v) => sum + v.stock, 0);
+                  const isLowStock = totalStock < product.lowStockThreshold;
                   return (
                     <TableRow 
                       key={product.id} 
@@ -235,11 +253,12 @@ export default function ProductsPage() {
                       })}
                     >
                       <TableCell className="font-medium" onClick={() => handleShowDetails(product)}>{product.productName}</TableCell>
-                      <TableCell onClick={() => handleShowDetails(product)}>{product.unit}</TableCell>
-                      <TableCell onClick={() => handleShowDetails(product)}>₹{Number(product.price).toLocaleString()}</TableCell>
+                      <TableCell onClick={() => handleShowDetails(product)}>
+                        {product.variants.length > 0 ? `${product.variants.length} variant(s)` : 'No variants'}
+                      </TableCell>
                       <TableCell onClick={() => handleShowDetails(product)}>
                         <div className="flex items-center gap-2">
-                          <span>{product.stock}</span>
+                          <span>{totalStock}</span>
                           {isLowStock && (
                             <Badge variant="destructive" className="flex items-center gap-1">
                               <AlertCircle className="h-3 w-3" /> Low

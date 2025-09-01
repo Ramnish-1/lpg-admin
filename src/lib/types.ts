@@ -15,19 +15,25 @@ export interface User {
   profileImage?: string | null;
 }
 
+export interface ProductVariant {
+  label: string; // e.g., '14.2kg', '5kg'
+  price: number;
+  stock: number;
+}
+
 export interface Product {
   id: string;
   productName: string;
   description: string;
-  price: number;
-  stock: number;
-  unit: string;
   status: 'active' | 'inactive' | 'Active' | 'Inactive';
   lowStockThreshold: number;
+  variants: ProductVariant[];
+  images: string[]; // URLs to images
   createdAt?: string;
   updatedAt?: string;
   history?: { date: Date; type: 'price_change' | 'stock_update', oldValue: number, newValue: number }[];
 }
+
 
 export interface AgentReport {
     totalDeliveries: number;
@@ -106,4 +112,3 @@ export interface Availability {
   saturday: DayAvailability;
   sunday: DayAvailability;
 }
-
