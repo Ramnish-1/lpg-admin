@@ -171,7 +171,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                             <Carousel className="w-full mt-4">
                                 <CarouselContent className="-ml-2">
                                     {imagePreviews.map((src, index) => (
-                                    <CarouselItem key={index} className="pl-2 basis-1/3 md:basis-1/4 lg:basis-1/5">
+                                    <CarouselItem key={index} className="pl-2 basis-1/3 sm:basis-1/4 md:basis-1/5">
                                         <div className="relative aspect-square group">
                                             <Image 
                                                 src={src} 
@@ -217,5 +217,3 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     </>
   );
 }
-
-    
