@@ -39,7 +39,7 @@ export default function ProfilePage() {
 
   const handleSaveChanges = async () => {
     setIsSaving(true);
-    const success = await setProfile({ name, email, phone, photoFile: photoFile || undefined });
+    const success = await setProfile({ name, email, phone, role: profile.role, photoFile: photoFile || undefined });
     if (success) {
         toast({
             title: 'Profile Updated',
