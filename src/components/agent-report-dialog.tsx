@@ -56,7 +56,7 @@ export function AgentReportDialog({ agent, isOpen, onOpenChange }: AgentReportDi
         <DialogHeader>
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
-                <AvatarImage src={`https://picsum.photos/seed/${agent.id}/100`} alt={agent.name} data-ai-hint="person portrait"/>
+                <AvatarImage src={agent.profileImage} alt={agent.name} data-ai-hint="person portrait"/>
                 <AvatarFallback>{agent.name.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>
