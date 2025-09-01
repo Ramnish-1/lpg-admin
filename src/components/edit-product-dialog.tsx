@@ -91,7 +91,9 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
       ...product,
       ...values,
       status: values.status as 'active' | 'inactive',
-      images: [], // Images are handled separately via FormData
+      // We send the original images that are left in the preview, and the new files.
+      // The backend will need to handle this. For now, we clear images and send new ones.
+      images: [],
     };
     onProductUpdate(updatedProduct, getFileList(imageFiles));
   };
@@ -100,15 +102,29 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     const files = event.target.files;
     if (files) {
         const newFiles = Array.from(files);
-        // In edit mode, new image selections replace old selections
+        const newFilePreviews = newFiles.map(file => URL.createObjectURL(file));
+
+        // When editing, we replace the entire set of images with the new selection.
         setImageFiles(newFiles);
-        setImagePreviews(newFiles.map(file => URL.createObjectURL(file)));
+        setImagePreviews(newFilePreviews);
     }
   };
-  
+
   const openImageViewer = (imageUrl: string) => {
     setSelectedImageUrl(imageUrl);
     setIsViewerOpen(true);
+  };
+  
+  const removeImage = (index: number) => {
+    setImagePreviews(previews => previews.filter((_, i) => i !== index));
+    // This assumes that new file uploads will replace all images.
+    // If you add a file, it clears previews, so we only need to handle clearing files.
+    // To handle removing old and adding new is more complex.
+    // For now, we just clear the "new files" if they exist.
+    setImageFiles([]); 
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
   };
 
 
@@ -167,6 +183,15 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                                                 className="rounded-md object-cover cursor-pointer"
                                                 onClick={() => openImageViewer(src)}
                                             />
+                                            <Button 
+                                                type="button" 
+                                                variant="destructive" 
+                                                size="icon" 
+                                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                onClick={() => removeImage(index)}
+                                            >
+                                                <X className="h-4 w-4"/>
+                                            </Button>
                                         </div>
                                     </CarouselItem>
                                     ))}
@@ -196,5 +221,3 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     </>
   );
 }
-
-    
