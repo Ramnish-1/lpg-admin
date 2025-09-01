@@ -42,31 +42,35 @@ export default function DashboardPage() {
     const fetchDashboardData = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/api/dashboard`, {
+        const [dashboardResponse, agentsResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/dashboard`, {
             headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const result = await response.json();
-        
-        const agentsResponse = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+          }),
+          fetch(`${API_BASE_URL}/api/delivery-agents`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+        ]);
+
+        const dashboardResult = await dashboardResponse.json();
         const agentsResult = await agentsResponse.json();
-        
+
         let totalAgents = 0;
         let activeAgents = 0;
-        if(agentsResult.success) {
+
+        if (agentsResult.success) {
           const agents: Agent[] = agentsResult.data.agents;
           totalAgents = agents.length;
           activeAgents = agents.filter(a => a.status.toLowerCase() === 'online').length;
+        } else {
+           toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch agent data.' });
         }
-
-
-        if (result.success) {
-          const { stats: dashboardStats, ordersByDay, recentOrders } = result.data;
+        
+        if (dashboardResult.success) {
+          const { stats: dashboardStats, ordersByDay, recentOrders } = dashboardResult.data;
           setStats({
             ...dashboardStats,
             totalAgents,
-            activeAgents
+            activeAgents,
           });
           setOrdersByDay(ordersByDay);
           setRecentOrders(recentOrders);
