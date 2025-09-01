@@ -142,7 +142,7 @@ export default function ProfilePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isSaving} />
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
