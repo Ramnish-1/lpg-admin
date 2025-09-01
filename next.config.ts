@@ -34,6 +34,12 @@ const nextConfig: NextConfig = {
         hostname: 'c5d511eb9159.ngrok-free.app',
         port: '',
         pathname: '/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
