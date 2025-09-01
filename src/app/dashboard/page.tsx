@@ -46,9 +46,28 @@ export default function DashboardPage() {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const result = await response.json();
+        
+        const agentsResponse = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const agentsResult = await agentsResponse.json();
+        
+        let totalAgents = 0;
+        let activeAgents = 0;
+        if(agentsResult.success) {
+          const agents: Agent[] = agentsResult.data.agents;
+          totalAgents = agents.length;
+          activeAgents = agents.filter(a => a.status.toLowerCase() === 'online').length;
+        }
+
+
         if (result.success) {
-          const { stats, ordersByDay, recentOrders } = result.data;
-          setStats(stats);
+          const { stats: dashboardStats, ordersByDay, recentOrders } = result.data;
+          setStats({
+            ...dashboardStats,
+            totalAgents,
+            activeAgents
+          });
           setOrdersByDay(ordersByDay);
           setRecentOrders(recentOrders);
         } else {
