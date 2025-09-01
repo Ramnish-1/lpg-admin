@@ -56,6 +56,7 @@ export interface Agent {
   joinedAt: Date;
   createdAt: Date;
   updatedAt: Date;
+  profileImage?: string;
   // Kept as optional since API doesn't provide it yet
   report?: AgentReport; 
   currentLocation?: { lat: number; lng: number };

@@ -27,6 +27,8 @@ import {
 import { AgentReportDialog } from '@/components/agent-report-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AuthContext } from '@/context/auth-context';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -109,17 +111,25 @@ export default function AgentsPage() {
     setIsReportDialogOpen(true);
   };
 
-  const handleAgentUpdate = async (updatedAgent: Agent) => {
-    if (!token) return;
+  const handleAgentUpdate = async (updatedAgent: Omit<Agent, 'id' | 'createdAt' | 'updatedAt' | 'joinedAt'>, agentId: string, image?: File) => {
+    if (!token) return false;
+    
+    const formData = new FormData();
+    Object.entries(updatedAgent).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, String(value));
+      }
+    });
+
+    if (image) {
+      formData.append('image', image);
+    }
+    
     try {
-      const { id, createdAt, joinedAt, updatedAt, report, ...payload } = updatedAgent;
-      const response = await fetch(`${API_BASE_URL}/api/delivery-agents/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/delivery-agents/${agentId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
       });
       const result = await response.json();
       if (result.success) {
@@ -127,29 +137,37 @@ export default function AgentsPage() {
         fetchAgents(); // Re-fetch agents
         setIsEditDialogOpen(false);
         setSelectedAgent(null);
+        return true;
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update agent.' });
+        return false;
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to update agent.' });
+      return false;
     }
   }
 
-  const handleAgentAdd = async (newAgent: Omit<Agent, 'id' | 'createdAt' | 'status' | 'report' | 'currentLocation' | 'vehicleDetails' | 'panCard' | 'aadharCard' | 'drivingLicense' | 'accountDetails' | 'updatedAt' | 'joinedAt' >): Promise<boolean> => {
+  const handleAgentAdd = async (newAgent: Omit<Agent, 'id' | 'createdAt' | 'updatedAt' | 'joinedAt'>, image?: File): Promise<boolean> => {
      if (!token) return false;
+
+     const formData = new FormData();
+     Object.entries(newAgent).forEach(([key, value]) => {
+        formData.append(key, String(value));
+     });
+     
+     if (image) {
+       formData.append('image', image);
+     }
+     
+     formData.append('status', 'offline');
+     formData.append('joinedAt', new Date().toISOString());
+
      try {
-        const payload = {
-            ...newAgent,
-            status: 'offline',
-            joinedAt: new Date().toISOString()
-        };
         const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(payload)
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData,
         });
         const result = await response.json();
         if (result.success) {
@@ -286,20 +304,22 @@ export default function AgentsPage() {
                       />
                   </TableCell>
                   <TableCell className="font-medium" onClick={() => handleViewReport(agent)} >
-                    <div className="font-medium">{agent.name}</div>
-                    <div className="text-sm text-muted-foreground flex items-center gap-2">
-                        <a href={`tel:${agent.phone}`} onClick={(e) => e.stopPropagation()} className="hover:underline flex items-center gap-1">
-                            {agent.phone}
-                        </a>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-green-500 hover:text-green-600 -ml-2" onClick={(e) => handleWhatsAppClick(e, agent.phone)}>
-                            <WhatsAppIcon className="h-4 w-4" />
-                        </Button>
-                    </div>
-                     <div className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Mail className="h-3.5 w-3.5"/>
-                        <a href={`mailto:${agent.email}`} onClick={(e) => e.stopPropagation()} className="hover:underline">
-                            {agent.email}
-                        </a>
+                    <div className="flex items-center gap-3">
+                       <Avatar className="h-10 w-10">
+                          <AvatarImage src={agent.profileImage} alt={agent.name} />
+                          <AvatarFallback>{agent.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{agent.name}</div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-2">
+                              <a href={`tel:${agent.phone}`} onClick={(e) => e.stopPropagation()} className="hover:underline flex items-center gap-1">
+                                  {agent.phone}
+                              </a>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 text-green-500 hover:text-green-600 -ml-2" onClick={(e) => handleWhatsAppClick(e, agent.phone)}>
+                                  <WhatsAppIcon className="h-4 w-4" />
+                              </Button>
+                          </div>
+                        </div>
                     </div>
                   </TableCell>
                   <TableCell onClick={() => handleViewReport(agent)} className="hidden sm:table-cell">{agent.vehicleNumber}</TableCell>

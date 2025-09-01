@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -19,14 +20,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Textarea } from './ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
-type NewAgentPayload = Omit<Agent, 'id' | 'joinedAt' | 'createdAt' | 'status' | 'report' | 'currentLocation' | 'updatedAt' | 'vehicleDetails' | 'panCard' | 'aadharCard' | 'drivingLicense' | 'accountDetails'>;
-
+type NewAgentPayload = Omit<Agent, 'id' | 'joinedAt' | 'createdAt' | 'status' | 'report' | 'currentLocation' | 'updatedAt' | 'vehicleDetails' | 'panCard' | 'aadharCard' | 'drivingLicense' | 'accountDetails' | 'profileImage'>;
 
 interface AddAgentDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onAgentAdd: (agent: NewAgentPayload) => Promise<boolean>;
+  onAgentAdd: (agent: NewAgentPayload, image?: File) => Promise<boolean>;
 }
 
 const agentSchema = z.object({
@@ -43,158 +44,85 @@ const agentSchema = z.object({
 type AgentFormValues = z.infer<typeof agentSchema>;
 
 export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDialogProps) {
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const form = useForm<AgentFormValues>({
     resolver: zodResolver(agentSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
-      vehicleNumber: '',
-      panCardNumber: '',
-      aadharCardNumber: '',
-      drivingLicence: '',
-      bankDetails: '',
+      name: '', email: '', phone: '', vehicleNumber: '',
+      panCardNumber: '', aadharCardNumber: '', drivingLicence: '', bankDetails: '',
     }
   });
 
+  const resetForm = () => {
+    form.reset();
+    setImagePreview(null);
+    setImageFile(null);
+    if(fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   const handleSubmit = async (values: AgentFormValues) => {
-    const success = await onAgentAdd(values);
+    const success = await onAgentAdd(values, imageFile || undefined);
     if (success) {
-      form.reset();
+      resetForm();
       onOpenChange(false);
     }
   };
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      form.reset();
+      resetForm();
     }
     onOpenChange(open);
   }
 
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[480px] grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh] p-0">
+      <DialogContent className="sm:max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh] p-0">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>Add New Agent</DialogTitle>
+          <DialogDescription>Fill in the details below to add a new delivery agent.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} noValidate className="overflow-hidden flex flex-col h-full">
-             <ScrollArea className="flex-1 px-6">
-              <div className="grid gap-4 py-4 ">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. John Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="e.g. john.doe@example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. 9876543210" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="vehicleNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Vehicle Number</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. KA-01-AB-1234" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="panCardNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>PAN Card</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="e.g. ABCDE1234F" 
-                          {...field}
-                          onChange={(e) => {
-                            const upperValue = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                            field.onChange(upperValue);
-                          }}
-                          maxLength={10}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="aadharCardNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Aadhar Card Number</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. 1234 5678 9012" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="drivingLicence"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Driving License</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. DL1420110012345" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="bankDetails"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Bank Account Details</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="e.g. State Bank of India&#10;Account: 1234567890&#10;IFSC: SBIN0001234" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+             <ScrollArea className="flex-1">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-6 py-4">
+                  <div className="md:col-span-1 space-y-4">
+                      <FormItem>
+                        <FormLabel>Profile Photo</FormLabel>
+                        <FormControl>
+                          <>
+                            <Avatar className="h-32 w-32 mx-auto cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                              <AvatarImage src={imagePreview || undefined} alt="Agent photo" />
+                              <AvatarFallback>{form.watch('name')?.charAt(0) || 'A'}</AvatarFallback>
+                            </Avatar>
+                            <input ref={fileInputRef} type="file" className="hidden" onChange={handleImageChange} accept="image/*" />
+                          </>
+                        </FormControl>
+                         <p className="text-xs text-muted-foreground text-center">Click avatar to upload image</p>
+                      </FormItem>
+                      <FormField control={form.control} name="vehicleNumber" render={({ field }) => (<FormItem><FormLabel>Vehicle Number</FormLabel><FormControl><Input placeholder="e.g. KA-01-AB-1234" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  </div>
+                  <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="e.g. John Doe" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input placeholder="e.g. 9876543210" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="e.g. john.doe@example.com" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="panCardNumber" render={({ field }) => (<FormItem><FormLabel>PAN Card</FormLabel><FormControl><Input placeholder="e.g. ABCDE1234F" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} maxLength={10} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="aadharCardNumber" render={({ field }) => (<FormItem><FormLabel>Aadhar Card Number</FormLabel><FormControl><Input placeholder="e.g. 1234 5678 9012" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="drivingLicence" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Driving License</FormLabel><FormControl><Input placeholder="e.g. DL1420110012345" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="bankDetails" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Bank Account Details</FormLabel><FormControl><Textarea placeholder="e.g. State Bank of India, Account: 1234567890, IFSC: SBIN0001234" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  </div>
+                </div>
             </ScrollArea>
             <DialogFooter className="p-6 pt-4 border-t bg-muted/40">
               <DialogClose asChild>
