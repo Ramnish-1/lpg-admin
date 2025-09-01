@@ -18,7 +18,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
-import { PlusCircle, Trash2, X } from 'lucide-react';
+import { PlusCircle, Trash2, X, ImagePlus } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { useState, useRef } from 'react';
 import Image from 'next/image';
@@ -116,11 +116,16 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
   };
   
   const removeImage = (index: number) => {
-    setImagePreviews(previews => previews.filter((_, i) => i !== index));
-    setImageFiles(files => files.filter((_, i) => i !== index));
+    const newPreviews = [...imagePreviews];
+    newPreviews.splice(index, 1);
+    setImagePreviews(newPreviews);
+
+    const newFiles = [...imageFiles];
+    newFiles.splice(index, 1);
+    setImageFiles(newFiles);
 
     // Reset the file input if all images are removed
-    if (imageFiles.length === 1) {
+    if (newFiles.length === 0) {
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
@@ -172,41 +177,50 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                       </div>
 
                       <div>
-                        <FormLabel>Product Images</FormLabel>
-                        <FormControl>
-                            <Input ref={fileInputRef} id="image-upload" type="file" multiple onChange={handleImageChange} className="mt-2" accept="image/*"/>
-                        </FormControl>
-                        {imagePreviews.length > 0 && (
-                            <Carousel className="w-full mt-4">
-                                <CarouselContent className="-ml-2">
-                                    {imagePreviews.map((src, index) => (
-                                    <CarouselItem key={index} className="pl-2 basis-1/3 sm:basis-1/4 md:basis-1/5">
-                                        <div className="relative aspect-square group">
-                                            <Image 
-                                                src={src} 
-                                                alt={`Preview ${index + 1}`} 
-                                                layout="fill" 
-                                                className="rounded-md object-cover cursor-pointer"
-                                                onClick={() => openImageViewer(src)}
-                                            />
-                                            <Button 
-                                                type="button" 
-                                                variant="destructive" 
-                                                size="icon" 
-                                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                                onClick={() => removeImage(index)}
-                                            >
-                                                <X className="h-4 w-4"/>
-                                            </Button>
-                                        </div>
-                                    </CarouselItem>
-                                    ))}
-                                </CarouselContent>
-                                <CarouselPrevious />
-                                <CarouselNext />
-                            </Carousel>
-                        )}
-                        <FormMessage>{form.formState.errors.root?.message}</FormMessage>
+                          <FormLabel>Product Images</FormLabel>
+                          <FormControl>
+                            <>
+                              <input ref={fileInputRef} id="image-upload" type="file" multiple onChange={handleImageChange} className="hidden" accept="image/*"/>
+                              <div
+                                className="mt-2 flex justify-center items-center flex-col w-full h-32 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted/50"
+                                onClick={() => fileInputRef.current?.click()}
+                              >
+                                <ImagePlus className="h-8 w-8 text-muted-foreground"/>
+                                <p className="text-sm text-muted-foreground mt-2">Click or drag to add images</p>
+                              </div>
+                            </>
+                          </FormControl>
+                          {imagePreviews.length > 0 && (
+                              <Carousel className="w-full mt-4">
+                                  <CarouselContent className="-ml-2">
+                                      {imagePreviews.map((src, index) => (
+                                      <CarouselItem key={index} className="pl-2 basis-1/3 sm:basis-1/4 md:basis-1/5">
+                                          <div className="relative aspect-square group">
+                                              <Image 
+                                                  src={src} 
+                                                  alt={`Preview ${index + 1}`} 
+                                                  fill
+                                                  className="rounded-md object-cover cursor-pointer"
+                                                  onClick={() => openImageViewer(src)}
+                                              />
+                                              <Button 
+                                                  type="button" 
+                                                  variant="destructive" 
+                                                  size="icon" 
+                                                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                                  onClick={(e) => { e.stopPropagation(); removeImage(index);}}
+                                              >
+                                                  <X className="h-4 w-4"/>
+                                              </Button>
+                                          </div>
+                                      </CarouselItem>
+                                      ))}
+                                  </CarouselContent>
+                                  <CarouselPrevious />
+                                  <CarouselNext />
+                              </Carousel>
+                          )}
+                          <FormMessage>{form.formState.errors.root?.message}</FormMessage>
                       </div>
                   </div>
               </ScrollArea>
@@ -226,4 +240,3 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     </>
   );
 }
-

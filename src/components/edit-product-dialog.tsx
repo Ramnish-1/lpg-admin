@@ -20,7 +20,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { PlusCircle, Trash2, X } from 'lucide-react';
+import { PlusCircle, Trash2, X, ImagePlus } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
@@ -113,15 +113,17 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     setIsViewerOpen(true);
   };
   
-  const removeImage = (index: number, previewUrl: string) => {
-    setImagePreviews(previews => previews.filter((_, i) => i !== index));
+  const removeImage = (indexToRemove: number) => {
+    const previewUrl = imagePreviews[indexToRemove];
+
+    setImagePreviews(previews => previews.filter((_, i) => i !== indexToRemove));
 
     // If it's a blob URL, it's a new file that needs to be removed from the files state
     if (previewUrl.startsWith('blob:')) {
-        const fileIndexToRemove = imagePreviews.filter(p => p.startsWith('blob:')).findIndex(p => p === previewUrl);
-        if (fileIndexToRemove !== -1) {
-            setImageFiles(files => files.filter((_, i) => i !== fileIndexToRemove));
-        }
+      const blobIndex = imagePreviews.filter(p => p.startsWith('blob:')).findIndex(p => p === previewUrl);
+      if (blobIndex !== -1) {
+        setImageFiles(files => files.filter((_, i) => i !== blobIndex));
+      }
     }
   };
 
@@ -165,9 +167,18 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
 
                       <div>
                         <FormLabel>Product Images</FormLabel>
-                        <FormControl>
-                            <Input ref={fileInputRef} id="image-upload-edit" type="file" multiple onChange={handleImageChange} className="mt-2" accept="image/*"/>
-                        </FormControl>
+                          <FormControl>
+                            <>
+                              <input ref={fileInputRef} id="image-upload-edit" type="file" multiple onChange={handleImageChange} className="hidden" accept="image/*"/>
+                              <div
+                                className="mt-2 flex justify-center items-center flex-col w-full h-32 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted/50"
+                                onClick={() => fileInputRef.current?.click()}
+                              >
+                                <ImagePlus className="h-8 w-8 text-muted-foreground"/>
+                                <p className="text-sm text-muted-foreground mt-2">Click or drag to add images</p>
+                              </div>
+                            </>
+                          </FormControl>
                          {imagePreviews.length > 0 && (
                             <Carousel className="w-full mt-4">
                                 <CarouselContent className="-ml-2">
@@ -177,7 +188,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                                             <Image 
                                                 src={src} 
                                                 alt={`Preview ${index + 1}`} 
-                                                layout="fill" 
+                                                fill
                                                 className="rounded-md object-cover cursor-pointer"
                                                 onClick={() => openImageViewer(src)}
                                             />
@@ -185,8 +196,8 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                                                 type="button" 
                                                 variant="destructive" 
                                                 size="icon" 
-                                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                                onClick={() => removeImage(index, src)}
+                                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                                onClick={(e) => { e.stopPropagation(); removeImage(index);}}
                                             >
                                                 <X className="h-4 w-4"/>
                                             </Button>
@@ -198,7 +209,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                                 <CarouselNext />
                             </Carousel>
                         )}
-                        <p className="text-xs text-muted-foreground mt-2">Uploading new images will be added to the existing ones.</p>
+                        <p className="text-xs text-muted-foreground mt-2">Add new images or remove existing ones.</p>
                       </div>
 
                   </div>
@@ -219,5 +230,3 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     </>
   );
 }
-
-    
