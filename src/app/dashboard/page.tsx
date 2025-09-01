@@ -8,8 +8,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { getDashboardData, getRecentOrders } from '@/lib/data';
-import { Users, ShoppingCart, Truck, IndianRupee } from 'lucide-react';
+import { Users, ShoppingCart, Truck, IndianRupee, Loader2 } from 'lucide-react';
 import type { Order, Agent } from '@/lib/types';
 import { DashboardChart } from '@/components/dashboard-chart';
 import { UserHoverCard } from '@/components/user-hover-card';
@@ -24,6 +23,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export default function DashboardPage() {
   const { token } = useContext(AuthContext);
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalOrders: 0,
@@ -33,53 +33,36 @@ export default function DashboardPage() {
   });
   const [ordersByDay, setOrdersByDay] = useState<{ day: string; orders: number }[]>([]);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
-  const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
+    if (!token) return;
 
-  useEffect(() => {
-    if (!isClient || !token) return;
-
-    const fetchAgents = async () => {
+    const fetchDashboardData = async () => {
+      setIsLoading(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
+        const response = await fetch(`${API_BASE_URL}/api/dashboard`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const result = await response.json();
         if (result.success) {
-          const agentData = result.data.agents;
-          setAgents(agentData);
-          return agentData;
+          const { stats, ordersByDay, recentOrders } = result.data;
+          setStats(stats);
+          setOrdersByDay(ordersByDay);
+          setRecentOrders(recentOrders);
         } else {
-          toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch agent data for dashboard.' });
-          return [];
+          toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch dashboard data.' });
         }
       } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch agent data for dashboard.' });
-        return [];
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch dashboard data.' });
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    const fetchDashboardData = async () => {
-      try {
-        const agentData = await fetchAgents();
-        const { stats: fetchedStats, ordersByDay: fetchedOrdersByDay } = await getDashboardData(agentData);
-        setStats(fetchedStats);
-        setOrdersByDay(fetchedOrdersByDay);
-        const fetchedRecentOrders = await getRecentOrders();
-        setRecentOrders(fetchedRecentOrders);
-      } catch (error) {
-        console.error("Failed to load dashboard data", error);
-      }
-    };
-
     fetchDashboardData();
-  }, [isClient, token, toast]);
+  }, [token, toast]);
 
   const handleShowDetails = (order: Order) => {
     setSelectedOrder(order);
@@ -93,8 +76,15 @@ export default function DashboardPage() {
     'Cancelled': 'destructive',
   };
   
-  if (!isClient) {
-    return null;
+  if (isLoading) {
+    return (
+        <AppShell>
+            <PageHeader title="Dashboard" />
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        </AppShell>
+    )
   }
 
   return (
@@ -111,7 +101,6 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats.totalUsers}</div>
-                  <p className="text-xs text-muted-foreground">+2% from last month</p>
                 </CardContent>
               </Card>
             </UserHoverCard>
@@ -125,7 +114,6 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats.totalOrders}</div>
-                  <p className="text-xs text-muted-foreground">+15% from last month</p>
                 </CardContent>
               </Card>
             </OrderHoverCard>

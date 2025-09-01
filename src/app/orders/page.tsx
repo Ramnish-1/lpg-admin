@@ -9,10 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MoreHorizontal, FileDown, ChevronDown, Search } from 'lucide-react';
-import { getOrdersData, getAgentsData } from '@/lib/data';
+import { MoreHorizontal, FileDown, ChevronDown, Search, Loader2 } from 'lucide-react';
 import type { Order, Agent } from '@/lib/types';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useContext } from 'react';
 import { OrderDetailsDialog } from '@/components/order-details-dialog';
 import { AssignAgentDialog } from '@/components/assign-agent-dialog';
 import { CancelOrderDialog } from '@/components/cancel-order-dialog';
@@ -20,8 +19,10 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { ReturnOrderDialog } from '@/components/return-order-dialog';
 import { Input } from '@/components/ui/input';
+import { AuthContext } from '@/context/auth-context';
 
 const ITEMS_PER_PAGE = 10;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   'Delivered': 'default',
@@ -185,6 +186,7 @@ function OrdersTable({
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -192,70 +194,58 @@ export default function OrdersPage() {
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isReturnOpen, setIsReturnOpen] = useState(false);
-  const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
+  const { token } = useContext(AuthContext);
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isClient) return;
-    const fetchOrders = async () => {
-        try {
-            const data = await getOrdersData();
-            const parsedOrders = data.map((o: any) => ({
-                ...o,
-                createdAt: new Date(o.createdAt),
-            }));
-            setOrders(parsedOrders);
-            setFilteredOrders(parsedOrders);
-        } catch (error) {
-            console.error("Failed to load orders", error);
-            toast({
-                variant: 'destructive',
-                title: 'Failed to load orders',
-                description: 'Could not fetch order data. Please try again later.'
-            });
-        }
-    };
-    const fetchAgents = async () => {
-       try {
-        const data = await getAgentsData();
-        const parsedAgents = data.map((a: any) => ({
-          ...a,
-          createdAt: new Date(a.createdAt),
-        }));
-        setAgents(parsedAgents);
-      } catch (error) {
-        console.error("Failed to load agents", error);
-        toast({
-            variant: 'destructive',
-            title: 'Failed to load agents',
-            description: 'Could not fetch agent data. Please try again later.'
+  const fetchOrders = async () => {
+    if (!token) return;
+    setIsLoading(true);
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/orders`, {
+          headers: { 'Authorization': `Bearer ${token}` }
         });
-      }
-    };
-    fetchOrders();
-    fetchAgents();
-  }, [isClient, toast]);
-  
-  const updateOrdersState = (newOrders: Order[]) => {
-    setOrders(newOrders);
-    
-    // Also update filtered orders based on the current search term
-    const searchTerm = (document.querySelector('input[placeholder="Search by customer or agent..."]') as HTMLInputElement)?.value || '';
-    if (searchTerm) {
-        const filtered = newOrders.filter(o =>
-            o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (o.agentName && o.agentName.toLowerCase().includes(searchTerm.toLowerCase()))
-        );
-        setFilteredOrders(filtered);
-    } else {
-        setFilteredOrders(newOrders);
+        const result = await response.json();
+        if (result.success) {
+           const parsedOrders = result.data.orders.map((o: any) => ({
+              ...o,
+              createdAt: new Date(o.createdAt),
+          }));
+          setOrders(parsedOrders);
+          setFilteredOrders(parsedOrders);
+        } else {
+           toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch orders.' });
+        }
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch orders.' });
+    } finally {
+        setIsLoading(false);
     }
   };
-  
+
+  const fetchAgents = async () => {
+    if (!token) return;
+     try {
+       const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+       });
+       const result = await response.json();
+       if(result.success) {
+         setAgents(result.data.agents);
+       } else {
+         toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch agents.' });
+       }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch agents.' });
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      fetchOrders();
+      fetchAgents();
+    }
+  }, [token]);
+
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     const searchTerm = event.target.value.toLowerCase();
     const filtered = orders.filter(order =>
@@ -286,63 +276,123 @@ export default function OrdersPage() {
     setIsReturnOpen(true);
   };
 
-  const handleAgentAssigned = (orderId: string, agentId: string) => {
-    const agent = agents.find(a => a.id === agentId);
-    if (agent) {
-        const newOrders = orders.map(o => 
-            o.id === orderId 
-            ? { ...o, assignedAgentId: agentId, agentName: agent.name, agentPhone: agent.phone, status: 'In-progress' as const } 
-            : o
-        );
-        updateOrdersState(newOrders);
-        toast({
-          title: "Agent Assigned",
-          description: `${agent.name} has been assigned to order #${orderId.slice(0, 6)}. Status updated to In-progress.`,
+  const handleAgentAssigned = async (orderId: string, agentId: string) => {
+    if (!token) return;
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/assign-agent`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ agentId })
         });
+        const result = await response.json();
+        if (result.success) {
+            toast({
+              title: "Agent Assigned",
+              description: `${result.data.order.agentName} has been assigned. Status updated to In-progress.`,
+            });
+            fetchOrders();
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to assign agent.' });
+        }
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to assign agent.' });
     }
   };
 
-  const handleStatusChange = (order: Order, newStatus: Order['status']) => {
+  const handleStatusChange = async (order: Order, newStatus: Order['status']) => {
     if (order.status === newStatus) return;
     
     if (newStatus === 'Cancelled' && order.status !== 'Cancelled') {
       handleCancelOrder(order);
       return;
     }
+    
+    if (!token) return;
 
-    const newOrders = orders.map(o => o.id === order.id ? { ...o, status: newStatus } : o);
-    updateOrdersState(newOrders);
-    toast({
-      title: 'Order Status Updated',
-      description: `Order #${order.id.slice(0,6)} has been marked as ${newStatus}.`
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/orders/${order.id}/status`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const result = await response.json();
+      if (result.success) {
+        toast({
+          title: 'Order Status Updated',
+          description: `Order #${order.id.slice(0,6)} has been marked as ${newStatus}.`
+        });
+        fetchOrders();
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
+      }
+    } catch (error) {
+       toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
+    }
   }
   
-  const confirmCancelOrder = (reason: string) => {
-    if (selectedOrder) {
-      const newOrders = orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'Cancelled' as const, cancellationReason: reason } : o);
-      updateOrdersState(newOrders);
-      toast({
-        title: 'Order Cancelled',
-        description: `Order #${selectedOrder.id.slice(0,6)} has been cancelled.`,
-        variant: 'destructive'
-      });
-      setIsCancelOpen(false);
-      setSelectedOrder(null);
+  const confirmCancelOrder = async (reason: string) => {
+    if (selectedOrder && token) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/orders/${selectedOrder.id}/cancel`, {
+          method: 'PATCH',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ cancellationReason: reason })
+        });
+        const result = await response.json();
+        if(result.success) {
+          toast({
+            title: 'Order Cancelled',
+            description: `Order #${selectedOrder.id.slice(0,6)} has been cancelled.`,
+            variant: 'destructive'
+          });
+          fetchOrders();
+          setIsCancelOpen(false);
+          setSelectedOrder(null);
+        } else {
+           toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to cancel order.' });
+        }
+      } catch (error) {
+         toast({ variant: 'destructive', title: 'Error', description: 'Failed to cancel order.' });
+      }
     }
   };
 
-  const confirmReturnOrder = (reason: string) => {
-    if (selectedOrder) {
-      const newOrders = orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'Returned' as const, returnReason: reason } : o);
-      updateOrdersState(newOrders);
-      toast({
-        title: 'Order Returned',
-        description: `Order #${selectedOrder.id.slice(0,6)} has been marked as returned.`,
-        variant: 'destructive'
-      });
-      setIsReturnOpen(false);
-      setSelectedOrder(null);
+  const confirmReturnOrder = async (reason: string) => {
+     if (selectedOrder && token) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/orders/${selectedOrder.id}/return`, {
+          method: 'PATCH',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ returnReason: reason })
+        });
+        const result = await response.json();
+        if(result.success) {
+          toast({
+            title: 'Order Returned',
+            description: `Order #${selectedOrder.id.slice(0,6)} has been marked as returned.`,
+            variant: 'destructive'
+          });
+          fetchOrders();
+          setIsReturnOpen(false);
+          setSelectedOrder(null);
+        } else {
+           toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to return order.' });
+        }
+      } catch (error) {
+         toast({ variant: 'destructive', title: 'Error', description: 'Failed to return order.' });
+      }
     }
   };
 
@@ -382,10 +432,6 @@ export default function OrdersPage() {
     link.click();
     document.body.removeChild(link);
   }
-  
-  if (!isClient) {
-    return null;
-  }
 
 
   return (
@@ -409,6 +455,11 @@ export default function OrdersPage() {
           </Button>
         </div>
       </PageHeader>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      ) : (
       <Tabs defaultValue="Pending">
         <div className="overflow-x-auto">
           <TabsList className="bg-transparent p-0 border-b h-auto rounded-none">
@@ -451,6 +502,7 @@ export default function OrdersPage() {
           </TabsContent>
         ))}
       </Tabs>
+      )}
       
       {selectedOrder && <OrderDetailsDialog order={selectedOrder} isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} />}
       {selectedOrder && <AssignAgentDialog order={selectedOrder} isOpen={isAssignOpen} onOpenChange={setIsAssignOpen} onAgentAssigned={handleAgentAssigned} agents={agents} />}

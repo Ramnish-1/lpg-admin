@@ -8,11 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, FileDown } from 'lucide-react';
-import { getUsersData } from '@/lib/data';
+import { MoreHorizontal, FileDown, Loader2 } from 'lucide-react';
 import type { User } from '@/lib/types';
 import { Input } from '@/components/ui/input';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useContext } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -25,12 +24,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { UserDetailsDialog } from '@/components/user-details-dialog';
+import { AuthContext } from '@/context/auth-context';
 
 
 const ITEMS_PER_PAGE = 10;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 
 export default function CustomersPage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [action, setAction] = useState<'Block' | 'Unblock' | null>(null);
@@ -38,24 +41,43 @@ export default function CustomersPage() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
+  const { token } = useContext(AuthContext);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const data = await getUsersData();
-        setUsers(data);
-        setFilteredUsers(data);
-      } catch (error) {
-        console.error("Failed to load users", error);
+  const fetchUsers = async () => {
+    if (!token) return;
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setUsers(result.data.users);
+        setFilteredUsers(result.data.users);
+      } else {
         toast({
-            variant: 'destructive',
-            title: 'Failed to load customers',
-            description: 'Could not fetch customer data. Please try again later.'
+          variant: 'destructive',
+          title: 'Failed to load customers',
+          description: result.message || 'Could not fetch customer data. Please try again later.'
         });
       }
-    };
-    fetchUsers();
-  }, [toast]);
+    } catch (error) {
+      console.error("Failed to load users", error);
+      toast({
+        variant: 'destructive',
+        title: 'Failed to load customers',
+        description: 'Could not fetch customer data. Please try again later.'
+      });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      fetchUsers();
+    }
+  }, [token]);
   
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
 
@@ -66,7 +88,7 @@ export default function CustomersPage() {
   }, [filteredUsers, currentPage]);
 
 
-  const updateUsersStateAndStorage = (newUsers: User[]) => {
+  const updateUsersState = (newUsers: User[]) => {
     setUsers(newUsers);
     const currentSearchTerm = (document.querySelector('input[placeholder="Search customers..."]') as HTMLInputElement)?.value || '';
     if (currentSearchTerm) {
@@ -92,32 +114,38 @@ export default function CustomersPage() {
     setFilteredUsers(filtered);
   };
 
-  const handleAction = (user: User, userAction: 'Block' | 'Unblock') => {
-    setSelectedUser(user);
-    setAction(userAction);
-    setIsConfirmOpen(true);
+  const handleAction = async (user: User, userAction: 'Block' | 'Unblock') => {
+    if (!token) return;
+    const newStatus = userAction === 'Block' ? 'Blocked' : 'Active';
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/users/${user.id}/status`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+        const result = await response.json();
+        if (result.success) {
+            toast({
+                title: `Customer ${userAction}ed`,
+                description: `${user.name} has been ${userAction.toLowerCase()}ed.`,
+                variant: userAction === 'Block' ? 'destructive' : 'default',
+            });
+            fetchUsers();
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.error || `Failed to ${userAction.toLowerCase()} customer.` });
+        }
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: `Failed to ${userAction.toLowerCase()} customer.` });
+    }
   };
 
   const handleShowDetails = (user: User) => {
     setSelectedUser(user);
     setIsDetailsOpen(true);
-  }
-  
-  const confirmAction = () => {
-    if (selectedUser && action) {
-      const newStatus = action === 'Block' ? 'Blocked' : 'Active';
-      const updatedUsers = users.map(u => u.id === selectedUser.id ? { ...u, status: newStatus } : u)
-      updateUsersStateAndStorage(updatedUsers);
-
-      toast({
-        title: `Customer ${action === 'Block' ? 'Blocked' : 'Unblocked'}`,
-        description: `${selectedUser.name} has been ${action.toLowerCase()}ed.`,
-        variant: action === 'Block' ? 'destructive' : 'default',
-      });
-      setIsConfirmOpen(false);
-      setSelectedUser(null);
-      setAction(null);
-    }
   }
 
   const handleAddressClick = (e: React.MouseEvent, address: string) => {
@@ -177,64 +205,70 @@ export default function CustomersPage() {
             </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead className="hidden md:table-cell">Contact</TableHead>
-                  <TableHead className="hidden sm:table-cell">Status</TableHead>
-                  <TableHead className="hidden lg:table-cell">Registered On</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedUsers.map((user: User) => (
-                  <TableRow key={user.id} onClick={() => handleShowDetails(user)} className="cursor-pointer">
-                    <TableCell>
-                      <div className="font-medium">{user.name}</div>
-                      <div 
-                        className="text-sm text-muted-foreground hover:underline md:hidden"
-                        onClick={(e) => handleAddressClick(e, user.address)}
-                      >
-                        {user.address}
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <a href={`tel:${user.phone}`} onClick={(e) => e.stopPropagation()} className="font-medium hover:underline">{user.phone}</a>
-                      <div className="text-sm text-muted-foreground">
-                        <a href={`mailto:${user.email}`} onClick={(e) => e.stopPropagation()} className="hover:underline">{user.email}</a>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge variant={user.status === 'Active' ? 'secondary' : 'destructive'}>{user.status}</Badge>
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleShowDetails(user)}>View Details</DropdownMenuItem>
-                          {user.status === 'Active' ? (
-                            <DropdownMenuItem className="text-destructive" onClick={() => handleAction(user, 'Block')}>Block</DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem onClick={() => handleAction(user, 'Unblock')}>Unblock</DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+          {isLoading ? (
+             <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Customer</TableHead>
+                    <TableHead className="hidden md:table-cell">Contact</TableHead>
+                    <TableHead className="hidden sm:table-cell">Status</TableHead>
+                    <TableHead className="hidden lg:table-cell">Registered On</TableHead>
+                    <TableHead>
+                      <span className="sr-only">Actions</span>
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {paginatedUsers.map((user: User) => (
+                    <TableRow key={user.id} onClick={() => handleShowDetails(user)} className="cursor-pointer">
+                      <TableCell>
+                        <div className="font-medium">{user.name}</div>
+                        <div 
+                          className="text-sm text-muted-foreground hover:underline md:hidden"
+                          onClick={(e) => handleAddressClick(e, user.address)}
+                        >
+                          {user.address}
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <a href={`tel:${user.phone}`} onClick={(e) => e.stopPropagation()} className="font-medium hover:underline">{user.phone}</a>
+                        <div className="text-sm text-muted-foreground">
+                          <a href={`mailto:${user.email}`} onClick={(e) => e.stopPropagation()} className="hover:underline">{user.email}</a>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <Badge variant={user.status === 'Active' ? 'secondary' : 'destructive'}>{user.status}</Badge>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleShowDetails(user)}>View Details</DropdownMenuItem>
+                            {user.status === 'Active' ? (
+                              <DropdownMenuItem className="text-destructive" onClick={() => handleAction(user, 'Block')}>Block</DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem onClick={() => handleAction(user, 'Unblock')}>Unblock</DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
          {totalPages > 1 && (
           <CardFooter className="flex justify-between">
@@ -266,23 +300,6 @@ export default function CustomersPage() {
         )}
       </Card>
       
-      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to {action?.toLowerCase()} this customer?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action can be reversed later.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmAction} className={action === 'Block' ? 'bg-destructive hover:bg-destructive/90' : ''}>
-              Confirm
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       <UserDetailsDialog user={selectedUser} isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} />
 
     </AppShell>

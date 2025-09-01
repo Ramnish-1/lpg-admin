@@ -7,46 +7,72 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getPaymentsData, getPaymentMethodsData } from '@/lib/data';
 import type { Payment, PaymentMethod } from '@/lib/types';
-import { IndianRupee, MoreHorizontal } from 'lucide-react';
-import { useEffect, useState, useMemo } from 'react';
+import { IndianRupee, MoreHorizontal, Loader2 } from 'lucide-react';
+import { useEffect, useState, useMemo, useContext } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { EditPaymentMethodDialog } from '@/components/edit-payment-method-dialog';
+import { AuthContext } from '@/context/auth-context';
 
 
 const ITEMS_PER_PAGE = 10;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
+  const { token } = useContext(AuthContext);
+
+  const fetchPayments = async () => {
+    if (!token) return;
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/payments`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setPayments(result.data.payments);
+      } else {
+         toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch payments.' });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch payments.' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchMethods = async () => {
+    if (!token) return;
+     try {
+       const response = await fetch(`${API_BASE_URL}/api/payment-methods`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setPaymentMethods(result.data.methods);
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch payment methods.' });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch payment methods.' });
+    }
+  }
 
   useEffect(() => {
-    const fetchPayments = async () => {
-      try {
-        setPayments(await getPaymentsData());
-      } catch (e) {
-        setPayments(await getPaymentsData());
-      }
-    };
-    
-    const fetchMethods = async () => {
-       try {
-        setPaymentMethods(await getPaymentMethodsData());
-      } catch (e) {
-        setPaymentMethods(await getPaymentMethodsData());
-      }
+    if (token) {
+      fetchPayments();
+      fetchMethods();
     }
-
-    fetchPayments();
-    fetchMethods();
-  }, []);
+  }, [token]);
 
   const totalPages = Math.ceil(payments.length / ITEMS_PER_PAGE);
 
@@ -66,20 +92,37 @@ export default function PaymentsPage() {
     'Refunded': 'destructive',
   };
 
-  const updatePaymentMethods = (newMethods: PaymentMethod[]) => {
-    setPaymentMethods(newMethods);
-  }
+  const handleToggleStatus = async (methodId: string) => {
+    if (!token) return;
+    const method = paymentMethods.find(m => m.id === methodId);
+    if (!method) return;
 
-  const handleToggleStatus = (methodId: string) => {
-    const newMethods = paymentMethods.map(m => 
-      m.id === methodId ? { ...m, status: m.status === 'Active' ? 'Inactive' : 'Active' } : m
-    );
-    const toggledMethod = newMethods.find(m => m.id === methodId);
-    updatePaymentMethods(newMethods);
-    toast({
-      title: 'Payment Method Updated',
-      description: `${toggledMethod?.name} is now ${toggledMethod?.status}.`
-    });
+    const newStatus = method.status === 'Active' ? 'Inactive' : 'Active';
+    
+    try {
+       const response = await fetch(`${API_BASE_URL}/api/payment-methods/${methodId}/status`, {
+            method: 'PATCH',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            toast({
+              title: 'Payment Method Updated',
+              description: `${method.name} is now ${newStatus}.`
+            });
+            fetchMethods(); // Re-fetch to get the latest state
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
+        }
+
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
+    }
   };
 
   const handleEditClick = (method: PaymentMethod) => {
@@ -87,16 +130,34 @@ export default function PaymentsPage() {
     setIsEditOpen(true);
   }
   
-  const handleMethodUpdate = (updatedMethod: PaymentMethod) => {
-     const newMethods = paymentMethods.map(m => 
-      m.id === updatedMethod.id ? updatedMethod : m
-    );
-    updatePaymentMethods(newMethods);
-     toast({
-      title: 'Payment Method Saved',
-      description: `${updatedMethod.name} details have been updated.`
-    });
-    setIsEditOpen(false);
+  const handleMethodUpdate = async (updatedMethod: PaymentMethod) => {
+     if (!token) return;
+
+     try {
+        const { id, ...payload } = updatedMethod;
+        const response = await fetch(`${API_BASE_URL}/api/payment-methods/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            toast({
+              title: 'Payment Method Saved',
+              description: `${updatedMethod.name} details have been updated.`
+            });
+            fetchMethods();
+            setIsEditOpen(false);
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to save method.' });
+        }
+     } catch (error) {
+         toast({ variant: 'destructive', title: 'Error', description: 'Failed to save method.' });
+     }
   }
 
 
@@ -193,32 +254,38 @@ export default function PaymentsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Payment ID</TableHead>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedPayments.map((payment: Payment) => (
-                  <TableRow key={payment.id}>
-                    <TableCell className="font-medium">#{payment.id.slice(0, 6)}</TableCell>
-                    <TableCell className="text-primary hover:underline cursor-pointer">#{payment.orderId.slice(0, 6)}</TableCell>
-                    <TableCell>₹{payment.amount.toLocaleString()}</TableCell>
-                    <TableCell>{payment.method}</TableCell>
-                    <TableCell>
-                      <Badge variant={paymentStatusVariant[payment.status]}>{payment.status}</Badge>
-                    </TableCell>
-                    <TableCell>{new Date(payment.timestamp).toLocaleString()}</TableCell>
+            {isLoading ? (
+               <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Payment ID</TableHead>
+                    <TableHead>Order ID</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {paginatedPayments.map((payment: Payment) => (
+                    <TableRow key={payment.id}>
+                      <TableCell className="font-medium">#{payment.id.slice(0, 6)}</TableCell>
+                      <TableCell className="text-primary hover:underline cursor-pointer">#{payment.orderId.slice(0, 6)}</TableCell>
+                      <TableCell>₹{payment.amount.toLocaleString()}</TableCell>
+                      <TableCell>{payment.method}</TableCell>
+                      <TableCell>
+                        <Badge variant={paymentStatusVariant[payment.status]}>{payment.status}</Badge>
+                      </TableCell>
+                      <TableCell>{new Date(payment.timestamp).toLocaleString()}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
           {totalPages > 1 && (
             <CardFooter className="flex justify-between">
