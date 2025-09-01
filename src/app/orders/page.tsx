@@ -20,9 +20,11 @@ import { cn } from '@/lib/utils';
 import { ReturnOrderDialog } from '@/components/return-order-dialog';
 import { Input } from '@/components/ui/input';
 import { AuthContext } from '@/context/auth-context';
+import { getAgentsData, getOrdersData } from '@/lib/data';
 
 const ITEMS_PER_PAGE = 10;
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const ORDERS_STORAGE_KEY = 'gastrack-orders';
+const AGENTS_STORAGE_KEY = 'gastrack-agents';
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   'Delivered': 'default',
@@ -195,57 +197,85 @@ export default function OrdersPage() {
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isReturnOpen, setIsReturnOpen] = useState(false);
   const { toast } = useToast();
-  const { token } = useContext(AuthContext);
-
-  const fetchOrders = async () => {
-    if (!token) return;
-    setIsLoading(true);
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/orders`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const result = await response.json();
-        if (result.success) {
-           const parsedOrders = result.data.orders.map((o: any) => ({
-              ...o,
-              createdAt: new Date(o.createdAt),
-          }));
-          setOrders(parsedOrders);
-          setFilteredOrders(parsedOrders);
-        } else {
-           toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch orders.' });
-        }
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch orders.' });
-    } finally {
-        setIsLoading(false);
-    }
-  };
-
-  const fetchAgents = async () => {
-    if (!token) return;
-     try {
-       const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-       });
-       const result = await response.json();
-       if(result.success) {
-         setAgents(result.data.agents);
-       } else {
-         toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch agents.' });
-       }
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch agents.' });
-    }
-  };
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    if (token) {
-      fetchOrders();
-      fetchAgents();
-    }
-  }, [token]);
+    setIsClient(true);
+  }, []);
 
+  useEffect(() => {
+    if (!isClient) return;
+    const fetchOrders = async () => {
+        setIsLoading(true);
+        try {
+            const savedOrders = window.localStorage.getItem(ORDERS_STORAGE_KEY);
+            if (savedOrders) {
+                const parsedOrders = JSON.parse(savedOrders).map((o: any) => ({
+                    ...o,
+                    createdAt: new Date(o.createdAt),
+                }));
+                setOrders(parsedOrders);
+                setFilteredOrders(parsedOrders);
+            } else {
+                const data = await getOrdersData();
+                setOrders(data);
+                setFilteredOrders(data);
+                window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(data));
+            }
+        } catch (error) {
+            console.error("Failed to load orders from localStorage", error);
+            const data = await getOrdersData();
+            setOrders(data);
+            setFilteredOrders(data);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    const fetchAgents = async () => {
+       try {
+        const savedAgents = window.localStorage.getItem(AGENTS_STORAGE_KEY);
+        if (savedAgents) {
+          const parsedAgents = JSON.parse(savedAgents).map((a: any) => ({
+            ...a,
+            createdAt: new Date(a.createdAt),
+          }));
+          setAgents(parsedAgents);
+        } else {
+          const data = await getAgentsData();
+          setAgents(data);
+          window.localStorage.setItem(AGENTS_STORAGE_KEY, JSON.stringify(data));
+        }
+      } catch (error) {
+        console.error("Failed to load agents from localStorage", error);
+        const data = await getAgentsData();
+        setAgents(data);
+      }
+    };
+    fetchOrders();
+    fetchAgents();
+  }, [isClient]);
+
+  const updateOrdersStateAndStorage = (newOrders: Order[]) => {
+    setOrders(newOrders);
+    
+    const searchTerm = (document.querySelector('input[placeholder="Search by customer or agent..."]') as HTMLInputElement)?.value || '';
+    if (searchTerm) {
+        const filtered = newOrders.filter(o =>
+            o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (o.agentName && o.agentName.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+        setFilteredOrders(filtered);
+    } else {
+        setFilteredOrders(newOrders);
+    }
+
+    try {
+        window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(newOrders));
+    } catch (error) {
+        console.error("Failed to save orders to localStorage", error);
+    }
+  };
+  
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     const searchTerm = event.target.value.toLowerCase();
     const filtered = orders.filter(order =>
@@ -277,28 +307,18 @@ export default function OrdersPage() {
   };
 
   const handleAgentAssigned = async (orderId: string, agentId: string) => {
-    if (!token) return;
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/assign-agent`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ agentId })
+    const agent = agents.find(a => a.id === agentId);
+    if (agent) {
+        const newOrders = orders.map(o => 
+            o.id === orderId 
+            ? { ...o, assignedAgentId: agentId, agentName: agent.name, agentPhone: agent.phone, status: 'In-progress' as const } 
+            : o
+        );
+        updateOrdersStateAndStorage(newOrders);
+        toast({
+          title: "Agent Assigned",
+          description: `${agent.name} has been assigned to order #${orderId.slice(0, 6)}. Status updated to In-progress.`,
         });
-        const result = await response.json();
-        if (result.success) {
-            toast({
-              title: "Agent Assigned",
-              description: `${result.data.order.agentName} has been assigned. Status updated to In-progress.`,
-            });
-            fetchOrders();
-        } else {
-            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to assign agent.' });
-        }
-    } catch(e) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to assign agent.' });
     }
   };
 
@@ -310,89 +330,39 @@ export default function OrdersPage() {
       return;
     }
     
-    if (!token) return;
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/orders/${order.id}/status`, {
-        method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-      const result = await response.json();
-      if (result.success) {
-        toast({
-          title: 'Order Status Updated',
-          description: `Order #${order.id.slice(0,6)} has been marked as ${newStatus}.`
-        });
-        fetchOrders();
-      } else {
-        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
-      }
-    } catch (error) {
-       toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
-    }
+    const newOrders = orders.map(o => o.id === order.id ? { ...o, status: newStatus } : o);
+    updateOrdersStateAndStorage(newOrders);
+    toast({
+      title: 'Order Status Updated',
+      description: `Order #${order.id.slice(0,6)} has been marked as ${newStatus}.`
+    });
   }
   
   const confirmCancelOrder = async (reason: string) => {
-    if (selectedOrder && token) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/orders/${selectedOrder.id}/cancel`, {
-          method: 'PATCH',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ cancellationReason: reason })
-        });
-        const result = await response.json();
-        if(result.success) {
-          toast({
-            title: 'Order Cancelled',
-            description: `Order #${selectedOrder.id.slice(0,6)} has been cancelled.`,
-            variant: 'destructive'
-          });
-          fetchOrders();
-          setIsCancelOpen(false);
-          setSelectedOrder(null);
-        } else {
-           toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to cancel order.' });
-        }
-      } catch (error) {
-         toast({ variant: 'destructive', title: 'Error', description: 'Failed to cancel order.' });
-      }
+    if (selectedOrder) {
+      const newOrders = orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'Cancelled' as const, cancellationReason: reason } : o);
+      updateOrdersStateAndStorage(newOrders);
+      toast({
+        title: 'Order Cancelled',
+        description: `Order #${selectedOrder.id.slice(0,6)} has been cancelled.`,
+        variant: 'destructive'
+      });
+      setIsCancelOpen(false);
+      setSelectedOrder(null);
     }
   };
 
   const confirmReturnOrder = async (reason: string) => {
-     if (selectedOrder && token) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/orders/${selectedOrder.id}/return`, {
-          method: 'PATCH',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ returnReason: reason })
-        });
-        const result = await response.json();
-        if(result.success) {
-          toast({
-            title: 'Order Returned',
-            description: `Order #${selectedOrder.id.slice(0,6)} has been marked as returned.`,
-            variant: 'destructive'
-          });
-          fetchOrders();
-          setIsReturnOpen(false);
-          setSelectedOrder(null);
-        } else {
-           toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to return order.' });
-        }
-      } catch (error) {
-         toast({ variant: 'destructive', title: 'Error', description: 'Failed to return order.' });
-      }
+     if (selectedOrder) {
+       const newOrders = orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'Returned' as const, returnReason: reason } : o);
+      updateOrdersStateAndStorage(newOrders);
+      toast({
+        title: 'Order Returned',
+        description: `Order #${selectedOrder.id.slice(0,6)} has been marked as returned.`,
+        variant: 'destructive'
+      });
+      setIsReturnOpen(false);
+      setSelectedOrder(null);
     }
   };
 
@@ -432,6 +402,8 @@ export default function OrdersPage() {
     link.click();
     document.body.removeChild(link);
   }
+  
+  if (!isClient) return null;
 
 
   return (

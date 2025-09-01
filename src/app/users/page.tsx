@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, FileDown, Loader2 } from 'lucide-react';
 import type { User } from '@/lib/types';
 import { Input } from '@/components/ui/input';
-import { useEffect, useState, useMemo, useContext } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -24,12 +24,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { UserDetailsDialog } from '@/components/user-details-dialog';
-import { AuthContext } from '@/context/auth-context';
-
+import { getUsersData } from '@/lib/data';
 
 const ITEMS_PER_PAGE = 10;
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
+const USERS_STORAGE_KEY = 'gastrack-users';
 
 export default function CustomersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -40,44 +38,40 @@ export default function CustomersPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
-  const { token } = useContext(AuthContext);
-
-  const fetchUsers = async () => {
-    if (!token) return;
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/users`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const result = await response.json();
-      if (result.success) {
-        setUsers(result.data.users);
-        setFilteredUsers(result.data.users);
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Failed to load customers',
-          description: result.message || 'Could not fetch customer data. Please try again later.'
-        });
-      }
-    } catch (error) {
-      console.error("Failed to load users", error);
-      toast({
-        variant: 'destructive',
-        title: 'Failed to load customers',
-        description: 'Could not fetch customer data. Please try again later.'
-      });
-    } finally {
-        setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
-    if (token) {
-      fetchUsers();
-    }
-  }, [token]);
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient) return;
+    const fetchUsers = async () => {
+      setIsLoading(true);
+      try {
+        const savedUsers = window.localStorage.getItem(USERS_STORAGE_KEY);
+        if (savedUsers) {
+          setUsers(JSON.parse(savedUsers).map((u: User) => ({...u, createdAt: new Date(u.createdAt)})));
+        } else {
+          const data = await getUsersData();
+          setUsers(data);
+          window.localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(data));
+        }
+      } catch (error) {
+        console.error("Failed to load users", error);
+        const data = await getUsersData();
+        setUsers(data);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchUsers();
+  }, [isClient]);
+
+  useEffect(() => {
+    setFilteredUsers(users);
+  }, [users]);
   
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
 
@@ -101,6 +95,11 @@ export default function CustomersPage() {
     } else {
         setFilteredUsers(newUsers);
     }
+     try {
+        window.localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(newUsers));
+    } catch (error) {
+        console.error("Failed to save users to localStorage", error);
+    }
   };
   
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,33 +114,28 @@ export default function CustomersPage() {
   };
 
   const handleAction = async (user: User, userAction: 'Block' | 'Unblock') => {
-    if (!token) return;
-    const newStatus = userAction === 'Block' ? 'Blocked' : 'Active';
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/users/${user.id}/status`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ status: newStatus })
-        });
-        const result = await response.json();
-        if (result.success) {
-            toast({
-                title: `Customer ${userAction}ed`,
-                description: `${user.name} has been ${userAction.toLowerCase()}ed.`,
-                variant: userAction === 'Block' ? 'destructive' : 'default',
-            });
-            fetchUsers();
-        } else {
-            toast({ variant: 'destructive', title: 'Error', description: result.error || `Failed to ${userAction.toLowerCase()} customer.` });
-        }
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: `Failed to ${userAction.toLowerCase()} customer.` });
-    }
+    setSelectedUser(user);
+    setAction(userAction);
+    setIsConfirmOpen(true);
   };
+  
+  const confirmAction = () => {
+    if (selectedUser && action) {
+      const newStatus = action === 'Block' ? 'Blocked' : 'Active';
+      const updatedUsers = users.map(u => 
+        u.id === selectedUser.id ? { ...u, status: newStatus } : u
+      );
+      updateUsersState(updatedUsers);
+      toast({
+        title: `Customer ${action}ed`,
+        description: `${selectedUser.name} has been ${action.toLowerCase()}ed.`,
+        variant: action === 'Block' ? 'destructive' : 'default',
+      });
+      setIsConfirmOpen(false);
+      setSelectedUser(null);
+      setAction(null);
+    }
+  }
 
   const handleShowDetails = (user: User) => {
     setSelectedUser(user);
@@ -179,6 +173,8 @@ export default function CustomersPage() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+  
+  if (!isClient) return null;
 
 
   return (
@@ -300,6 +296,23 @@ export default function CustomersPage() {
         )}
       </Card>
       
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to {action?.toLowerCase()} this customer?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action can be reversed later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmAction} className={action === 'Block' ? 'bg-destructive hover:bg-destructive/90' : ''}>
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <UserDetailsDialog user={selectedUser} isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} />
 
     </AppShell>

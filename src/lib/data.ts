@@ -1,47 +1,77 @@
 
 
 import type { User, Product, Agent, Order, Payment, PaymentMethod } from './types';
+import { products as sampleProducts, users as sampleUsers, agents as sampleAgents, orders as sampleOrders, paymentMethods as samplePaymentMethods, payments as samplePayments } from './sample-data';
 
-// NOTE: This file now contains only the base data structures for reference.
-// The application has been migrated to fetch all dynamic data from the API.
 
-// Base data structures (for type reference)
-const baseUsers: User[] = [
-  { id: 'usr_1', name: 'Arjun Kumar', email: 'arjun@example.com', phone: '9876543210', address: '123, MG Road, Bangalore, Karnataka 560001', status: 'Active', orderHistory: ['ord_1', 'ord_3'], createdAt: new Date('2023-01-15'), location: { lat: 12.9716, lng: 77.5946 } },
-];
+// Mock data fetching functions
+export async function getUsersData(): Promise<User[]> {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  return sampleUsers;
+}
 
-const baseProducts: Product[] = [
-    { id: 'prod_1', productName: 'LPG Cylinder', description: 'Standard domestic cylinder', lowStockThreshold: 20, status: 'Active', variants: [], images: [] },
-];
+export async function getProductsData(): Promise<Product[]> {
+  await new Promise(resolve => setTimeout(resolve, 500));
+  return sampleProducts;
+}
 
-const baseAgents: Agent[] = [
-  { 
-    id: 'agt_1', 
-    name: 'Suresh Singh', 
-    phone: '8765432109',
-    email: 'suresh@example.com',
-    vehicleNumber: 'KA-01-AB-1234',
-    panCardNumber: 'ABCDE1234F',
-    aadharCardNumber: '1234 5678 9012',
-    drivingLicence: 'DL1420110012345',
-    bankDetails: 'SBI - 1234567890',
-    status: 'Online', 
-    createdAt: new Date('2023-01-05'),
-    updatedAt: new Date('2023-01-05'),
-    joinedAt: new Date('2023-01-05'),
-  },
-];
+export async function getAgentsData(): Promise<Agent[]> {
+  await new Promise(resolve => setTimeout(resolve, 500));
+  return sampleAgents;
+}
 
-const baseOrders: Omit<Order, 'customerName' | 'agentName' | 'agentPhone' | 'customerPhone'>[] = [
-  { id: 'ord_1', customerId: 'usr_1', products: [{ productId: 'prod_1', productName: 'LPG Cylinder 14.2kg', quantity: 1 }], totalAmount: 1100, status: 'Delivered', assignedAgentId: 'agt_1', createdAt: new Date('2024-05-20'), deliveryType: 'Home Delivery', paymentType: 'COD' },
-];
+export async function getOrdersData(): Promise<Order[]> {
+  await new Promise(resolve => setTimeout(resolve, 500));
+  // Enrich order data with customer and agent names
+  return sampleOrders.map(order => {
+    const customer = sampleUsers.find(u => u.id === order.customerId);
+    const agent = sampleAgents.find(a => a.id === order.assignedAgentId);
+    return {
+      ...order,
+      customerName: customer?.name || 'Unknown Customer',
+      customerPhone: customer?.phone || 'N/A',
+      agentName: agent?.name,
+      agentPhone: agent?.phone,
+    };
+  });
+}
 
-const basePaymentMethods: PaymentMethod[] = [
-    { id: 'pm_1', name: 'Cash on Delivery', description: 'Pay cash upon receiving the order.', status: 'Active', config: {} },
-];
+export async function getPaymentsData(): Promise<Payment[]> {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return samplePayments;
+}
 
-const basePayments: Payment[] = [
-  { id: 'pay_1', orderId: 'ord_1', amount: 1100, status: 'Success', method: 'Cash on Delivery', timestamp: new Date('2024-05-20') },
-];
+export async function getPaymentMethods(): Promise<PaymentMethod[]> {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return samplePaymentMethods;
+}
 
-// No data access functions are exported from this file anymore as all data is fetched from APIs.
+
+// --- Single item getters ---
+export async function getOrderById(orderId: string): Promise<Order | undefined> {
+    const orders = await getOrdersData();
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return undefined;
+
+    const customer = await getUserById(order.customerId);
+    const agent = order.assignedAgentId ? await getAgentById(order.assignedAgentId) : undefined;
+    
+    return {
+        ...order,
+        // @ts-ignore
+        customer,
+        // @ts-ignore
+        agent,
+    }
+}
+
+export async function getUserById(userId: string): Promise<User | undefined> {
+    const users = await getUsersData();
+    return users.find(u => u.id === userId);
+}
+
+export async function getAgentById(agentId: string): Promise<Agent | undefined> {
+    const agents = await getAgentsData();
+    return agents.find(a => a.id === agentId);
+}

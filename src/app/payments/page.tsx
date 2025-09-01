@@ -14,11 +14,12 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { EditPaymentMethodDialog } from '@/components/edit-payment-method-dialog';
-import { AuthContext } from '@/context/auth-context';
+import { getPaymentMethods, getPaymentsData } from '@/lib/data';
 
 
 const ITEMS_PER_PAGE = 10;
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const PAYMENTS_STORAGE_KEY = 'gastrack-payments';
+const METHODS_STORAGE_KEY = 'gastrack-payment-methods';
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -27,52 +28,52 @@ export default function PaymentsPage() {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
-  const { token } = useContext(AuthContext);
-
-  const fetchPayments = async () => {
-    if (!token) return;
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/payments`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const result = await response.json();
-      if (result.success) {
-        setPayments(result.data.payments);
-      } else {
-         toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch payments.' });
-      }
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch payments.' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchMethods = async () => {
-    if (!token) return;
-     try {
-       const response = await fetch(`${API_BASE_URL}/api/payment-methods`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const result = await response.json();
-      if (result.success) {
-        setPaymentMethods(result.data.methods);
-      } else {
-        toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch payment methods.' });
-      }
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch payment methods.' });
-    }
-  }
 
   useEffect(() => {
-    if (token) {
-      fetchPayments();
-      fetchMethods();
-    }
-  }, [token]);
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient) return;
+
+    const fetchPayments = async () => {
+      setIsLoading(true);
+      try {
+        const savedPayments = window.localStorage.getItem(PAYMENTS_STORAGE_KEY);
+        if (savedPayments) {
+          setPayments(JSON.parse(savedPayments).map((p: Payment) => ({...p, timestamp: new Date(p.timestamp)})));
+        } else {
+          const data = await getPaymentsData();
+          setPayments(data);
+          window.localStorage.setItem(PAYMENTS_STORAGE_KEY, JSON.stringify(data));
+        }
+      } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch payments.' });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    const fetchMethods = async () => {
+      try {
+        const savedMethods = window.localStorage.getItem(METHODS_STORAGE_KEY);
+        if (savedMethods) {
+          setPaymentMethods(JSON.parse(savedMethods));
+        } else {
+          const data = await getPaymentMethods();
+          setPaymentMethods(data);
+          window.localStorage.setItem(METHODS_STORAGE_KEY, JSON.stringify(data));
+        }
+      } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch payment methods.' });
+      }
+    };
+
+    fetchPayments();
+    fetchMethods();
+  }, [isClient, toast]);
 
   const totalPages = Math.ceil(payments.length / ITEMS_PER_PAGE);
 
@@ -92,37 +93,27 @@ export default function PaymentsPage() {
     'Refunded': 'destructive',
   };
 
+  const updateMethodsStateAndStorage = (newMethods: PaymentMethod[]) => {
+    setPaymentMethods(newMethods);
+    try {
+      window.localStorage.setItem(METHODS_STORAGE_KEY, JSON.stringify(newMethods));
+    } catch (error) {
+      console.error("Failed to save payment methods to localStorage", error);
+    }
+  };
+
+
   const handleToggleStatus = async (methodId: string) => {
-    if (!token) return;
     const method = paymentMethods.find(m => m.id === methodId);
     if (!method) return;
 
     const newStatus = method.status === 'Active' ? 'Inactive' : 'Active';
-    
-    try {
-       const response = await fetch(`${API_BASE_URL}/api/payment-methods/${methodId}/status`, {
-            method: 'PATCH',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` 
-            },
-            body: JSON.stringify({ status: newStatus })
-        });
-        const result = await response.json();
-
-        if (result.success) {
-            toast({
-              title: 'Payment Method Updated',
-              description: `${method.name} is now ${newStatus}.`
-            });
-            fetchMethods(); // Re-fetch to get the latest state
-        } else {
-            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
-        }
-
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
-    }
+    const updatedMethods = paymentMethods.map(m => m.id === methodId ? {...m, status: newStatus } : m);
+    updateMethodsStateAndStorage(updatedMethods);
+    toast({
+      title: 'Payment Method Updated',
+      description: `${method.name} is now ${newStatus}.`
+    });
   };
 
   const handleEditClick = (method: PaymentMethod) => {
@@ -131,34 +122,16 @@ export default function PaymentsPage() {
   }
   
   const handleMethodUpdate = async (updatedMethod: PaymentMethod) => {
-     if (!token) return;
-
-     try {
-        const { id, ...payload } = updatedMethod;
-        const response = await fetch(`${API_BASE_URL}/api/payment-methods/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(payload)
-        });
-        const result = await response.json();
-
-        if (result.success) {
-            toast({
-              title: 'Payment Method Saved',
-              description: `${updatedMethod.name} details have been updated.`
-            });
-            fetchMethods();
-            setIsEditOpen(false);
-        } else {
-            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to save method.' });
-        }
-     } catch (error) {
-         toast({ variant: 'destructive', title: 'Error', description: 'Failed to save method.' });
-     }
+     const updatedMethods = paymentMethods.map(m => m.id === updatedMethod.id ? updatedMethod : m);
+     updateMethodsStateAndStorage(updatedMethods);
+     toast({
+        title: 'Payment Method Saved',
+        description: `${updatedMethod.name} details have been updated.`
+      });
+      setIsEditOpen(false);
   }
+  
+  if (!isClient) return null;
 
 
   return (
