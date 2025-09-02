@@ -64,6 +64,10 @@ function OrdersTable({
     setCurrentPage(1);
   }, [orders]);
 
+  const isActionDisabled = (status: Order['status']) => {
+    return ['delivered', 'cancelled', 'returned'].includes(status);
+  }
+
   return (
     <Card>
       <CardContent className="pt-6">
@@ -114,9 +118,7 @@ function OrdersTable({
                                 value={status}
                                 disabled={
                                     (status === 'in-progress' && !order.assignedAgent) || 
-                                    (order.status === 'delivered') ||
-                                    (order.status === 'cancelled' && status === 'cancelled') ||
-                                    (order.status === 'returned')
+                                    isActionDisabled(order.status)
                                 }
                                 className="capitalize"
                                 >
@@ -151,6 +153,14 @@ function OrdersTable({
                         {order.status === 'delivered' && (
                             <DropdownMenuItem onClick={() => onReturn(order)}>Return</DropdownMenuItem>
                         )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                            onClick={() => onStatusChange(order, 'cancelled')} 
+                            className="text-destructive"
+                            disabled={isActionDisabled(order.status)}
+                        >
+                            Cancel Order
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -479,3 +489,5 @@ export default function OrdersPage() {
     </AppShell>
   );
 }
+
+    
