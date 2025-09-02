@@ -7,7 +7,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MoreHorizontal, FileDown, ChevronDown, Search, Loader2 } from 'lucide-react';
 import type { Order, Agent } from '@/lib/types';
@@ -36,7 +36,8 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
 };
 
 const orderStatusesForDropdown: Order['status'][] = ['pending', 'confirmed', 'assigned', 'out-for-delivery', 'delivered', 'cancelled', 'returned'];
-const orderStatusesForTabs = ['pending', 'confirmed', 'in-progress', 'delivered', 'cancelled', 'returned'];
+const orderStatusesForTabs: (Order['status'] | 'in-progress')[] = ['pending', 'confirmed', 'in-progress', 'delivered', 'cancelled', 'returned'];
+
 
 function OrdersTable({ 
   orders, 
@@ -44,12 +45,14 @@ function OrdersTable({
   onAssignAgent, 
   onStatusChange,
   onReturn,
+  onCancel,
 }: { 
   orders: Order[],
   onShowDetails: (order: Order) => void,
   onAssignAgent: (order: Order) => void,
   onStatusChange: (order: Order, status: Order['status']) => void,
   onReturn: (order: Order) => void;
+  onCancel: (order: Order) => void;
 }) {
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.ceil(orders.length / ITEMS_PER_PAGE);
@@ -155,7 +158,7 @@ function OrdersTable({
                         )}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
-                            onClick={() => onStatusChange(order, 'cancelled')} 
+                            onClick={() => onCancel(order)} 
                             className="text-destructive"
                             disabled={isActionDisabled(order.status)}
                         >
@@ -310,20 +313,14 @@ export default function OrdersPage() {
     }
   };
 
-  const handleStatusChange = async (order: Order, newStatus: Order['status']) => {
-    if (order.status === newStatus || !token) return;
-    
-    if (newStatus === 'cancelled' && order.status !== 'cancelled') {
-      handleCancelOrder(order);
-      return;
-    }
+  const updateOrderStatus = async (order: Order, newStatus: Order['status'], notes?: string) => {
+    if (!token) return;
 
     const requestBody: { status: Order['status'], adminNotes?: string } = { status: newStatus };
-
-    if (newStatus === 'confirmed') {
-        requestBody.adminNotes = 'Order confirmed and ready for delivery';
+    if (notes) {
+      requestBody.adminNotes = notes;
     }
-    
+
     try {
        const response = await fetch(`${API_BASE_URL}/api/orders/${order.id}/status`, {
         method: 'PUT',
@@ -347,20 +344,35 @@ export default function OrdersPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
     }
   }
+
+
+  const handleStatusChange = async (order: Order, newStatus: Order['status']) => {
+    if (order.status === newStatus) return;
+    
+    if (newStatus === 'cancelled') {
+      handleCancelOrder(order);
+      return;
+    }
+    
+    let notes;
+    if (newStatus === 'confirmed') {
+        notes = 'Order confirmed and ready for delivery';
+    }
+
+    await updateOrderStatus(order, newStatus, notes);
+  }
   
   const confirmCancelOrder = async (reason: string) => {
-    if (selectedOrder && token) {
-       handleStatusChange(selectedOrder, 'cancelled');
-       // Optionally, send reason to a different endpoint if needed
+    if (selectedOrder) {
+       await updateOrderStatus(selectedOrder, 'cancelled', reason);
        setIsCancelOpen(false);
        setSelectedOrder(null);
     }
   };
 
   const confirmReturnOrder = async (reason: string) => {
-     if (selectedOrder && token) {
-       handleStatusChange(selectedOrder, 'returned');
-        // Optionally, send reason to a different endpoint if needed
+     if (selectedOrder) {
+       await updateOrderStatus(selectedOrder, 'returned', reason);
        setIsReturnOpen(false);
        setSelectedOrder(null);
     }
@@ -475,6 +487,7 @@ export default function OrdersPage() {
               onAssignAgent={handleAssignAgent}
               onStatusChange={handleStatusChange}
               onReturn={handleReturnOrder}
+              onCancel={handleCancelOrder}
             />
           </TabsContent>
         ))}
