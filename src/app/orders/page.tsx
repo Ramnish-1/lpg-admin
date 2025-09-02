@@ -140,6 +140,9 @@ function OrdersTable({
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => onShowDetails(order)}>View Details</DropdownMenuItem>
+                        {order.status === 'pending' && (
+                           <DropdownMenuItem onClick={() => onStatusChange(order, 'confirmed')}>Confirm Order</DropdownMenuItem>
+                        )}
                         {(order.status === 'pending' || order.status === 'confirmed') && (
                           <DropdownMenuItem onClick={() => onAssignAgent(order)}>Assign Agent</DropdownMenuItem>
                         )}
@@ -302,6 +305,12 @@ export default function OrdersPage() {
       handleCancelOrder(order);
       return;
     }
+
+    const requestBody: { status: Order['status'], adminNotes?: string } = { status: newStatus };
+
+    if (newStatus === 'confirmed') {
+        requestBody.adminNotes = 'Order confirmed and ready for delivery';
+    }
     
     try {
        const response = await fetch(`${API_BASE_URL}/api/orders/${order.id}/status`, {
@@ -310,7 +319,7 @@ export default function OrdersPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify(requestBody)
       });
       const result = await response.json();
        if (result.success) {
@@ -461,3 +470,5 @@ export default function OrdersPage() {
     </AppShell>
   );
 }
+
+    
