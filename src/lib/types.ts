@@ -83,7 +83,7 @@ export interface Order {
   totalAmount: string;
   paymentMethod: string;
   paymentStatus: string;
-  status: 'pending' | 'confirmed' | 'in-progress' | 'out-for-delivery' | 'delivered' | 'cancelled' | 'returned';
+  status: 'pending' | 'confirmed' | 'in-progress' | 'out-for-delivery' | 'delivered' | 'cancelled' | 'returned' | 'assigned';
   adminNotes?: string | null;
   agentNotes?: string | null;
   createdAt: string;
@@ -94,6 +94,12 @@ export interface Order {
   deliveredAt?: string | null;
   cancelledAt?: string | null;
   agent?: Agent | null; // Agent can be part of the order data
+  assignedAgent?: {
+    id: string;
+    name: string;
+    phone: string;
+    vehicleNumber: string;
+  } | null;
 }
 
 

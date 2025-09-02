@@ -28,13 +28,14 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
   'delivered': 'default',
   'pending': 'secondary',
   'confirmed': 'secondary',
+  'assigned': 'outline',
   'in-progress': 'outline',
   'out-for-delivery': 'outline',
   'cancelled': 'destructive',
   'returned': 'destructive',
 };
 
-const orderStatuses: Order['status'][] = ['pending', 'confirmed', 'in-progress', 'out-for-delivery', 'delivered', 'cancelled', 'returned'];
+const orderStatuses: Order['status'][] = ['pending', 'confirmed', 'assigned', 'in-progress', 'out-for-delivery', 'delivered', 'cancelled', 'returned'];
 
 function OrdersTable({ 
   orders, 
@@ -86,8 +87,8 @@ function OrdersTable({
                   <TableCell className="font-medium text-primary">#{order.orderNumber.slice(-8)}</TableCell>
                   <TableCell>{order.customerName}</TableCell>
                   <TableCell className="hidden sm:table-cell">
-                    {order.agent ? (
-                      <Badge variant="outline">{order.agent.name}</Badge>
+                    {order.assignedAgent ? (
+                      <Badge variant="outline">{order.assignedAgent.name}</Badge>
                     ) : (
                       <span className="text-muted-foreground">Unassigned</span>
                     )}
@@ -111,7 +112,7 @@ function OrdersTable({
                                 key={status} 
                                 value={status}
                                 disabled={
-                                    (status === 'in-progress' && !order.agent) || 
+                                    (status === 'in-progress' && !order.assignedAgent) || 
                                     (order.status === 'delivered') ||
                                     (order.status === 'cancelled' && status === 'cancelled') ||
                                     (order.status === 'returned')
@@ -119,7 +120,7 @@ function OrdersTable({
                                 className="capitalize"
                                 >
                                 {status.replace('-', ' ')}
-                                {status === 'in-progress' && !order.agent && " (Assign agent first)"}
+                                {status === 'in-progress' && !order.assignedAgent && " (Assign agent first)"}
                                 </DropdownMenuRadioItem>
                             ))}
                             </DropdownMenuRadioGroup>
@@ -143,7 +144,7 @@ function OrdersTable({
                         {order.status === 'pending' && (
                            <DropdownMenuItem onClick={() => onStatusChange(order, 'confirmed')}>Confirm Order</DropdownMenuItem>
                         )}
-                        {(order.status === 'pending' || order.status === 'confirmed') && (
+                        {(order.status === 'confirmed') && (
                           <DropdownMenuItem onClick={() => onAssignAgent(order)}>Assign Agent</DropdownMenuItem>
                         )}
                         {order.status === 'delivered' && (
@@ -246,7 +247,7 @@ export default function OrdersPage() {
   const filteredOrders = useMemo(() => {
     return orders.filter(order =>
         order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (order.agent && order.agent.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (order.assignedAgent && order.assignedAgent.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [orders, searchTerm]);
@@ -367,8 +368,8 @@ export default function OrdersPage() {
             o.orderNumber,
             `"${o.customerName}"`,
             o.customerPhone,
-            `"${o.agent?.name || 'N/A'}"`,
-            o.agent?.phone || 'N/A',
+            `"${o.assignedAgent?.name || 'N/A'}"`,
+            o.assignedAgent?.phone || 'N/A',
             o.status,
             o.totalAmount,
             new Date(o.createdAt).toISOString(),
@@ -436,7 +437,7 @@ export default function OrdersPage() {
                   <Badge 
                      variant={statusVariant[status]} 
                      className={cn("px-2 py-0.5 text-xs font-semibold", {
-                       'bg-primary/10 text-primary': status === 'in-progress',
+                       'bg-primary/10 text-primary': status === 'in-progress' || status === 'assigned' || status === 'out-for-delivery',
                        'bg-green-100 text-green-800': status === 'delivered',
                        'bg-red-100 text-red-800': status === 'cancelled' || status === 'returned',
                      })}

@@ -41,6 +41,7 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
     'delivered': 'default',
     'pending': 'secondary',
     'confirmed': 'secondary',
+    'assigned': 'outline',
     'in-progress': 'outline',
     'out-for-delivery': 'outline',
     'cancelled': 'destructive',
@@ -93,13 +94,13 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetails
                     <div className="flex items-start gap-3">
                         <Truck className="h-5 w-5 text-muted-foreground mt-1" />
                         <div className="text-sm">
-                            <div className="font-medium">{order.agent?.name || 'Unassigned'}</div>
+                            <div className="font-medium">{order.assignedAgent?.name || 'Unassigned'}</div>
                             <div className="text-muted-foreground">Delivery Agent</div>
-                             {order.agent?.phone && (
+                             {order.assignedAgent?.phone && (
                                 <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                                     <Phone className="h-3 w-3"/>
-                                    <a href={`tel:${order.agent.phone}`} className="hover:underline">{order.agent.phone}</a>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-green-500 hover:text-green-600 -ml-1" onClick={() => handleWhatsAppClick(order.agent?.phone)}>
+                                    <a href={`tel:${order.assignedAgent.phone}`} className="hover:underline">{order.assignedAgent.phone}</a>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-green-500 hover:text-green-600 -ml-1" onClick={() => handleWhatsAppClick(order.assignedAgent?.phone)}>
                                         <WhatsAppIcon className="h-4 w-4" />
                                     </Button>
                                 </div>
