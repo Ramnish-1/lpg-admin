@@ -275,7 +275,7 @@ export default function OrdersPage() {
   const handleAgentAssigned = async (orderId: string, agentId: string) => {
     if (!token) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/assign-agent`, {
+      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/assign`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
