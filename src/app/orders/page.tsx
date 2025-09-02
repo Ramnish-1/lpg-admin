@@ -276,7 +276,7 @@ export default function OrdersPage() {
     if (!token) return;
     try {
       const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/assign`, {
-        method: 'POST',
+        method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -470,5 +470,3 @@ export default function OrdersPage() {
     </AppShell>
   );
 }
-
-    
