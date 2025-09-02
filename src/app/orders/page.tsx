@@ -35,7 +35,8 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
   'returned': 'destructive',
 };
 
-const orderStatuses: Order['status'][] = ['pending', 'confirmed', 'assigned', 'out-for-delivery', 'delivered', 'cancelled', 'returned'];
+const orderStatusesForDropdown: Order['status'][] = ['pending', 'confirmed', 'assigned', 'out-for-delivery', 'delivered', 'cancelled', 'returned'];
+const orderStatusesForTabs = ['pending', 'confirmed', 'in-progress', 'delivered', 'cancelled', 'returned'];
 
 function OrdersTable({ 
   orders, 
@@ -107,7 +108,7 @@ function OrdersTable({
                                 value={order.status} 
                                 onValueChange={(newStatus) => onStatusChange(order, newStatus as Order['status'])}
                             >
-                            {orderStatuses.filter(s => s !== 'returned').map(status => (
+                            {orderStatusesForDropdown.filter(s => s !== 'returned').map(status => (
                                 <DropdownMenuRadioItem 
                                 key={status} 
                                 value={status}
@@ -355,8 +356,10 @@ export default function OrdersPage() {
     }
   };
 
-
-  const getOrderCount = (status: Order['status']) => {
+  const getOrderCount = (status: string) => {
+    if (status === 'in-progress') {
+      return filteredOrders.filter(o => ['assigned', 'in-progress', 'out-for-delivery'].includes(o.status)).length;
+    }
     return filteredOrders.filter(o => o.status === status).length;
   }
   
@@ -422,7 +425,7 @@ export default function OrdersPage() {
       <Tabs defaultValue="pending">
         <div className="overflow-x-auto">
           <TabsList className="bg-transparent p-0 border-b h-auto rounded-none">
-            {orderStatuses.map(status => {
+            {orderStatusesForTabs.map(status => {
               const count = getOrderCount(status);
               return (
                 <TabsTrigger 
@@ -449,10 +452,15 @@ export default function OrdersPage() {
             })}
           </TabsList>
         </div>
-        {orderStatuses.map(status => (
+        {orderStatusesForTabs.map(status => (
           <TabsContent key={status} value={status} className="mt-4">
             <OrdersTable 
-              orders={filteredOrders.filter(o => o.status === status)}
+              orders={filteredOrders.filter(o => {
+                if (status === 'in-progress') {
+                  return ['assigned', 'in-progress', 'out-for-delivery'].includes(o.status);
+                }
+                return o.status === status;
+              })}
               onShowDetails={handleShowDetails}
               onAssignAgent={handleAssignAgent}
               onStatusChange={handleStatusChange}
