@@ -35,7 +35,7 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
   'returned': 'destructive',
 };
 
-const orderStatuses: Order['status'][] = ['pending', 'confirmed', 'assigned', 'in-progress', 'out-for-delivery', 'delivered', 'cancelled', 'returned'];
+const orderStatuses: Order['status'][] = ['pending', 'confirmed', 'assigned', 'out-for-delivery', 'delivered', 'cancelled', 'returned'];
 
 function OrdersTable({ 
   orders, 
