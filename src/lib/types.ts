@@ -57,29 +57,45 @@ export interface Agent {
   createdAt: Date;
   updatedAt: Date;
   profileImage?: string;
-  // Kept as optional since API doesn't provide it yet
   report?: AgentReport; 
   currentLocation?: { lat: number; lng: number };
 }
 
 
+export interface OrderItem {
+  total: number;
+  quantity: number;
+  productId: string;
+  productName: string;
+  variantLabel: string;
+  variantPrice: number;
+}
+
 export interface Order {
   id: string;
-  customerId: string;
+  orderNumber: string;
   customerName: string;
-  customerPhone?: string;
-  products: { productId: string; productName: string; quantity: number }[];
-  totalAmount: number;
-  status: 'Pending' | 'In-progress' | 'Delivered' | 'Cancelled' | 'Returned';
-  assignedAgentId: string | null;
-  agentName?: string;
-  agentPhone?: string;
-  createdAt: Date;
-  deliveryType: 'Home Delivery' | 'Pickup';
-  paymentType: 'COD';
-  cancellationReason?: string;
-  returnReason?: string;
+  customerEmail: string;
+  customerPhone: string;
+  customerAddress: string;
+  items: OrderItem[];
+  subtotal: string;
+  totalAmount: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  status: 'pending' | 'confirmed' | 'in-progress' | 'out-for-delivery' | 'delivered' | 'cancelled' | 'returned';
+  adminNotes?: string | null;
+  agentNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  confirmedAt?: string | null;
+  assignedAt?: string | null;
+  outForDeliveryAt?: string | null;
+  deliveredAt?: string | null;
+  cancelledAt?: string | null;
+  agent?: Agent | null; // Agent can be part of the order data
 }
+
 
 export interface PaymentMethod {
     id: string;

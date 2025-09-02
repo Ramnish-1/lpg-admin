@@ -47,6 +47,8 @@ export function AssignAgentDialog({ order, isOpen, onOpenChange, onAgentAssigned
 
 
   if (!order) return null;
+  
+  const availableAgents = agents.filter(a => a.status.toLowerCase() === 'online');
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -54,20 +56,24 @@ export function AssignAgentDialog({ order, isOpen, onOpenChange, onAgentAssigned
         <DialogHeader>
           <DialogTitle>Assign Delivery Agent</DialogTitle>
           <DialogDescription>
-            Select an available agent for order #{order.id.slice(0, 6)}.
+            Select an available agent for order #{order.orderNumber.slice(-8)}.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
           <Select onValueChange={setSelectedAgentId}>
             <SelectTrigger>
-              <SelectValue placeholder="Select an agent" />
+              <SelectValue placeholder="Select an online agent" />
             </SelectTrigger>
             <SelectContent>
-              {agents.map(agent => (
-                <SelectItem key={agent.id} value={agent.id}>
-                  {agent.name}
-                </SelectItem>
-              ))}
+              {availableAgents.length > 0 ? (
+                availableAgents.map(agent => (
+                  <SelectItem key={agent.id} value={agent.id}>
+                    {agent.name}
+                  </SelectItem>
+                ))
+              ) : (
+                <div className="p-4 text-center text-sm text-muted-foreground">No agents are online.</div>
+              )}
             </SelectContent>
           </Select>
         </div>

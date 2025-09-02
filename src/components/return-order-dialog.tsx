@@ -79,7 +79,7 @@ export function ReturnOrderDialog({ order, isOpen, onOpenChange, onConfirm }: Re
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Return Order #{order.id.slice(0,6)}</DialogTitle>
+          <DialogTitle>Return Order #{order.orderNumber.slice(-8)}</DialogTitle>
           <DialogDescription>
             Please select a reason for this return. This will update the order status.
           </DialogDescription>

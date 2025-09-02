@@ -38,11 +38,13 @@ interface OrderDetailsDialogProps {
 }
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-    'Delivered': 'default',
-    'Pending': 'secondary',
-    'In-progress': 'outline',
-    'Cancelled': 'destructive',
-    'Returned': 'destructive'
+    'delivered': 'default',
+    'pending': 'secondary',
+    'confirmed': 'secondary',
+    'in-progress': 'outline',
+    'out-for-delivery': 'outline',
+    'cancelled': 'destructive',
+    'returned': 'destructive'
   };
 
 export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetailsDialogProps) {
@@ -63,7 +65,7 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetails
             <span>Order Details</span>
           </DialogTitle>
           <DialogDescription>
-            Order #{order.id.slice(0, 6)}
+            Order #{order.orderNumber.slice(-8)}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -91,13 +93,13 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetails
                     <div className="flex items-start gap-3">
                         <Truck className="h-5 w-5 text-muted-foreground mt-1" />
                         <div className="text-sm">
-                            <div className="font-medium">{order.agentName || 'Unassigned'}</div>
+                            <div className="font-medium">{order.agent?.name || 'Unassigned'}</div>
                             <div className="text-muted-foreground">Delivery Agent</div>
-                             {order.agentPhone && (
+                             {order.agent?.phone && (
                                 <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                                     <Phone className="h-3 w-3"/>
-                                    <a href={`tel:${order.agentPhone}`} className="hover:underline">{order.agentPhone}</a>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-green-500 hover:text-green-600 -ml-1" onClick={() => handleWhatsAppClick(order.agentPhone)}>
+                                    <a href={`tel:${order.agent.phone}`} className="hover:underline">{order.agent.phone}</a>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-green-500 hover:text-green-600 -ml-1" onClick={() => handleWhatsAppClick(order.agent?.phone)}>
                                         <WhatsAppIcon className="h-4 w-4" />
                                     </Button>
                                 </div>
@@ -113,27 +115,17 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetails
                     <span>{new Date(order.createdAt).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center gap-2"><Package className="h-4 w-4"/>Delivery Type</span>
-                    <span>{order.deliveryType}</span>
-                </div>
-                <div className="flex justify-between items-center">
                     <span className="text-muted-foreground flex items-center gap-2"><Wallet className="h-4 w-4"/>Payment</span>
-                    <span>{order.paymentType}</span>
+                    <span className="capitalize">{order.paymentMethod.replace('_', ' ')} ({order.paymentStatus})</span>
                 </div>
                  <div className="flex justify-between items-center">
                     <span className="text-muted-foreground flex items-center gap-2">Status</span>
-                    <Badge variant={statusVariant[order.status]} className="text-xs">{order.status}</Badge>
+                    <Badge variant={statusVariant[order.status]} className="text-xs capitalize">{order.status.replace('-', ' ')}</Badge>
                 </div>
-                {order.status === 'Cancelled' && order.cancellationReason && (
+                {(order.status === 'cancelled' || order.status === 'returned') && order.adminNotes && (
                    <div className="flex justify-between items-start pt-2">
                         <span className="text-muted-foreground flex items-center gap-2"><XCircle className="h-4 w-4"/>Reason</span>
-                        <span className="text-right text-destructive text-sm font-medium">{order.cancellationReason}</span>
-                    </div>
-                )}
-                 {order.status === 'Returned' && order.returnReason && (
-                   <div className="flex justify-between items-start pt-2">
-                        <span className="text-muted-foreground flex items-center gap-2"><Undo2 className="h-4 w-4"/>Return Reason</span>
-                        <span className="text-right text-destructive text-sm font-medium">{order.returnReason}</span>
+                        <span className="text-right text-destructive text-sm font-medium">{order.adminNotes}</span>
                     </div>
                 )}
             </div>
@@ -143,9 +135,12 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetails
             <div>
                 <h4 className="font-semibold mb-2 text-foreground">Items</h4>
                 <div className="space-y-2">
-                {order.products.map(p => (
-                    <div key={p.productId} className="flex justify-between items-center p-2 rounded-md bg-muted/40 text-sm">
-                        <span>{p.productName}</span>
+                {order.items.map((p, i) => (
+                    <div key={i} className="flex justify-between items-center p-2 rounded-md bg-muted/40 text-sm">
+                        <div>
+                            <span>{p.productName}</span>
+                            <span className="text-muted-foreground ml-2 text-xs">({p.variantLabel})</span>
+                        </div>
                         <span className="text-muted-foreground">x{p.quantity}</span>
                     </div>
                 ))}
@@ -156,10 +151,10 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetails
 
             <div className="flex justify-between items-center font-bold text-lg p-3 bg-primary/10 rounded-lg">
                 <span className="text-primary">Total Amount</span>
-                <span className="flex items-center text-primary"><IndianRupee className="h-5 w-5" />{order.totalAmount.toLocaleString()}</span>
+                <span className="flex items-center text-primary"><IndianRupee className="h-5 w-5" />{parseFloat(order.totalAmount).toLocaleString()}</span>
             </div>
         </div>
-        {order.status === 'In-progress' && (
+        {(order.status === 'in-progress' || order.status === 'out-for-delivery') && (
              <DialogFooter className="mt-4">
                 <Button asChild className="w-full">
                     <Link href={`/track/${order.id}`}>
@@ -173,4 +168,3 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetails
     </Dialog>
   );
 }
-

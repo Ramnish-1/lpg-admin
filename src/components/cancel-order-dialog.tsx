@@ -79,7 +79,7 @@ export function CancelOrderDialog({ order, isOpen, onOpenChange, onConfirm }: Ca
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Cancel Order #{order.id.slice(0,6)}</DialogTitle>
+          <DialogTitle>Cancel Order #{order.orderNumber.slice(-8)}</DialogTitle>
           <DialogDescription>
             Please select a reason for cancelling this order. This action cannot be undone.
           </DialogDescription>

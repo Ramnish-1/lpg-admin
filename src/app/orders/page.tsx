@@ -20,21 +20,21 @@ import { cn } from '@/lib/utils';
 import { ReturnOrderDialog } from '@/components/return-order-dialog';
 import { Input } from '@/components/ui/input';
 import { AuthContext } from '@/context/auth-context';
-import { getAgentsData, getOrdersData } from '@/lib/data';
 
 const ITEMS_PER_PAGE = 10;
-const ORDERS_STORAGE_KEY = 'gastrack-orders';
-const AGENTS_STORAGE_KEY = 'gastrack-agents';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-  'Delivered': 'default',
-  'Pending': 'secondary',
-  'In-progress': 'outline',
-  'Cancelled': 'destructive',
-  'Returned': 'destructive',
+  'delivered': 'default',
+  'pending': 'secondary',
+  'confirmed': 'secondary',
+  'in-progress': 'outline',
+  'out-for-delivery': 'outline',
+  'cancelled': 'destructive',
+  'returned': 'destructive',
 };
 
-const orderStatuses: Order['status'][] = ['Pending', 'In-progress', 'Delivered', 'Cancelled', 'Returned'];
+const orderStatuses: Order['status'][] = ['pending', 'confirmed', 'in-progress', 'out-for-delivery', 'delivered', 'cancelled', 'returned'];
 
 function OrdersTable({ 
   orders, 
@@ -83,21 +83,21 @@ function OrdersTable({
             <TableBody>
               {paginatedOrders.map((order: Order) => (
                 <TableRow key={order.id} onClick={() => onShowDetails(order)} className="cursor-pointer">
-                  <TableCell className="font-medium text-primary">#{order.id.slice(0, 6)}</TableCell>
+                  <TableCell className="font-medium text-primary">#{order.orderNumber.slice(-8)}</TableCell>
                   <TableCell>{order.customerName}</TableCell>
                   <TableCell className="hidden sm:table-cell">
-                    {order.agentName ? (
-                      <Badge variant="outline">{order.agentName}</Badge>
+                    {order.agent ? (
+                      <Badge variant="outline">{order.agent.name}</Badge>
                     ) : (
                       <span className="text-muted-foreground">Unassigned</span>
                     )}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">₹{order.totalAmount.toLocaleString()}</TableCell>
+                  <TableCell className="hidden md:table-cell">₹{parseFloat(order.totalAmount).toLocaleString()}</TableCell>
                   <TableCell className="hidden lg:table-cell">
                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="w-32 justify-between" onClick={(e) => e.stopPropagation()}>
-                                <Badge variant={statusVariant[order.status]} className="pointer-events-none">{order.status}</Badge>
+                            <Button variant="outline" size="sm" className="w-40 justify-between capitalize" onClick={(e) => e.stopPropagation()}>
+                                <Badge variant={statusVariant[order.status]} className="pointer-events-none">{order.status.replace('-', ' ')}</Badge>
                                 <ChevronDown className="h-4 w-4 text-muted-foreground"/>
                             </Button>
                         </DropdownMenuTrigger>
@@ -106,19 +106,20 @@ function OrdersTable({
                                 value={order.status} 
                                 onValueChange={(newStatus) => onStatusChange(order, newStatus as Order['status'])}
                             >
-                            {orderStatuses.filter(s => s !== 'Returned').map(status => (
+                            {orderStatuses.filter(s => s !== 'returned').map(status => (
                                 <DropdownMenuRadioItem 
                                 key={status} 
                                 value={status}
                                 disabled={
-                                    (status === 'In-progress' && !order.assignedAgentId) || 
-                                    (order.status === 'Delivered') ||
-                                    (order.status === 'Cancelled' && status === 'Cancelled') ||
-                                    (order.status === 'Returned')
+                                    (status === 'in-progress' && !order.agent) || 
+                                    (order.status === 'delivered') ||
+                                    (order.status === 'cancelled' && status === 'cancelled') ||
+                                    (order.status === 'returned')
                                 }
+                                className="capitalize"
                                 >
-                                {status}
-                                {status === 'In-progress' && !order.assignedAgentId && " (Assign agent first)"}
+                                {status.replace('-', ' ')}
+                                {status === 'in-progress' && !order.agent && " (Assign agent first)"}
                                 </DropdownMenuRadioItem>
                             ))}
                             </DropdownMenuRadioGroup>
@@ -139,10 +140,10 @@ function OrdersTable({
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => onShowDetails(order)}>View Details</DropdownMenuItem>
-                        {order.status === 'Pending' && (
+                        {(order.status === 'pending' || order.status === 'confirmed') && (
                           <DropdownMenuItem onClick={() => onAssignAgent(order)}>Assign Agent</DropdownMenuItem>
                         )}
-                        {order.status === 'Delivered' && (
+                        {order.status === 'delivered' && (
                             <DropdownMenuItem onClick={() => onReturn(order)}>Return</DropdownMenuItem>
                         )}
                       </DropdownMenuContent>
@@ -189,7 +190,6 @@ function OrdersTable({
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -197,93 +197,56 @@ export default function OrdersPage() {
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isReturnOpen, setIsReturnOpen] = useState(false);
   const { toast } = useToast();
-  const [isClient, setIsClient] = useState(false);
+  const { token } = useContext(AuthContext);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isClient) return;
-    const fetchOrders = async () => {
-        setIsLoading(true);
-        try {
-            const savedOrders = window.localStorage.getItem(ORDERS_STORAGE_KEY);
-            if (savedOrders) {
-                const parsedOrders = JSON.parse(savedOrders).map((o: any) => ({
-                    ...o,
-                    createdAt: new Date(o.createdAt),
-                }));
-                setOrders(parsedOrders);
-                setFilteredOrders(parsedOrders);
-            } else {
-                const data = await getOrdersData();
-                setOrders(data);
-                setFilteredOrders(data);
-                window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(data));
-            }
-        } catch (error) {
-            console.error("Failed to load orders from localStorage", error);
-            const data = await getOrdersData();
-            setOrders(data);
-            setFilteredOrders(data);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    const fetchAgents = async () => {
-       try {
-        const savedAgents = window.localStorage.getItem(AGENTS_STORAGE_KEY);
-        if (savedAgents) {
-          const parsedAgents = JSON.parse(savedAgents).map((a: any) => ({
-            ...a,
-            createdAt: new Date(a.createdAt),
-          }));
-          setAgents(parsedAgents);
-        } else {
-          const data = await getAgentsData();
-          setAgents(data);
-          window.localStorage.setItem(AGENTS_STORAGE_KEY, JSON.stringify(data));
-        }
+  const fetchOrders = async () => {
+      if (!token) return;
+      setIsLoading(true);
+      try {
+          const response = await fetch(`${API_BASE_URL}/api/orders`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const result = await response.json();
+          if (result.success) {
+              setOrders(result.data.orders);
+          } else {
+              toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch orders.' });
+          }
       } catch (error) {
-        console.error("Failed to load agents from localStorage", error);
-        const data = await getAgentsData();
-        setAgents(data);
+          toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch orders.' });
+      } finally {
+          setIsLoading(false);
       }
-    };
+  };
+
+  const fetchAgents = async () => {
+     if (!token) return;
+     try {
+       const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await response.json();
+        if (result.success) {
+            setAgents(result.data.agents);
+        }
+    } catch (error) {
+       console.error("Failed to load agents", error);
+    }
+  };
+
+  useEffect(() => {
     fetchOrders();
     fetchAgents();
-  }, [isClient]);
+  }, [token]);
 
-  const updateOrdersStateAndStorage = (newOrders: Order[]) => {
-    setOrders(newOrders);
-    
-    const searchTerm = (document.querySelector('input[placeholder="Search by customer or agent..."]') as HTMLInputElement)?.value || '';
-    if (searchTerm) {
-        const filtered = newOrders.filter(o =>
-            o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (o.agentName && o.agentName.toLowerCase().includes(searchTerm.toLowerCase()))
-        );
-        setFilteredOrders(filtered);
-    } else {
-        setFilteredOrders(newOrders);
-    }
-
-    try {
-        window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(newOrders));
-    } catch (error) {
-        console.error("Failed to save orders to localStorage", error);
-    }
-  };
-  
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const searchTerm = event.target.value.toLowerCase();
-    const filtered = orders.filter(order =>
-        order.customerName.toLowerCase().includes(searchTerm) ||
-        (order.agentName && order.agentName.toLowerCase().includes(searchTerm))
+  const filteredOrders = useMemo(() => {
+    return orders.filter(order =>
+        order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (order.agent && order.agent.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    setFilteredOrders(filtered);
-  };
+  }, [orders, searchTerm]);
 
 
   const handleShowDetails = (order: Order) => {
@@ -307,62 +270,78 @@ export default function OrdersPage() {
   };
 
   const handleAgentAssigned = async (orderId: string, agentId: string) => {
-    const agent = agents.find(a => a.id === agentId);
-    if (agent) {
-        const newOrders = orders.map(o => 
-            o.id === orderId 
-            ? { ...o, assignedAgentId: agentId, agentName: agent.name, agentPhone: agent.phone, status: 'In-progress' as const } 
-            : o
-        );
-        updateOrdersStateAndStorage(newOrders);
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/assign-agent`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ agentId })
+      });
+      const result = await response.json();
+      if (result.success) {
         toast({
           title: "Agent Assigned",
-          description: `${agent.name} has been assigned to order #${orderId.slice(0, 6)}. Status updated to In-progress.`,
+          description: `Agent has been assigned and status updated.`,
         });
+        fetchOrders();
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to assign agent.' });
+      }
+    } catch (error) {
+       toast({ variant: 'destructive', title: 'Error', description: 'Failed to assign agent.' });
     }
   };
 
   const handleStatusChange = async (order: Order, newStatus: Order['status']) => {
-    if (order.status === newStatus) return;
+    if (order.status === newStatus || !token) return;
     
-    if (newStatus === 'Cancelled' && order.status !== 'Cancelled') {
+    if (newStatus === 'cancelled' && order.status !== 'cancelled') {
       handleCancelOrder(order);
       return;
     }
     
-    const newOrders = orders.map(o => o.id === order.id ? { ...o, status: newStatus } : o);
-    updateOrdersStateAndStorage(newOrders);
-    toast({
-      title: 'Order Status Updated',
-      description: `Order #${order.id.slice(0,6)} has been marked as ${newStatus}.`
-    });
+    try {
+       const response = await fetch(`${API_BASE_URL}/api/orders/${order.id}/status`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const result = await response.json();
+       if (result.success) {
+        toast({
+          title: 'Order Status Updated',
+          description: `Order #${order.orderNumber.slice(-8)} has been marked as ${newStatus}.`
+        });
+        fetchOrders();
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
+    }
   }
   
   const confirmCancelOrder = async (reason: string) => {
-    if (selectedOrder) {
-      const newOrders = orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'Cancelled' as const, cancellationReason: reason } : o);
-      updateOrdersStateAndStorage(newOrders);
-      toast({
-        title: 'Order Cancelled',
-        description: `Order #${selectedOrder.id.slice(0,6)} has been cancelled.`,
-        variant: 'destructive'
-      });
-      setIsCancelOpen(false);
-      setSelectedOrder(null);
+    if (selectedOrder && token) {
+       handleStatusChange(selectedOrder, 'cancelled');
+       // Optionally, send reason to a different endpoint if needed
+       setIsCancelOpen(false);
+       setSelectedOrder(null);
     }
   };
 
   const confirmReturnOrder = async (reason: string) => {
-     if (selectedOrder) {
-       const newOrders = orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'Returned' as const, returnReason: reason } : o);
-      updateOrdersStateAndStorage(newOrders);
-      toast({
-        title: 'Order Returned',
-        description: `Order #${selectedOrder.id.slice(0,6)} has been marked as returned.`,
-        variant: 'destructive'
-      });
-      setIsReturnOpen(false);
-      setSelectedOrder(null);
+     if (selectedOrder && token) {
+       handleStatusChange(selectedOrder, 'returned');
+        // Optionally, send reason to a different endpoint if needed
+       setIsReturnOpen(false);
+       setSelectedOrder(null);
     }
   };
 
@@ -374,13 +353,13 @@ export default function OrdersPage() {
   const handleExport = () => {
     const csvHeader = "Order ID,Customer Name,Customer Phone,Agent Name,Agent Phone,Status,Total Amount,Date,Products\n";
     const csvRows = filteredOrders.map(o => {
-        const productList = o.products.map(p => `${p.productName} (x${p.quantity})`).join('; ');
+        const productList = o.items.map(p => `${p.productName} ${p.variantLabel} (x${p.quantity})`).join('; ');
         const row = [
-            o.id,
+            o.orderNumber,
             `"${o.customerName}"`,
             o.customerPhone,
-            `"${o.agentName || 'N/A'}"`,
-            o.agentPhone || 'N/A',
+            `"${o.agent?.name || 'N/A'}"`,
+            o.agent?.phone || 'N/A',
             o.status,
             o.totalAmount,
             new Date(o.createdAt).toISOString(),
@@ -402,8 +381,6 @@ export default function OrdersPage() {
     link.click();
     document.body.removeChild(link);
   }
-  
-  if (!isClient) return null;
 
 
   return (
@@ -414,9 +391,9 @@ export default function OrdersPage() {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search by customer or agent..."
+                placeholder="Search by customer, agent or ID..."
                 className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
-                onChange={handleSearch}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           <Button size="sm" variant="outline" className="h-9 gap-1" onClick={handleExport}>
@@ -432,7 +409,7 @@ export default function OrdersPage() {
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       ) : (
-      <Tabs defaultValue="Pending">
+      <Tabs defaultValue="pending">
         <div className="overflow-x-auto">
           <TabsList className="bg-transparent p-0 border-b h-auto rounded-none">
             {orderStatuses.map(status => {
@@ -442,17 +419,17 @@ export default function OrdersPage() {
                   key={status} 
                   value={status}
                   className={cn(
-                    "data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none",
+                    "data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none capitalize",
                     "text-base px-4"
                   )}
                 >
-                  <span className="whitespace-nowrap mr-2">{status}</span>
+                  <span className="whitespace-nowrap mr-2">{status.replace('-', ' ')}</span>
                   <Badge 
                      variant={statusVariant[status]} 
                      className={cn("px-2 py-0.5 text-xs font-semibold", {
-                       'bg-primary/10 text-primary': status === 'In-progress',
-                       'bg-green-100 text-green-800': status === 'Delivered',
-                       'bg-red-100 text-red-800': status === 'Cancelled' || status === 'Returned',
+                       'bg-primary/10 text-primary': status === 'in-progress',
+                       'bg-green-100 text-green-800': status === 'delivered',
+                       'bg-red-100 text-red-800': status === 'cancelled' || status === 'returned',
                      })}
                   >
                     {count}
@@ -484,5 +461,3 @@ export default function OrdersPage() {
     </AppShell>
   );
 }
-
-    
