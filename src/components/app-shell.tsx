@@ -28,6 +28,7 @@ import {
   LogOut,
   User as UserIcon,
   UserPlus,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +36,9 @@ import { ProfileContext } from '@/context/profile-context';
 import { SettingsContext } from '@/context/settings-context';
 import { useAuth } from '@/context/auth-context';
 import { SidebarMascot } from './sidebar-mascot';
+import { useNotifications } from '@/context/notification-context';
+import { Badge } from './ui/badge';
+import { formatDistanceToNow } from 'date-fns';
 
 const GasPump = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -69,7 +73,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { profile } = React.useContext(ProfileContext);
   const { settings } = React.useContext(SettingsContext);
   const { isAuthenticated, logout } = useAuth();
+  const { notifications, markAsRead } = useNotifications();
   
+  const unreadCount = notifications.filter(n => !n.read).length;
+
   React.useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
@@ -84,6 +91,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       description: "You have been successfully logged out.",
     });
     router.push('/login');
+  }
+
+  const handleNotificationClick = (orderId: string) => {
+    markAsRead(orderId);
+    router.push('/orders');
   }
 
   const sidebarNav = (
@@ -149,6 +161,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1" />
+           <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                        <Badge className="absolute -top-1 -right-1 h-4 w-4 justify-center p-0">{unreadCount}</Badge>
+                    )}
+                    <span className="sr-only">Notifications</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-80" align="end">
+                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {notifications.length === 0 ? (
+                    <p className="p-4 text-sm text-muted-foreground">No new notifications</p>
+                ) : (
+                    notifications.map(n => (
+                        <DropdownMenuItem key={n.id} onSelect={() => handleNotificationClick(n.orderId)} className={cn("flex flex-col items-start gap-1 whitespace-normal", !n.read && "bg-accent/50")}>
+                            <p className="font-medium">{n.message}</p>
+                            <p className="text-xs text-muted-foreground">{formatDistanceToNow(n.timestamp, { addSuffix: true })}</p>
+                        </DropdownMenuItem>
+                    ))
+                )}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 flex items-center gap-2 px-2 rounded-md hover:bg-muted hover:text-foreground border border-transparent hover:border-border">

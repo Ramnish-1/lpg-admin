@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { ProfileProvider } from '@/context/profile-context';
 import { SettingsProvider } from '@/context/settings-context';
 import { AuthProvider } from '@/context/auth-context';
+import { NotificationProvider } from '@/context/notification-context';
 
 export const metadata: Metadata = {
   title: 'GasTrack Admin',
@@ -27,7 +28,9 @@ export default function RootLayout({
         <AuthProvider>
           <ProfileProvider>
             <SettingsProvider>
-              {children}
+              <NotificationProvider>
+                {children}
+              </NotificationProvider>
             </SettingsProvider>
           </ProfileProvider>
         </AuthProvider>

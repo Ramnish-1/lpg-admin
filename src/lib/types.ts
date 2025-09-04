@@ -135,3 +135,11 @@ export interface Availability {
   saturday: DayAvailability;
   sunday: DayAvailability;
 }
+
+export interface Notification {
+    id: string;
+    message: string;
+    orderId: string;
+    timestamp: Date;
+    read: boolean;
+}

@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { ReturnOrderDialog } from '@/components/return-order-dialog';
 import { Input } from '@/components/ui/input';
 import { AuthContext } from '@/context/auth-context';
+import { useNotifications } from '@/context/notification-context';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -217,6 +218,8 @@ export default function OrdersPage() {
   const { toast } = useToast();
   const { token } = useContext(AuthContext);
   const [searchTerm, setSearchTerm] = useState('');
+  const { socket } = useNotifications();
+
 
   const fetchOrders = async () => {
       if (!token) return;
@@ -237,6 +240,23 @@ export default function OrdersPage() {
           setIsLoading(false);
       }
   };
+
+  useEffect(() => {
+    if (socket) {
+        socket.on('newOrder', (newOrder) => {
+            console.log('New order received via socket:', newOrder);
+            toast({
+                title: "New Order Received!",
+                description: `Order #${newOrder.orderNumber.slice(-8)} from ${newOrder.customerName}.`
+            });
+            fetchOrders(); // Refetch orders when a new one comes in
+        });
+
+        return () => {
+            socket.off('newOrder');
+        };
+    }
+}, [socket, toast]);
 
   const fetchAgents = async () => {
      if (!token) return;
