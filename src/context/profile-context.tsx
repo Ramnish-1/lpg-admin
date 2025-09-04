@@ -84,7 +84,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     
     const formData = new FormData();
     if(newProfileData.name) formData.append('name', newProfileData.name);
-    if(newProfileData.email) formData.append('email', newProfileData.email);
     if(newProfileData.phone) formData.append('phone', newProfileData.phone);
     if(newProfileData.role) formData.append('role', newProfileData.role);
     if(newProfileData.photoFile) formData.append('image', newProfileData.photoFile);
