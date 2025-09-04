@@ -178,17 +178,17 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
 
                       <div>
                           <FormLabel>Product Images</FormLabel>
-                          <FormControl>
-                            <>
-                              <input ref={fileInputRef} id="image-upload" type="file" multiple onChange={handleImageChange} className="hidden" accept="image/*"/>
-                              <div
-                                className="mt-2 flex justify-center items-center flex-col w-full h-32 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted/50"
-                                onClick={() => fileInputRef.current?.click()}
-                              >
-                                <ImagePlus className="h-8 w-8 text-muted-foreground"/>
-                                <p className="text-sm text-muted-foreground mt-2">Click or drag to add images</p>
-                              </div>
-                            </>
+                           <FormControl>
+                                <div>
+                                    <input ref={fileInputRef} id="image-upload" type="file" multiple onChange={handleImageChange} className="hidden" accept="image/*"/>
+                                    <div
+                                        className="mt-2 flex justify-center items-center flex-col w-full h-32 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted/50"
+                                        onClick={() => fileInputRef.current?.click()}
+                                    >
+                                        <ImagePlus className="h-8 w-8 text-muted-foreground"/>
+                                        <p className="text-sm text-muted-foreground mt-2">Click or drag to add images</p>
+                                    </div>
+                                </div>
                           </FormControl>
                           {imagePreviews.length > 0 && (
                               <Carousel className="w-full mt-4">
