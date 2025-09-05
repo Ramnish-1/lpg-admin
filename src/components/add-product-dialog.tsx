@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
 import { ImageViewerDialog } from './image-viewer-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 type AddProductPayload = Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'history'>;
 
@@ -42,6 +44,7 @@ const variantSchema = z.object({
 const productSchema = z.object({
   productName: z.string().min(1, "Product name is required."),
   description: z.string().min(1, "Description is required."),
+  category: z.enum(['LPG', 'Accessories']),
   lowStockThreshold: z.coerce.number().int().min(0, "Threshold must be a whole number."),
   variants: z.array(variantSchema).min(1, "At least one product variant is required."),
 });
@@ -60,6 +63,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     defaultValues: {
       productName: '',
       description: '',
+      category: 'LPG',
       lowStockThreshold: 10,
       variants: [{ label: '', price: 0, stock: 0 }],
     }
@@ -152,8 +156,9 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
             <form onSubmit={form.handleSubmit(handleSubmit)} noValidate className="flex flex-col overflow-hidden">
               <ScrollArea className="flex-1 px-6">
                   <div className="space-y-6 py-2">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <FormField control={form.control} name="productName" render={({ field }) => (<FormItem><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g. LPG Cylinder" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="productName" render={({ field }) => (<FormItem><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g. LPG Cylinder" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl><SelectContent><SelectItem value="LPG">LPG</SelectItem><SelectItem value="Accessories">Accessories</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                           <FormField control={form.control} name="lowStockThreshold" render={({ field }) => (<FormItem><FormLabel>Low Stock Threshold</FormLabel><FormControl><Input type="number" placeholder="e.g. 10" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
                       <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="e.g. Standard household cooking gas cylinder" {...field} /></FormControl><FormMessage /></FormItem>)} />

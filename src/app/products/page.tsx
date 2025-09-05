@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { AppShell } from '@/components/app-shell';
@@ -140,6 +141,7 @@ export default function ProductsPage() {
     const formData = new FormData();
     formData.append('productName', updatedProduct.productName);
     formData.append('description', updatedProduct.description);
+    formData.append('category', updatedProduct.category);
     formData.append('status', updatedProduct.status);
     formData.append('lowStockThreshold', updatedProduct.lowStockThreshold.toString());
     formData.append('variants', JSON.stringify(updatedProduct.variants));
@@ -176,6 +178,7 @@ export default function ProductsPage() {
     const formData = new FormData();
     formData.append('productName', newProduct.productName);
     formData.append('description', newProduct.description);
+    formData.append('category', newProduct.category);
     formData.append('status', newProduct.status);
     formData.append('lowStockThreshold', newProduct.lowStockThreshold.toString());
     formData.append('variants', JSON.stringify(newProduct.variants));
