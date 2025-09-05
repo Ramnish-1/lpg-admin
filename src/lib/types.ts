@@ -25,7 +25,7 @@ export interface Product {
   id: string;
   productName: string;
   description: string;
-  category: 'LPG' | 'Accessories';
+  category: 'lpg' | 'accessories';
   status: 'active' | 'inactive' | 'Active' | 'Inactive';
   lowStockThreshold: number;
   variants: ProductVariant[];
