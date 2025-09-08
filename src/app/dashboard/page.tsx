@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Users, ShoppingCart, Truck, IndianRupee, Loader2 } from 'lucide-react';
 import type { Order, Agent } from '@/lib/types';
-import { DashboardChart } from '@/components/dashboard-chart';
+import { SalesChart } from '@/components/sales-chart';
 import { UserHoverCard } from '@/components/user-hover-card';
 import { OrderHoverCard } from '@/components/order-hover-card';
 import { AgentHoverCard } from '@/components/agent-hover-card';
@@ -31,7 +31,7 @@ export default function DashboardPage() {
     totalAgents: 0,
     totalRevenue: 0,
   });
-  const [ordersByDay, setOrdersByDay] = useState<{ day: string; orders: number }[]>([]);
+  const [salesByDay, setSalesByDay] = useState<{ day: string; totalRevenue: number }[]>([]);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -66,13 +66,13 @@ export default function DashboardPage() {
         }
         
         if (dashboardResult.success) {
-          const { stats: dashboardStats, ordersByDay, recentOrders } = dashboardResult.data;
+          const { stats: dashboardStats, salesByDay, recentOrders } = dashboardResult.data;
           setStats({
             ...dashboardStats,
             totalAgents,
             activeAgents,
           });
-          setOrdersByDay(ordersByDay);
+          setSalesByDay(salesByDay);
           setRecentOrders(recentOrders);
         } else {
           toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch dashboard data.' });
@@ -93,10 +93,10 @@ export default function DashboardPage() {
   };
 
   const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-    'Delivered': 'default',
-    'Pending': 'secondary',
-    'In-progress': 'outline',
-    'Cancelled': 'destructive',
+    'delivered': 'default',
+    'pending': 'secondary',
+    'in-progress': 'outline',
+    'cancelled': 'destructive',
   };
   
   if (isLoading) {
@@ -169,10 +169,10 @@ export default function DashboardPage() {
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Orders Overview (Last 7 Days)</CardTitle>
+              <CardTitle>Sales Overview (Last 7 Days)</CardTitle>
             </CardHeader>
             <CardContent>
-              <DashboardChart ordersByDay={ordersByDay} />
+              <SalesChart salesByDay={salesByDay} />
             </CardContent>
           </Card>
           <Card>
@@ -195,15 +195,15 @@ export default function DashboardPage() {
                       <TableRow key={order.id} onClick={() => handleShowDetails(order)} className="cursor-pointer">
                         <TableCell>
                           <div className="font-medium">{order.customerName}</div>
-                          <div className="text-sm text-muted-foreground">#{order.id.slice(0, 6)}</div>
+                          <div className="text-sm text-muted-foreground">#{order.orderNumber.slice(-8)}</div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={statusVariant[order.status]}>{order.status}</Badge>
+                          <Badge variant={statusVariant[order.status] || 'secondary'}>{order.status}</Badge>
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
                           {new Date(order.createdAt).toLocaleDateString()}
                         </TableCell>
-                        <TableCell className="text-right">₹{order.totalAmount.toLocaleString()}</TableCell>
+                        <TableCell className="text-right">₹{parseFloat(order.totalAmount).toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

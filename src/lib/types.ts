@@ -92,6 +92,7 @@ export interface Order {
   items: OrderItem[];
   subtotal: string;
   totalAmount: string;
+  totalRevenue?: number;
   paymentMethod: string;
   paymentStatus: string;
   status: 'pending' | 'confirmed' | 'in-progress' | 'out-for-delivery' | 'delivered' | 'cancelled' | 'returned' | 'assigned';
