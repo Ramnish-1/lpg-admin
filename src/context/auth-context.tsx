@@ -3,6 +3,7 @@
 
 import { createContext, useState, useEffect, ReactNode, useContext } from 'react';
 import type { User } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -11,6 +12,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   signup: (name: string, email: string, password: string, phone: string) => Promise<boolean>;
+  handleApiError: (response: Response) => void;
 }
 
 const TOKEN_STORAGE_KEY = 'gastrack-token';
@@ -23,6 +25,7 @@ export const AuthContext = createContext<AuthContextType>({
   login: async () => false,
   logout: async () => {},
   signup: async () => false,
+  handleApiError: () => {},
 });
 
 const getStoredToken = (): string | null => {
@@ -37,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     setIsClient(true);
@@ -126,6 +130,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
     }
   }
+
+  const handleApiError = (response: Response) => {
+    if (response.status === 401) {
+        toast({
+            variant: 'destructive',
+            title: 'Session Expired',
+            description: 'Your session has expired. Please log in again.',
+        });
+        logout();
+    }
+  };
   
   if (isLoading) {
     return null; // Or a loading screen
@@ -133,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, token, login, logout, signup }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, token, login, logout, signup, handleApiError }}>
       {children}
     </AuthContext.Provider>
   );

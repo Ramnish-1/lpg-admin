@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { AgentReportDialog } from '@/components/agent-report-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { AuthContext } from '@/context/auth-context';
+import { AuthContext, useAuth } from '@/context/auth-context';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
@@ -58,6 +58,8 @@ export default function AgentsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const { token } = useContext(AuthContext);
+  const { handleApiError } = useAuth();
+
 
   const fetchAgents = async () => {
     if (!token) return;
@@ -66,6 +68,7 @@ export default function AgentsPage() {
         const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (!response.ok) handleApiError(response);
         const result = await response.json();
         if (result.success) {
             setAgents(result.data.agents.map((a: any) => ({ ...a, joinedAt: new Date(a.joinedAt)})));
@@ -131,6 +134,7 @@ export default function AgentsPage() {
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData,
       });
+      if (!response.ok) handleApiError(response);
       const result = await response.json();
       if (result.success) {
         toast({ title: 'Agent Updated', description: `${updatedAgent.name}'s details have been successfully updated.` });
@@ -169,6 +173,7 @@ export default function AgentsPage() {
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData,
         });
+        if (!response.ok) handleApiError(response);
         const result = await response.json();
         if (result.success) {
             toast({ title: 'Agent Added', description: `${newAgent.name} has been successfully added.` });
@@ -198,6 +203,8 @@ export default function AgentsPage() {
       );
       
       const responses = await Promise.all(deletePromises);
+      responses.forEach(res => { if(!res.ok) handleApiError(res)});
+
       const successfulDeletes = responses.filter(res => res.ok).length;
 
       if (successfulDeletes > 0) {
@@ -420,4 +427,3 @@ export default function AgentsPage() {
     </AppShell>
   );
 }
-

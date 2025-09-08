@@ -15,13 +15,14 @@ import { UserHoverCard } from '@/components/user-hover-card';
 import { OrderHoverCard } from '@/components/order-hover-card';
 import { AgentHoverCard } from '@/components/agent-hover-card';
 import { OrderDetailsDialog } from '@/components/order-details-dialog';
-import { AuthContext } from '@/context/auth-context';
+import { AuthContext, useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function DashboardPage() {
   const { token } = useContext(AuthContext);
+  const { handleApiError } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -50,6 +51,10 @@ export default function DashboardPage() {
             headers: { 'Authorization': `Bearer ${token}` }
           })
         ]);
+
+        if (!dashboardResponse.ok) handleApiError(dashboardResponse);
+        if (!agentsResponse.ok) handleApiError(agentsResponse);
+
 
         const dashboardResult = await dashboardResponse.json();
         const agentsResult = await agentsResponse.json();
@@ -87,7 +92,7 @@ export default function DashboardPage() {
     };
     
     fetchDashboardData();
-  }, [token, toast]);
+  }, [token, toast, handleApiError]);
 
   const handleShowDetails = (order: Order) => {
     setSelectedOrder(order);

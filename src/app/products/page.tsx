@@ -17,7 +17,7 @@ import { EditProductDialog } from '@/components/edit-product-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { AddProductDialog } from '@/components/add-product-dialog';
 import { cn } from '@/lib/utils';
-import { AuthContext } from '@/context/auth-context';
+import { AuthContext, useAuth } from '@/context/auth-context';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 
@@ -36,6 +36,8 @@ export default function ProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const { token } = useContext(AuthContext);
+  const { handleApiError } = useAuth();
+
 
   const fetchProducts = async () => {
     if (!token) return;
@@ -44,6 +46,7 @@ export default function ProductsPage() {
       const response = await fetch(`${API_BASE_URL}/api/products`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (!response.ok) handleApiError(response);
       const result = await response.json();
       if (result.success) {
         setProducts(result.data.products);
@@ -93,6 +96,7 @@ export default function ProductsPage() {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (!response.ok) handleApiError(response);
       if (response.ok) {
         toast({ title: 'Product Deleted', description: `${selectedProduct.productName} has been deleted.` });
         fetchProducts(); // Re-fetch
@@ -120,6 +124,7 @@ export default function ProductsPage() {
             },
             body: JSON.stringify({ status: newStatus })
         });
+        if (!response.ok) handleApiError(response);
         const result = await response.json();
         if (result.success) {
             toast({
@@ -158,6 +163,7 @@ export default function ProductsPage() {
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData,
         });
+        if (!response.ok) handleApiError(response);
         const result = await response.json();
         if (result.success) {
             toast({ title: 'Product Updated', description: `${updatedProduct.productName} has been successfully updated.` });
@@ -193,6 +199,7 @@ export default function ProductsPage() {
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
         });
+        if (!response.ok) handleApiError(response);
         const result = await response.json();
         if(result.success) {
             toast({ title: 'Product Added', description: `${newProduct.productName} has been successfully added.` });

@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { useEffect, useState, useMemo, useContext } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { UserDetailsDialog } from '@/components/user-details-dialog';
-import { AuthContext } from '@/context/auth-context';
+import { AuthContext, useAuth } from '@/context/auth-context';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -29,6 +29,8 @@ export default function CustomersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const { token } = useContext(AuthContext);
+  const { handleApiError } = useAuth();
+
 
   useEffect(() => {
     if (!token) return;
@@ -39,6 +41,7 @@ export default function CustomersPage() {
         const response = await fetch(`${API_BASE_URL}/api/auth/customers`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (!response.ok) handleApiError(response);
         const result = await response.json();
         if (result.success) {
             const fetchedUsers = result.data.customers.map((u: any) => ({
@@ -67,7 +70,7 @@ export default function CustomersPage() {
     };
     
     fetchUsers();
-  }, [token, toast]);
+  }, [token, toast, handleApiError]);
   
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
 

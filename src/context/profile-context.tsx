@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useState, useEffect, ReactNode, useContext, useCallback } from 'react';
-import { AuthContext } from './auth-context';
+import { AuthContext, useAuth } from './auth-context';
 import { User } from '@/lib/types';
 
 interface Profile {
@@ -13,7 +13,7 @@ interface Profile {
   photoUrl: string;
 }
 
-interface ProfileUpdatePayload extends Partial<Omit<Profile, 'photoUrl'>> {
+interface ProfileUpdatePayload extends Partial<Omit<Profile, 'photoUrl' | 'email'>> {
   photoFile?: File;
 }
 
@@ -41,6 +41,7 @@ export const ProfileContext = createContext<ProfileContextType>({
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const { token, isAuthenticated } = useContext(AuthContext);
+  const { handleApiError } = useAuth();
   const [profile, setProfileState] = useState<Profile>(defaultProfile);
   const [isFetchingProfile, setIsFetchingProfile] = useState(true);
 
@@ -53,6 +54,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
             'Authorization': `Bearer ${token}`
           }
         });
+        if (!response.ok) handleApiError(response);
         const result = await response.json();
         if (result.success) {
           const userData = result.data.user;
@@ -73,7 +75,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       setProfileState(defaultProfile);
       setIsFetchingProfile(false);
     }
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, token, handleApiError]);
 
   useEffect(() => {
     fetchProfile();
@@ -96,6 +98,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
             },
             body: formData
         });
+        if (!response.ok) handleApiError(response);
         const result = await response.json();
         
         if (result.success) {

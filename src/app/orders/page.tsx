@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { ReturnOrderDialog } from '@/components/return-order-dialog';
 import { Input } from '@/components/ui/input';
-import { AuthContext } from '@/context/auth-context';
+import { AuthContext, useAuth } from '@/context/auth-context';
 import { useNotifications } from '@/context/notification-context';
 
 const ITEMS_PER_PAGE = 10;
@@ -217,6 +217,7 @@ export default function OrdersPage() {
   const [isReturnOpen, setIsReturnOpen] = useState(false);
   const { toast } = useToast();
   const { token } = useContext(AuthContext);
+  const { handleApiError } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const { socket } = useNotifications();
 
@@ -228,6 +229,7 @@ export default function OrdersPage() {
           const response = await fetch(`${API_BASE_URL}/api/orders`, {
               headers: { 'Authorization': `Bearer ${token}` }
           });
+          if (!response.ok) handleApiError(response);
           const result = await response.json();
           if (result.success) {
               setOrders(result.data.orders);
@@ -264,6 +266,7 @@ export default function OrdersPage() {
        const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (!response.ok) handleApiError(response);
         const result = await response.json();
         if (result.success) {
             setAgents(result.data.agents);
@@ -318,6 +321,7 @@ export default function OrdersPage() {
         },
         body: JSON.stringify({ agentId })
       });
+      if (!response.ok) handleApiError(response);
       const result = await response.json();
       if (result.success) {
         toast({
@@ -350,6 +354,7 @@ export default function OrdersPage() {
         },
         body: JSON.stringify(requestBody)
       });
+      if (!response.ok) handleApiError(response);
       const result = await response.json();
        if (result.success) {
         toast({
@@ -522,5 +527,3 @@ export default function OrdersPage() {
     </AppShell>
   );
 }
-
-    
