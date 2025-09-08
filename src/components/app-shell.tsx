@@ -129,9 +129,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Image 
             src="https://res.cloudinary.com/dr0x84q69/image/upload/v1756720531/lpg-products/ktztg1vnjfel19wlpco0.png"
             alt="Company Mascot"
-            width={150}
-            height={150}
-            className="w-full h-auto max-w-[150px]"
+            width={250}
+            height={250}
+            className="w-full h-auto max-w-[250px]"
             data-ai-hint="company mascot"
         />
     </div>
