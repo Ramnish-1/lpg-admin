@@ -13,22 +13,11 @@ import type { User } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { useEffect, useState, useMemo, useContext } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { UserDetailsDialog } from '@/components/user-details-dialog';
 import { AuthContext } from '@/context/auth-context';
-import { getUsersData } from '@/lib/data';
 
 const ITEMS_PER_PAGE = 10;
-const USERS_STORAGE_KEY = 'gastrack-users';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 
 export default function CustomersPage() {
@@ -36,46 +25,47 @@ export default function CustomersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [action, setAction] = useState<'Block' | 'Unblock' | null>(null);
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
-  
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  const { token } = useContext(AuthContext);
 
   useEffect(() => {
-    if (!isClient) return;
+    if (!token) return;
 
     const fetchUsers = async () => {
       setIsLoading(true);
       try {
-        const savedUsers = window.localStorage.getItem(USERS_STORAGE_KEY);
-        if (savedUsers) {
-          setUsers(JSON.parse(savedUsers).map((u: User) => ({...u, createdAt: new Date(u.createdAt)})));
+        const response = await fetch(`${API_BASE_URL}/api/auth/customers`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await response.json();
+        if (result.success) {
+            const fetchedUsers = result.data.customers.map((u: any) => ({
+                id: u.id,
+                name: u.name,
+                email: u.email,
+                phone: u.phone,
+                address: u.addresses?.[0]?.address || 'No address provided',
+                status: 'Active', // Assuming all fetched users are active
+                createdAt: new Date(u.createdAt),
+                orderHistory: [],
+                location: { lat: 0, lng: 0 }
+            }));
+            setUsers(fetchedUsers);
+            setFilteredUsers(fetchedUsers);
         } else {
-          const data = await getUsersData();
-          setUsers(data);
-          window.localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(data));
+             toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch customers.' });
         }
       } catch (error) {
-        console.error("Failed to load users", error);
-        const data = await getUsersData();
-        setUsers(data);
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch customers.' });
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchUsers();
-  }, [isClient]);
-
-  useEffect(() => {
-    setFilteredUsers(users);
-  }, [users]);
+  }, [token, toast]);
   
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
 
@@ -85,26 +75,6 @@ export default function CustomersPage() {
     return filteredUsers.slice(startIndex, endIndex);
   }, [filteredUsers, currentPage]);
 
-
-  const updateUsersStateAndStorage = (newUsers: User[]) => {
-    setUsers(newUsers);
-    const currentSearchTerm = (document.querySelector('input[placeholder="Search customers..."]') as HTMLInputElement)?.value || '';
-    if (currentSearchTerm) {
-        const filtered = newUsers.filter(user => 
-            user.name.toLowerCase().includes(currentSearchTerm) ||
-            user.email.toLowerCase().includes(currentSearchTerm) ||
-            user.phone.toLowerCase().includes(currentSearchTerm)
-        );
-        setFilteredUsers(filtered);
-    } else {
-        setFilteredUsers(newUsers);
-    }
-    try {
-        window.localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(newUsers));
-    } catch (error) {
-        console.error("Failed to save users to localStorage", error);
-    }
-  };
   
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     const searchTerm = event.target.value.toLowerCase();
@@ -116,31 +86,6 @@ export default function CustomersPage() {
     );
     setFilteredUsers(filtered);
   };
-
-  const handleAction = (user: User, userAction: 'Block' | 'Unblock') => {
-    setSelectedUser(user);
-    setAction(userAction);
-    setIsConfirmOpen(true);
-  };
-  
-  const confirmAction = () => {
-     if (selectedUser && action) {
-      const newStatus = action === 'Block' ? 'Blocked' : 'Active';
-      const updatedUsers = users.map(u => 
-        u.id === selectedUser.id ? { ...u, status: newStatus } : u
-      );
-      updateUsersStateAndStorage(updatedUsers);
-      toast({
-        title: `Customer ${action}ed`,
-        description: `${selectedUser.name} has been ${action.toLowerCase()}ed.`,
-        variant: action === 'Block' ? 'destructive' : 'default',
-      });
-      setIsConfirmOpen(false);
-      setSelectedUser(null);
-      setAction(null);
-    }
-  }
-
 
   const handleShowDetails = (user: User) => {
     setSelectedUser(user);
@@ -178,8 +123,6 @@ export default function CustomersPage() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
-  
-  if (!isClient) return null;
 
 
   return (
@@ -256,11 +199,6 @@ export default function CustomersPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleShowDetails(user)}>View Details</DropdownMenuItem>
-                            {user.status === 'Active' ? (
-                              <DropdownMenuItem className="text-destructive" onClick={() => handleAction(user, 'Block')}>Block</DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem onClick={() => handleAction(user, 'Unblock')}>Unblock</DropdownMenuItem>
-                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -301,23 +239,6 @@ export default function CustomersPage() {
         )}
       </Card>
       
-      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to {action?.toLowerCase()} this customer?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action can be reversed later.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmAction} className={action === 'Block' ? 'bg-destructive hover:bg-destructive/90' : ''}>
-              Confirm
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       <UserDetailsDialog user={selectedUser} isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} />
 
     </AppShell>
