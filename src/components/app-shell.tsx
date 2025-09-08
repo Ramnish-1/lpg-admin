@@ -131,7 +131,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             alt="Company Mascot"
             width={150}
             height={150}
-            className="w-36 h-auto"
+            className="w-full h-auto max-w-[150px]"
             data-ai-hint="company mascot"
         />
     </div>
