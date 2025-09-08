@@ -3,6 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -35,7 +36,6 @@ import { useToast } from '@/hooks/use-toast';
 import { ProfileContext } from '@/context/profile-context';
 import { SettingsContext } from '@/context/settings-context';
 import { useAuth } from '@/context/auth-context';
-import { SidebarMascot } from './sidebar-mascot';
 import { useNotifications } from '@/context/notification-context';
 import { Badge } from './ui/badge';
 import { formatDistanceToNow } from 'date-fns';
@@ -124,6 +124,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     ? profile.photoUrl 
     : profile.photoUrl ? `${API_BASE_URL}/${profile.photoUrl}` : '';
 
+  const sidebarImage = (
+    <div className="relative mt-auto mb-4 flex justify-center p-4">
+        <Image 
+            src="https://res.cloudinary.com/dr0x84q69/image/upload/v1756720531/lpg-products/ktztg1vnjfel19wlpco0.png"
+            alt="Company Mascot"
+            width={150}
+            height={150}
+            className="w-36 h-auto"
+            data-ai-hint="company mascot"
+        />
+    </div>
+  );
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block">
@@ -137,7 +150,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex-1">
             {sidebarNav}
           </div>
-          <SidebarMascot />
+          {sidebarImage}
         </div>
       </div>
       <div className="flex flex-col">
@@ -157,7 +170,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </Link>
               </div>
               {sidebarNav}
-              <SidebarMascot />
+              {sidebarImage}
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1" />
