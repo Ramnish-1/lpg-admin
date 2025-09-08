@@ -68,7 +68,9 @@ export default function DashboardPage() {
         if (dashboardResult.success) {
           const { stats: dashboardStats, salesByDay, recentOrders } = dashboardResult.data;
           setStats({
-            ...dashboardStats,
+            totalUsers: dashboardStats.totalUsers,
+            totalOrders: dashboardStats.totalOrders,
+            totalRevenue: dashboardStats.totalRevenue,
             totalAgents,
             activeAgents,
           });
