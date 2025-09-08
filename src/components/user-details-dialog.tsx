@@ -34,6 +34,9 @@ interface UserDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+
+
 export function UserDetailsDialog({ user, isOpen, onOpenChange }: UserDetailsDialogProps) {
   if (!user) return null;
 
@@ -49,13 +52,19 @@ export function UserDetailsDialog({ user, isOpen, onOpenChange }: UserDetailsDia
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(user.address)}`, '_blank');
   }
 
+  const displayPhotoUrl = user.profileImage 
+    ? user.profileImage.startsWith('http') 
+      ? user.profileImage 
+      : `${API_BASE_URL}/${user.profileImage}` 
+    : '';
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
-                <AvatarImage src={`https://picsum.photos/seed/${user.id}/100`} alt={user.name} data-ai-hint="person portrait" />
+                <AvatarImage src={displayPhotoUrl} alt={user.name} data-ai-hint="person portrait" />
                 <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>

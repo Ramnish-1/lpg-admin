@@ -26,7 +26,7 @@ export interface Product {
   productName: string;
   description: string;
   category: 'lpg' | 'accessories';
-  status: 'active' | 'inactive' | 'Active' | 'Inactive';
+  status: 'active' | 'inactive';
   lowStockThreshold: number;
   variants: ProductVariant[];
   images: string[]; // URLs to images
@@ -53,7 +53,7 @@ export interface Agent {
   aadharCardNumber: string;
   drivingLicence: string;
   bankDetails: string;
-  status: 'online' | 'offline' | 'Online' | 'Offline';
+  status: 'online' | 'offline';
   joinedAt: Date;
   createdAt: Date;
   updatedAt: Date;

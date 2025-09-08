@@ -50,7 +50,8 @@ export default function CustomersPage() {
                 status: 'Active', // Assuming all fetched users are active
                 createdAt: new Date(u.createdAt),
                 orderHistory: [],
-                location: { lat: 0, lng: 0 }
+                location: { lat: 0, lng: 0 },
+                profileImage: u.profileImage,
             }));
             setUsers(fetchedUsers);
             setFilteredUsers(fetchedUsers);
