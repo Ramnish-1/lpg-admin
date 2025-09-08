@@ -9,7 +9,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import type { User } from '@/lib/types';
+import type { User, UserAddress } from '@/lib/types';
 import { Mail, Phone, MapPin, Calendar, User as UserIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
@@ -47,9 +47,9 @@ export function UserDetailsDialog({ user, isOpen, onOpenChange }: UserDetailsDia
     window.open(`https://wa.me/${cleanPhone}`, '_blank');
   };
 
-  const handleAddressClick = (e: React.MouseEvent) => {
+  const handleAddressClick = (e: React.MouseEvent, address: string) => {
     e.stopPropagation();
-    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(user.address)}`, '_blank');
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
   }
 
   const displayPhotoUrl = user.profileImage 
@@ -57,6 +57,8 @@ export function UserDetailsDialog({ user, isOpen, onOpenChange }: UserDetailsDia
       ? user.profileImage 
       : `${API_BASE_URL}/${user.profileImage}` 
     : '';
+  
+  const primaryAddress = user.addresses?.[0];
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -90,8 +92,21 @@ export function UserDetailsDialog({ user, isOpen, onOpenChange }: UserDetailsDia
                 </Button>
             </div>
             <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <a href="#" onClick={handleAddressClick} className="text-sm hover:underline">{user.address}</a>
+                <MapPin className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                {primaryAddress ? (
+                   <div className="text-sm">
+                      <p className="font-medium">{primaryAddress.title}</p>
+                      <a 
+                        href="#" 
+                        onClick={(e) => handleAddressClick(e, `${primaryAddress.address}, ${primaryAddress.city}`)} 
+                        className="text-muted-foreground hover:underline"
+                      >
+                        {primaryAddress.address}, {primaryAddress.city}, {primaryAddress.pincode}
+                      </a>
+                   </div>
+                ) : (
+                    <p className="text-sm text-muted-foreground">No address on file.</p>
+                )}
             </div>
             <Separator />
              <h3 className="text-sm font-medium text-muted-foreground">Account Details</h3>

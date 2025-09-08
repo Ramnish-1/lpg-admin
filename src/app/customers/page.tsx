@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, FileDown, Loader2 } from 'lucide-react';
-import type { User } from '@/lib/types';
+import type { User, UserAddress } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { useEffect, useState, useMemo, useContext } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -47,6 +47,7 @@ export default function CustomersPage() {
                 email: u.email,
                 phone: u.phone,
                 address: u.addresses?.[0]?.address || 'No address provided',
+                addresses: u.addresses,
                 status: 'Active', // Assuming all fetched users are active
                 createdAt: new Date(u.createdAt),
                 orderHistory: [],

@@ -1,12 +1,22 @@
 
 
+export interface UserAddress {
+  id: string;
+  city: string;
+  title: string;
+  address: string;
+  pincode: string;
+  landmark: string;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   password?: string;
   phone: string;
-  address: string;
+  address: string; // This will hold the primary formatted address string for table views
+  addresses?: UserAddress[]; // This will hold the full address objects
   status: 'Active' | 'Blocked';
   orderHistory: string[];
   createdAt: Date;
