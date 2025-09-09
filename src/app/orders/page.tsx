@@ -407,6 +407,9 @@ export default function OrdersPage() {
     if (status === 'in-progress') {
       return filteredOrders.filter(o => ['assigned', 'in-progress'].includes(o.status)).length;
     }
+    if (status === 'out-for-delivery') {
+      return filteredOrders.filter(o => o.status === 'out_for_delivery').length;
+    }
     return filteredOrders.filter(o => o.status === status).length;
   }
   
@@ -483,7 +486,7 @@ export default function OrdersPage() {
                     "text-base px-4"
                   )}
                 >
-                  <span className="whitespace-nowrap mr-2">{status.replace('_', ' ')}</span>
+                  <span className="whitespace-nowrap mr-2">{status.replace('_', '-')}</span>
                   <Badge 
                      variant={statusVariant[status]} 
                      className={cn("px-2 py-0.5 text-xs font-semibold", {
@@ -505,6 +508,9 @@ export default function OrdersPage() {
               orders={filteredOrders.filter(o => {
                 if (status === 'in-progress') {
                   return ['assigned', 'in-progress'].includes(o.status);
+                }
+                if (status === 'out-for-delivery') {
+                  return o.status === 'out_for_delivery';
                 }
                 return o.status === status;
               })}
