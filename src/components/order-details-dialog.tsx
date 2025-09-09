@@ -121,7 +121,7 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetails
                 </div>
                  <div className="flex justify-between items-center">
                     <span className="text-muted-foreground flex items-center gap-2">Status</span>
-                    <Badge variant={statusVariant[order.status]} className="text-xs capitalize">{order.status.replace('-', ' ')}</Badge>
+                    <Badge variant={statusVariant[order.status]} className="text-xs capitalize">{order.status.replace('_', ' ')}</Badge>
                 </div>
                 {(order.status === 'cancelled' || order.status === 'returned') && order.adminNotes && (
                    <div className="flex justify-between items-start pt-2">

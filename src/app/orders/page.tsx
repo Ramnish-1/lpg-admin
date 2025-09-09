@@ -37,7 +37,7 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
 };
 
 const orderStatusesForDropdown: Order['status'][] = ['pending', 'confirmed', 'assigned', 'out-for-delivery', 'delivered', 'cancelled', 'returned'];
-const orderStatusesForTabs: (Order['status'] | 'in-progress')[] = ['pending', 'confirmed', 'in-progress', 'delivered', 'cancelled', 'returned'];
+const orderStatusesForTabs: (Order['status'] | 'in-progress')[] = ['pending', 'confirmed', 'in-progress', 'out-for-delivery', 'delivered', 'cancelled', 'returned'];
 
 
 function OrdersTable({ 
@@ -107,7 +107,7 @@ function OrdersTable({
                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="sm" className="w-40 justify-between capitalize" onClick={(e) => e.stopPropagation()}>
-                                <Badge variant={statusVariant[order.status]} className="pointer-events-none">{order.status.replace('-', ' ')}</Badge>
+                                <Badge variant={statusVariant[order.status]} className="pointer-events-none">{order.status.replace('_', ' ')}</Badge>
                                 <ChevronDown className="h-4 w-4 text-muted-foreground"/>
                             </Button>
                         </DropdownMenuTrigger>
@@ -126,7 +126,7 @@ function OrdersTable({
                                 }
                                 className="capitalize"
                                 >
-                                {status.replace('-', ' ')}
+                                {status.replace('_', ' ')}
                                 {status === 'in-progress' && !order.assignedAgent && " (Assign agent first)"}
                                 </DropdownMenuRadioItem>
                             ))}
@@ -405,7 +405,7 @@ export default function OrdersPage() {
 
   const getOrderCount = (status: string) => {
     if (status === 'in-progress') {
-      return filteredOrders.filter(o => ['assigned', 'in-progress', 'out-for-delivery'].includes(o.status)).length;
+      return filteredOrders.filter(o => ['assigned', 'in-progress'].includes(o.status)).length;
     }
     return filteredOrders.filter(o => o.status === status).length;
   }
@@ -483,7 +483,7 @@ export default function OrdersPage() {
                     "text-base px-4"
                   )}
                 >
-                  <span className="whitespace-nowrap mr-2">{status.replace('-', ' ')}</span>
+                  <span className="whitespace-nowrap mr-2">{status.replace('_', ' ')}</span>
                   <Badge 
                      variant={statusVariant[status]} 
                      className={cn("px-2 py-0.5 text-xs font-semibold", {
@@ -504,7 +504,7 @@ export default function OrdersPage() {
             <OrdersTable 
               orders={filteredOrders.filter(o => {
                 if (status === 'in-progress') {
-                  return ['assigned', 'in-progress', 'out-for-delivery'].includes(o.status);
+                  return ['assigned', 'in-progress'].includes(o.status);
                 }
                 return o.status === status;
               })}

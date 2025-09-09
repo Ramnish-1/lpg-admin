@@ -105,7 +105,6 @@ export interface Order {
   outForDeliveryAt?: string | null;
   deliveredAt?: string | null;
   cancelledAt?: string | null;
-  agent?: Agent | null; // Agent can be part of the order data
   assignedAgent?: {
     id: string;
     name: string;
