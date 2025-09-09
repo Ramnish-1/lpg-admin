@@ -6,7 +6,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Agent } from "@/lib/types";
 import { Badge } from './ui/badge';
-import { AuthContext } from '@/context/auth-context';
+import { AuthContext, useAuth } from '@/context/auth-context';
 import { Separator } from './ui/separator';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -14,6 +14,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export function AgentHoverCard({ children }: { children: React.ReactNode }) {
   const [agents, setAgents] = useState<Agent[]>([]);
   const { token } = useContext(AuthContext);
+  const { handleApiError } = useAuth();
 
   useEffect(() => {
     const fetchAgents = async () => {
@@ -22,6 +23,7 @@ export function AgentHoverCard({ children }: { children: React.ReactNode }) {
         const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (!response.ok) handleApiError(response);
         const result = await response.json();
         if (result.success) {
             setAgents(result.data.agents);
@@ -31,7 +33,7 @@ export function AgentHoverCard({ children }: { children: React.ReactNode }) {
       }
     };
     fetchAgents();
-  }, [token]);
+  }, [token, handleApiError]);
 
   const onlineAgents = useMemo(() => agents.filter(a => a.status.toLowerCase() === 'online'), [agents]);
   const offlineAgents = useMemo(() => agents.filter(a => a.status.toLowerCase() === 'offline'), [agents]);

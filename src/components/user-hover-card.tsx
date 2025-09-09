@@ -6,13 +6,14 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "@/lib/types";
-import { AuthContext } from '@/context/auth-context';
+import { AuthContext, useAuth } from '@/context/auth-context';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export function UserHoverCard({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
   const { token } = useContext(AuthContext);
+  const { handleApiError } = useAuth();
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -21,6 +22,7 @@ export function UserHoverCard({ children }: { children: React.ReactNode }) {
          const response = await fetch(`${API_BASE_URL}/api/users?limit=10`, { // Fetch last 10 users
              headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (!response.ok) handleApiError(response);
         const result = await response.json();
         if (result.success) {
           setUsers(result.data.users);
@@ -30,7 +32,7 @@ export function UserHoverCard({ children }: { children: React.ReactNode }) {
       }
     };
     fetchUsers();
-  }, [token]);
+  }, [token, handleApiError]);
 
   return (
     <HoverCard>

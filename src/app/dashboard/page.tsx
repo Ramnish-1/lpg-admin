@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, useCallback } from 'react';
 import Link from 'next/link';
 import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';

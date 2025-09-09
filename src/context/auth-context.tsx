@@ -1,7 +1,7 @@
 
 "use client";
 
-import { createContext, useState, useEffect, ReactNode, useContext } from 'react';
+import { createContext, useState, useEffect, ReactNode, useContext, useCallback } from 'react';
 import type { User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -131,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const handleApiError = (response: Response) => {
+  const handleApiError = useCallback((response: Response) => {
     if (response.status === 401) {
         toast({
             variant: 'destructive',
@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         logout();
     }
-  };
+  }, [toast]);
   
   if (isLoading) {
     return null; // Or a loading screen
