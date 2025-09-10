@@ -36,7 +36,7 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
   'returned': 'destructive',
 };
 
-const orderStatusesForDropdown: Order['status'][] = ['pending', 'confirmed', 'assigned', 'out-for-delivery', 'delivered', 'cancelled', 'returned'];
+const orderStatusesForDropdown: Order['status'][] = ['pending', 'confirmed', 'delivered', 'cancelled', 'returned'];
 const orderStatusesForTabs: (Order['status'] | 'in-progress')[] = ['pending', 'confirmed', 'in-progress', 'out-for-delivery', 'delivered', 'cancelled', 'returned'];
 
 
@@ -474,14 +474,14 @@ export default function OrdersPage() {
       ) : (
       <Tabs defaultValue="pending">
         <div className="overflow-x-auto">
-          <TabsList>
+          <TabsList className="bg-muted p-1 rounded-lg">
             {orderStatusesForTabs.map(status => {
               const count = getOrderCount(status);
               return (
                 <TabsTrigger 
                   key={status} 
                   value={status}
-                  className="capitalize"
+                  className="capitalize px-4 py-1.5 text-sm font-medium rounded-md"
                 >
                   <span className="mr-2">{status.replace('_', '-')}</span>
                   <Badge 
