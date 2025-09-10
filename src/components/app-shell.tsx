@@ -30,6 +30,7 @@ import {
   User as UserIcon,
   UserPlus,
   Bell,
+  Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -39,6 +40,7 @@ import { useAuth } from '@/context/auth-context';
 import { useNotifications } from '@/context/notification-context';
 import { Badge } from './ui/badge';
 import { formatDistanceToNow } from 'date-fns';
+import { Order } from '@/lib/types';
 
 const GasPump = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -72,8 +74,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const { profile } = React.useContext(ProfileContext);
   const { settings } = React.useContext(SettingsContext);
-  const { isAuthenticated, logout } = useAuth();
-  const { notifications, markAsRead } = useNotifications();
+  const { isAuthenticated, logout, token, handleApiError } = useAuth();
+  const { notifications, removeNotification } = useNotifications();
   
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -94,8 +96,36 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   const handleNotificationClick = (orderId: string) => {
-    markAsRead(orderId);
     router.push('/orders');
+  }
+
+  const handleConfirmOrder = async (e: React.MouseEvent, orderId: string) => {
+      e.stopPropagation();
+      if (!token) return;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/status`, {
+            method: 'PUT',
+            headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ status: 'confirmed', adminNotes: 'Order confirmed and ready for delivery' })
+        });
+        if (!response.ok) handleApiError(response);
+        const result = await response.json();
+        if (result.success) {
+            toast({
+                title: 'Order Confirmed',
+                description: `Order has been marked as confirmed.`
+            });
+            removeNotification(orderId);
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to confirm order.' });
+        }
+      } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to confirm order.' });
+      }
   }
 
   const sidebarNav = (
@@ -185,15 +215,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-80" align="end">
-                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                <DropdownMenuLabel>Pending Orders</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {notifications.length === 0 ? (
-                    <p className="p-4 text-sm text-muted-foreground">No new notifications</p>
+                    <p className="p-4 text-sm text-muted-foreground">No pending orders.</p>
                 ) : (
                     notifications.map(n => (
-                        <DropdownMenuItem key={n.id} onSelect={() => handleNotificationClick(n.orderId)} className={cn("flex flex-col items-start gap-1 whitespace-normal", !n.read && "bg-accent/50")}>
-                            <p className="font-medium">{n.message}</p>
-                            <p className="text-xs text-muted-foreground">{formatDistanceToNow(n.timestamp, { addSuffix: true })}</p>
+                        <DropdownMenuItem key={n.id} onSelect={() => handleNotificationClick(n.orderId)} className={cn("flex items-start justify-between gap-2 whitespace-normal cursor-pointer", !n.read && "bg-accent/50")}>
+                            <div>
+                                <p className="font-medium">{n.message}</p>
+                                <p className="text-xs text-muted-foreground">{formatDistanceToNow(n.timestamp, { addSuffix: true })}</p>
+                            </div>
+                             <Button size="sm" variant="outline" className="h-7 gap-1" onClick={(e) => handleConfirmOrder(e, n.orderId)}>
+                                <Check className="h-3.5 w-3.5" />
+                                Confirm
+                            </Button>
                         </DropdownMenuItem>
                     ))
                 )}

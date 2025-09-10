@@ -121,7 +121,7 @@ function OrdersTable({
                                 value={order.status} 
                                 onValueChange={(newStatus) => onStatusChange(order, newStatus as Order['status'])}
                             >
-                            {orderStatusesForDropdown.filter(s => !['returned', 'assigned', 'out-for-delivery'].includes(s)).map(status => (
+                            {orderStatusesForDropdown.filter(s => !['returned'].includes(s)).map(status => (
                                 <DropdownMenuRadioItem 
                                 key={status} 
                                 value={status}
@@ -225,10 +225,10 @@ export default function OrdersPage() {
   const { token } = useContext(AuthContext);
   const { handleApiError } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
-  const { socket } = useNotifications();
+  const { socket, removeNotification } = useNotifications();
 
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
       if (!token) return;
       setIsLoading(true);
       try {
@@ -247,26 +247,22 @@ export default function OrdersPage() {
       } finally {
           setIsLoading(false);
       }
-  };
+  }, [token, toast, handleApiError]);
 
   useEffect(() => {
     if (socket) {
-        socket.on('newOrder', (newOrder) => {
-            console.log('New order received via socket:', newOrder);
-            toast({
-                title: "New Order Received!",
-                description: `Order #${newOrder.orderNumber.slice(-8)} from ${newOrder.customerName}.`
-            });
-            fetchOrders(); // Refetch orders when a new one comes in
-        });
+        const handleNewOrder = () => {
+            fetchOrders(); 
+        };
+        socket.on('newOrder', handleNewOrder);
 
         return () => {
-            socket.off('newOrder');
+            socket.off('newOrder', handleNewOrder);
         };
     }
-}, [socket, toast]);
+  }, [socket, fetchOrders]);
 
-  const fetchAgents = async () => {
+  const fetchAgents = useCallback(async () => {
      if (!token) return;
      try {
        const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
@@ -280,12 +276,12 @@ export default function OrdersPage() {
     } catch (error) {
        console.error("Failed to load agents", error);
     }
-  };
+  }, [token, handleApiError]);
 
   useEffect(() => {
     fetchOrders();
     fetchAgents();
-  }, [token]);
+  }, [token, fetchOrders, fetchAgents]);
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order =>
@@ -367,6 +363,9 @@ export default function OrdersPage() {
           title: 'Order Status Updated',
           description: `Order #${order.orderNumber.slice(-8)} has been marked as ${newStatus}.`
         });
+        if(newStatus === 'confirmed') {
+            removeNotification(order.id);
+        }
         fetchOrders();
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
@@ -413,7 +412,7 @@ export default function OrdersPage() {
     if (status === 'in-progress') {
       return filteredOrders.filter(o => ['assigned', 'in-progress'].includes(o.status)).length;
     }
-    if (status === 'out-for-delivery') {
+    if (status === 'out_for_delivery') {
       return filteredOrders.filter(o => o.status === 'out_for_delivery').length;
     }
     return filteredOrders.filter(o => o.status === status).length;
@@ -508,7 +507,7 @@ export default function OrdersPage() {
                 if (status === 'in-progress') {
                   return ['assigned', 'in-progress'].includes(o.status);
                 }
-                if (status === 'out-for-delivery') {
+                 if (status === 'out-for-delivery') {
                   return o.status === 'out_for_delivery';
                 }
                 return o.status === status;
