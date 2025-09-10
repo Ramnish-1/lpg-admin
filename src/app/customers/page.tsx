@@ -9,12 +9,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, FileDown, Loader2 } from 'lucide-react';
-import type { User, UserAddress } from '@/lib/types';
+import type { User } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { useEffect, useState, useMemo, useContext } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { UserDetailsDialog } from '@/components/user-details-dialog';
 import { AuthContext, useAuth } from '@/context/auth-context';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { cn } from '@/lib/utils';
+
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -25,17 +28,16 @@ export default function CustomersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [action, setAction] = useState<'Block' | 'Unblock' | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
-  const { token } = useContext(AuthContext);
-  const { handleApiError } = useAuth();
+  const { token, handleApiError } = useAuth();
 
 
-  useEffect(() => {
-    if (!token) return;
-
-    const fetchUsers = async () => {
+  const fetchUsers = async () => {
+      if (!token) return;
       setIsLoading(true);
       try {
         const response = await fetch(`${API_BASE_URL}/api/auth/customers`, {
@@ -51,7 +53,8 @@ export default function CustomersPage() {
                 phone: u.phone,
                 address: u.addresses?.[0]?.address || 'No address provided',
                 addresses: u.addresses,
-                status: 'Active', // Assuming all fetched users are active
+                status: u.isBlocked ? 'Blocked' : 'Active',
+                isBlocked: u.isBlocked,
                 createdAt: new Date(u.createdAt),
                 orderHistory: [],
                 location: { lat: 0, lng: 0 },
@@ -68,8 +71,11 @@ export default function CustomersPage() {
         setIsLoading(false);
       }
     };
-    
-    fetchUsers();
+
+  useEffect(() => {
+    if (token) {
+      fetchUsers();
+    }
   }, [token, toast, handleApiError]);
   
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
@@ -91,6 +97,55 @@ export default function CustomersPage() {
     );
     setFilteredUsers(filtered);
   };
+  
+  const handleAction = (user: User, userAction: 'Block' | 'Unblock') => {
+    setSelectedUser(user);
+    setAction(userAction);
+    setIsConfirmOpen(true);
+  };
+
+  const confirmAction = async () => {
+    if (!selectedUser || !action || !token) return;
+
+    const isBlocked = action === 'Block';
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/users/${selectedUser.id}/block`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ isBlocked })
+      });
+
+      if (!response.ok) {
+        handleApiError(response);
+        throw new Error('Failed to update status');
+      }
+      
+      toast({
+        title: `Customer ${action}ed`,
+        description: `${selectedUser.name} has been successfully ${action.toLowerCase()}ed.`,
+        variant: isBlocked ? 'destructive' : 'default',
+      });
+      
+      // Refetch users to get the latest state
+      fetchUsers();
+
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: `Could not ${action.toLowerCase()} the customer. Please try again.`,
+      });
+    } finally {
+      setIsConfirmOpen(false);
+      setSelectedUser(null);
+      setAction(null);
+    }
+  }
+
 
   const handleShowDetails = (user: User) => {
     setSelectedUser(user);
@@ -174,7 +229,13 @@ export default function CustomersPage() {
                 </TableHeader>
                 <TableBody>
                   {paginatedUsers.map((user: User) => (
-                    <TableRow key={user.id} onClick={() => handleShowDetails(user)} className="cursor-pointer">
+                    <TableRow 
+                      key={user.id} 
+                      onClick={() => handleShowDetails(user)} 
+                      className={cn("cursor-pointer", {
+                        "bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30": user.status === 'Blocked'
+                      })}
+                    >
                       <TableCell>
                         <div className="font-medium">{user.name}</div>
                         <div 
@@ -204,6 +265,11 @@ export default function CustomersPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleShowDetails(user)}>View Details</DropdownMenuItem>
+                            {user.status === 'Active' ? (
+                              <DropdownMenuItem className="text-destructive" onClick={() => handleAction(user, 'Block')}>Block</DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem onClick={() => handleAction(user, 'Unblock')}>Unblock</DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -244,8 +310,27 @@ export default function CustomersPage() {
         )}
       </Card>
       
+       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to {action?.toLowerCase()} this customer?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will update the user's status and can be reversed later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmAction} className={action === 'Block' ? 'bg-destructive hover:bg-destructive/90' : ''}>
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <UserDetailsDialog user={selectedUser} isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} />
 
     </AppShell>
   );
 }
+
+    

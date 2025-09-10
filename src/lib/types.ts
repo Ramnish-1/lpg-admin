@@ -18,6 +18,7 @@ export interface User {
   address: string; // This will hold the primary formatted address string for table views
   addresses?: UserAddress[]; // This will hold the full address objects
   status: 'Active' | 'Blocked';
+  isBlocked?: boolean;
   orderHistory: string[];
   createdAt: Date;
   location: { lat: number; lng: number };
@@ -154,3 +155,5 @@ export interface Notification {
     timestamp: Date;
     read: boolean;
 }
+
+    
