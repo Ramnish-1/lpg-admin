@@ -71,6 +71,9 @@ function OrdersTable({
   const isActionDisabled = (status: Order['status']) => {
     return ['delivered', 'cancelled', 'returned'].includes(status);
   }
+  
+  const tableStatus = paginatedOrders[0]?.status;
+
 
   return (
     <Card>
@@ -81,7 +84,7 @@ function OrdersTable({
               <TableRow>
                 <TableHead>Order ID</TableHead>
                 <TableHead>Customer</TableHead>
-                <TableHead className="hidden sm:table-cell">Agent</TableHead>
+                {tableStatus !== 'pending' && <TableHead className="hidden sm:table-cell">Agent</TableHead>}
                 <TableHead className="hidden md:table-cell">Amount</TableHead>
                 <TableHead className="hidden lg:table-cell">Status</TableHead>
                 <TableHead className="hidden sm:table-cell">Date</TableHead>
@@ -95,13 +98,15 @@ function OrdersTable({
                 <TableRow key={order.id} onClick={() => onShowDetails(order)} className="cursor-pointer">
                   <TableCell className="font-medium text-primary">#{order.orderNumber.slice(-8)}</TableCell>
                   <TableCell>{order.customerName}</TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    {order.assignedAgent ? (
-                      <Badge variant="outline">{order.assignedAgent.name}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">Unassigned</span>
+                   {tableStatus !== 'pending' && (
+                        <TableCell className="hidden sm:table-cell">
+                            {order.assignedAgent ? (
+                            <Badge variant="outline">{order.assignedAgent.name}</Badge>
+                            ) : (
+                            <span className="text-muted-foreground">Unassigned</span>
+                            )}
+                        </TableCell>
                     )}
-                  </TableCell>
                   <TableCell className="hidden md:table-cell">₹{parseFloat(order.totalAmount).toLocaleString()}</TableCell>
                   <TableCell className="hidden lg:table-cell">
                      <DropdownMenu>
@@ -116,7 +121,7 @@ function OrdersTable({
                                 value={order.status} 
                                 onValueChange={(newStatus) => onStatusChange(order, newStatus as Order['status'])}
                             >
-                            {orderStatusesForDropdown.filter(s => s !== 'returned').map(status => (
+                            {orderStatusesForDropdown.filter(s => !['returned', 'assigned', 'out-for-delivery'].includes(s)).map(status => (
                                 <DropdownMenuRadioItem 
                                 key={status} 
                                 value={status}
@@ -138,35 +143,36 @@ function OrdersTable({
                     {new Date(order.createdAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => onShowDetails(order)}>View Details</DropdownMenuItem>
-                        {order.status === 'pending' && (
-                           <DropdownMenuItem onClick={() => onStatusChange(order, 'confirmed')}>Confirm Order</DropdownMenuItem>
-                        )}
-                        {(order.status === 'confirmed') && (
-                          <DropdownMenuItem onClick={() => onAssignAgent(order)}>Assign Agent</DropdownMenuItem>
-                        )}
-                        {order.status === 'delivered' && (
-                            <DropdownMenuItem onClick={() => onReturn(order)}>Return</DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                            onClick={() => onCancel(order)} 
-                            className="text-destructive"
-                            disabled={isActionDisabled(order.status)}
-                        >
-                            Cancel Order
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {order.status === 'pending' ? (
+                       <Button size="sm" onClick={() => onStatusChange(order, 'confirmed')}>Confirm Order</Button>
+                    ) : (
+                        <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => onShowDetails(order)}>View Details</DropdownMenuItem>
+                            {(order.status === 'confirmed') && (
+                            <DropdownMenuItem onClick={() => onAssignAgent(order)}>Assign Agent</DropdownMenuItem>
+                            )}
+                            {order.status === 'delivered' && (
+                                <DropdownMenuItem onClick={() => onReturn(order)}>Return</DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                                onClick={() => onCancel(order)} 
+                                className="text-destructive"
+                                disabled={isActionDisabled(order.status)}
+                            >
+                                Cancel Order
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
