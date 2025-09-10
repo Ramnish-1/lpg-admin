@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MoreHorizontal, FileDown, ChevronDown, Search, Loader2 } from 'lucide-react';
 import type { Order, Agent } from '@/lib/types';
-import { useEffect, useState, useMemo, useContext } from 'react';
+import { useEffect, useState, useMemo, useContext, useCallback } from 'react';
 import { OrderDetailsDialog } from '@/components/order-details-dialog';
 import { AssignAgentDialog } from '@/components/assign-agent-dialog';
 import { CancelOrderDialog } from '@/components/cancel-order-dialog';
@@ -121,7 +121,7 @@ function OrdersTable({
                                 value={order.status} 
                                 onValueChange={(newStatus) => onStatusChange(order, newStatus as Order['status'])}
                             >
-                            {orderStatusesForDropdown.filter(s => !['returned'].includes(s)).map(status => (
+                            {orderStatusesForDropdown.filter(s => !['returned', 'assigned', 'out-for-delivery'].includes(s)).map(status => (
                                 <DropdownMenuRadioItem 
                                 key={status} 
                                 value={status}
