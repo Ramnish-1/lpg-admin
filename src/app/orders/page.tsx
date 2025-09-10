@@ -474,26 +474,19 @@ export default function OrdersPage() {
       ) : (
       <Tabs defaultValue="pending">
         <div className="overflow-x-auto">
-          <TabsList className="bg-transparent p-0 border-b h-auto rounded-none">
+          <TabsList>
             {orderStatusesForTabs.map(status => {
               const count = getOrderCount(status);
               return (
                 <TabsTrigger 
                   key={status} 
                   value={status}
-                  className={cn(
-                    "data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none capitalize",
-                    "text-base px-4"
-                  )}
+                  className="capitalize"
                 >
-                  <span className="whitespace-nowrap mr-2">{status.replace('_', '-')}</span>
+                  <span className="mr-2">{status.replace('_', '-')}</span>
                   <Badge 
-                     variant={statusVariant[status]} 
-                     className={cn("px-2 py-0.5 text-xs font-semibold", {
-                       'bg-primary/10 text-primary': status === 'in-progress' || status === 'assigned' || status === 'out-for-delivery',
-                       'bg-green-100 text-green-800': status === 'delivered',
-                       'bg-red-100 text-red-800': status === 'cancelled' || status === 'returned',
-                     })}
+                    variant={count > 0 ? "default" : "secondary"}
+                    className="rounded-full px-2"
                   >
                     {count}
                   </Badge>
