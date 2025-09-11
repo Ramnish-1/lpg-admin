@@ -75,8 +75,8 @@ export function AgencyDetailsDialog({ agency, isOpen, onOpenChange }: AgencyDeta
             <div className="flex items-center gap-3">
                 <span className="text-sm font-medium mr-2">Status:</span>
                 <Badge className={cn('capitalize', {
-                    'bg-green-500 text-white': agency.status === 'active',
-                    'bg-red-500 text-white': agency.status === 'inactive'
+                    'bg-green-100 text-green-800': agency.status === 'active',
+                    'bg-red-100 text-red-800': agency.status === 'inactive'
                 })}>
                     {agency.status}
                 </Badge>

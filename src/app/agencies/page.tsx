@@ -231,8 +231,8 @@ export default function AgenciesPage() {
                     <TableCell className="hidden md:table-cell">{`${agency.address}, ${agency.city}, ${agency.pincode}`}</TableCell>
                     <TableCell>
                         <Badge className={cn('capitalize', {
-                            'bg-green-500 text-white': agency.status === 'active',
-                            'bg-red-500 text-white': agency.status === 'inactive'
+                            'bg-green-100 text-green-800': agency.status === 'active',
+                            'bg-red-100 text-red-800': agency.status === 'inactive'
                         })}>
                             {agency.status}
                         </Badge>
