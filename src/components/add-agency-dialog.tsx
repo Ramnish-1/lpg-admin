@@ -18,7 +18,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 
-type NewAgencyPayload = Omit<Agency, 'id' | 'createdAt' | 'updatedAt'>;
+type NewAgencyPayload = Omit<Agency, 'id' | 'createdAt' | 'updatedAt' | 'status'>;
 
 interface AddAgencyDialogProps {
   isOpen: boolean;

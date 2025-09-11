@@ -166,6 +166,7 @@ export interface Agency {
   city: string;
   pincode: string;
   landmark: string;
+  status: 'active' | 'inactive';
   createdAt: string;
   updatedAt: string;
 }

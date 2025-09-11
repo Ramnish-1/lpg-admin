@@ -16,6 +16,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { AddAgencyDialog } from '@/components/add-agency-dialog';
 import { EditAgencyDialog } from '@/components/edit-agency-dialog';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -73,7 +75,7 @@ export default function AgenciesPage() {
     return filteredAgencies.slice(startIndex, endIndex);
   }, [filteredAgencies, currentPage]);
 
-  const handleAddAgency = async (newAgency: Omit<Agency, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleAddAgency = async (newAgency: Omit<Agency, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => {
     if (!token) return false;
     try {
       const response = await fetch(`${API_BASE_URL}/api/agencies`, {
@@ -136,6 +138,31 @@ export default function AgenciesPage() {
     setSelectedAgency(agency);
     setIsEditDialogOpen(true);
   };
+
+  const handleToggleStatus = async (agency: Agency) => {
+    if (!token) return;
+    const newStatus = agency.status === 'active' ? 'inactive' : 'active';
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/agencies/${agency.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (!response.ok) handleApiError(response);
+      const result = await response.json();
+      if (result.success) {
+        toast({ title: 'Status Updated', description: `${agency.name} is now ${newStatus}.`});
+        fetchAgencies();
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
+    }
+  }
 
   const confirmDelete = async () => {
     if (!selectedAgency || !token) return;
@@ -203,6 +230,7 @@ export default function AgenciesPage() {
                   <TableHead>Agency Name</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead className="hidden md:table-cell">Address</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Joined On</TableHead>
                   <TableHead>
                     <span className="sr-only">Actions</span>
@@ -218,6 +246,14 @@ export default function AgenciesPage() {
                       <div className="text-sm text-muted-foreground">{agency.email}</div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{`${agency.address}, ${agency.city}, ${agency.pincode}`}</TableCell>
+                    <TableCell>
+                        <Badge className={cn('capitalize', {
+                            'bg-green-500 text-white': agency.status === 'active',
+                            'bg-red-500 text-white': agency.status === 'inactive'
+                        })}>
+                            {agency.status}
+                        </Badge>
+                    </TableCell>
                     <TableCell className="hidden lg:table-cell">{new Date(agency.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -229,6 +265,9 @@ export default function AgenciesPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => handleEditClick(agency)}>Edit</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleToggleStatus(agency)}>
+                            Set as {agency.status === 'active' ? 'Inactive' : 'Active'}
+                          </DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(agency)}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
