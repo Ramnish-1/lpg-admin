@@ -178,27 +178,22 @@ export default function ProductsPage() {
     }
   }
 
-  const handleProductAdd = async (newProduct: Omit<Product, 'id'>, images: FileList): Promise<boolean> => {
-    if(!token || !newProduct.agencyId) return false;
+  const handleProductAdd = async (newProduct: Omit<Product, 'id' | 'images'>, images: string[]): Promise<boolean> => {
+    if(!token) return false;
 
-    const formData = new FormData();
-    formData.append('agencyId', newProduct.agencyId);
-    formData.append('productName', newProduct.productName);
-    formData.append('description', newProduct.description);
-    formData.append('category', newProduct.category);
-    formData.append('status', newProduct.status);
-    formData.append('lowStockThreshold', newProduct.lowStockThreshold.toString());
-    formData.append('variants', JSON.stringify(newProduct.variants));
-
-    Array.from(images).forEach(file => {
-        formData.append('images', file);
-    });
+    const payload = {
+        ...newProduct,
+        images,
+    }
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/products`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
-            body: formData
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
         });
         if (!response.ok) handleApiError(response);
         const result = await response.json();

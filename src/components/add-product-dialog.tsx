@@ -34,7 +34,7 @@ type AddProductPayload = Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'histo
 interface AddProductDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onProductAdd: (product: AddProductPayload, images: FileList) => Promise<boolean>;
+  onProductAdd: (product: AddProductPayload, imagesAsBase64: string[]) => Promise<boolean>;
 }
 
 const variantSchema = z.object({
@@ -104,12 +104,15 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     control: form.control,
     name: "variants"
   });
-  
-  const getFileList = (files: File[]): FileList => {
-    const dt = new DataTransfer();
-    files.forEach(file => dt.items.add(file));
-    return dt.files;
-  }
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
 
   const handleSubmit = async (values: ProductFormValues) => {
     if (imageFiles.length === 0) {
@@ -117,8 +120,24 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
       return;
     }
 
-    const payload = { ...values, status: 'active' as const, images: [] };
-    const success = await onProductAdd(payload, getFileList(imageFiles));
+    const selectedAgency = agencies.find(a => a.id === values.agencyId);
+    if (!selectedAgency) {
+      form.setError("agencyId", { message: "Selected agency not found."});
+      return;
+    }
+
+    const { agencyId, ...productData } = values;
+    
+    const payload = {
+        ...productData,
+        status: 'active' as const,
+        images: [], // Images will be handled separately
+        agency: selectedAgency
+    };
+
+    const imagesAsBase64 = await Promise.all(imageFiles.map(file => fileToBase64(file)));
+
+    const success = await onProductAdd(payload, imagesAsBase64);
     
     if (success) {
       form.reset();

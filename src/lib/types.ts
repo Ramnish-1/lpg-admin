@@ -34,7 +34,7 @@ export interface ProductVariant {
 
 export interface Product {
   id: string;
-  agencyId?: string;
+  agency?: Agency;
   productName: string;
   description: string;
   category: 'lpg' | 'accessories';
