@@ -127,12 +127,14 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     }
 
     const { agencyId, ...productData } = values;
+
+    const { id, status, createdAt, updatedAt, ...agencyPayload } = selectedAgency;
     
     const payload = {
         ...productData,
         status: 'active' as const,
         images: [], // Images will be handled separately
-        agency: selectedAgency
+        agency: agencyPayload,
     };
 
     const imagesAsBase64 = await Promise.all(imageFiles.map(file => fileToBase64(file)));
@@ -296,3 +298,4 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     </>
   );
 }
+
