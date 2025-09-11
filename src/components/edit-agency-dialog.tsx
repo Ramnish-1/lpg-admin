@@ -24,7 +24,7 @@ interface EditAgencyDialogProps {
   agency: Agency;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onAgencyUpdate: (agency: Omit<Agency, 'createdAt' | 'updatedAt'>) => Promise<boolean>;
+  onAgencyUpdate: (agency: Omit<Agency, 'createdAt' | 'updatedAt' | 'status'> & { id: string }) => Promise<boolean>;
 }
 
 const agencySchema = z.object({
@@ -36,7 +36,6 @@ const agencySchema = z.object({
   city: z.string().min(1, "City is required."),
   pincode: z.string().min(6, "Pincode must be 6 digits.").max(6, "Pincode must be 6 digits."),
   landmark: z.string().optional(),
-  status: z.enum(['active', 'inactive']),
 });
 
 type AgencyFormValues = z.infer<typeof agencySchema>;
@@ -48,10 +47,7 @@ export function EditAgencyDialog({ agency, isOpen, onOpenChange, onAgencyUpdate 
   
   useEffect(() => {
     if (isOpen) {
-      form.reset({
-        ...agency,
-        status: agency.status.toLowerCase() as 'active' | 'inactive'
-      });
+      form.reset(agency);
     }
   }, [agency, isOpen, form]);
 
@@ -82,9 +78,6 @@ export function EditAgencyDialog({ agency, isOpen, onOpenChange, onAgencyUpdate 
                 <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField control={form.control} name="pincode" render={({ field }) => ( <FormItem><FormLabel>Pincode</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField control={form.control} name="landmark" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Landmark</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                <FormField control={form.control} name="status" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select>
-                <FormMessage /></FormItem>)}/>
               </div>
             <DialogFooter className="pt-4">
               <DialogClose asChild>
@@ -100,5 +93,3 @@ export function EditAgencyDialog({ agency, isOpen, onOpenChange, onAgencyUpdate 
     </Dialog>
   );
 }
-
-    
