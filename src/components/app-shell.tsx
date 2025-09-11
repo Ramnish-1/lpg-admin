@@ -156,19 +156,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     ? profile.photoUrl 
     : profile.photoUrl ? `${API_BASE_URL}/${profile.photoUrl}` : '';
 
-  const sidebarImage = (
-    <div className="relative mt-auto mb-4 flex justify-center p-4">
-        <Image 
-            src="https://res.cloudinary.com/dr0x84q69/image/upload/v1756720531/lpg-products/ktztg1vnjfel19wlpco0.png"
-            alt="Company Mascot"
-            width={250}
-            height={250}
-            className="w-full h-auto max-w-[250px]"
-            data-ai-hint="company mascot"
-        />
-    </div>
-  );
-
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block">
@@ -182,7 +169,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex-1">
             {sidebarNav}
           </div>
-          {sidebarImage}
         </div>
       </div>
       <div className="flex flex-col">
@@ -202,7 +188,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </Link>
               </div>
               {sidebarNav}
-              {sidebarImage}
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1" />
