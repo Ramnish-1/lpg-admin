@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import type { Product } from '@/lib/types';
-import { IndianRupee, Package, PackageCheck, AlertCircle, Info, Beaker, Image as ImageIcon } from 'lucide-react';
+import { IndianRupee, Package, PackageCheck, AlertCircle, Info, Beaker, Image as ImageIcon, Building2, MapPin } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
 import Image from 'next/image';
@@ -30,6 +30,11 @@ export function ProductDetailsDialog({ product, isOpen, onOpenChange }: ProductD
 
   const totalStock = product.variants.reduce((acc, v) => acc + v.stock, 0);
   const isLowStock = totalStock < product.lowStockThreshold;
+  
+  const handleAddressClick = (e: React.MouseEvent, address: string) => {
+    e.stopPropagation();
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -103,6 +108,27 @@ export function ProductDetailsDialog({ product, isOpen, onOpenChange }: ProductD
                       </div>
               </CardContent>
             </Card>
+
+            {product.agency && (
+                 <Card>
+                    <CardContent className="pt-6">
+                         <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-4"><Building2 className="h-4 w-4"/> Supplying Agency</h3>
+                         <div className="flex items-start gap-4">
+                            <div>
+                                <h4 className="font-semibold">{product.agency.name}</h4>
+                                <a 
+                                    href="#" 
+                                    onClick={(e) => handleAddressClick(e, `${product.agency?.address}, ${product.agency?.city}`)} 
+                                    className="text-xs text-muted-foreground hover:underline flex items-start gap-1.5 mt-1"
+                                >
+                                    <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                    <span>{product.agency.address}, {product.agency.city}</span>
+                                </a>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
         </div>
       </DialogContent>
     </Dialog>
