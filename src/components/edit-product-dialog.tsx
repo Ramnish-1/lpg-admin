@@ -66,6 +66,15 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
   const { token, handleApiError } = useAuth();
   const { toast } = useToast();
 
+  const form = useForm<ProductFormValues>({
+    resolver: zodResolver(productSchema),
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "variants"
+  });
+
   useEffect(() => {
     const fetchAgencies = async () => {
       if (!token || !isOpen) return;
@@ -88,20 +97,12 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     fetchAgencies();
   }, [isOpen, token, handleApiError, toast]);
 
-  const form = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema),
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "variants"
-  });
-
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && agencies.length > 0) {
+      const currentAgency = agencies.find(a => a.name === product.agency?.name);
       form.reset({
         ...product,
-        agencyId: product.agency?.id,
+        agencyId: currentAgency?.id || '',
         status: product.status.toLowerCase() as 'active' | 'inactive',
         category: product.category || 'lpg',
       });
@@ -109,7 +110,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
       setImageFiles([]);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
-  }, [product, isOpen, form]);
+  }, [product, isOpen, form, agencies]);
 
   
   const handleSubmit = (values: ProductFormValues) => {
