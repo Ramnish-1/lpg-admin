@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Product } from '@/lib/types';
+import { Product, Agency } from '@/lib/types';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,6 +26,8 @@ import { ScrollArea } from './ui/scroll-area';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
 import { ImageViewerDialog } from './image-viewer-dialog';
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
 
 interface EditProductDialogProps {
   product: Product;
@@ -41,6 +43,7 @@ const variantSchema = z.object({
 });
 
 const productSchema = z.object({
+  agencyId: z.string().min(1, "Please select an agency."),
   productName: z.string().min(1, "Product name is required."),
   description: z.string().min(1, "Description is required."),
   category: z.enum(['lpg', 'accessories']),
@@ -54,11 +57,36 @@ type ProductFormValues = z.infer<typeof productSchema>;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpdate }: EditProductDialogProps) {
+  const [agencies, setAgencies] = useState<Agency[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { token, handleApiError } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchAgencies = async () => {
+      if (!token || !isOpen) return;
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/agencies/active`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) handleApiError(response);
+        const result = await response.json();
+        if (result.success) {
+          setAgencies(result.data.agencies);
+        } else {
+          toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch active agencies.' });
+        }
+      } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch active agencies.' });
+      }
+    };
+
+    fetchAgencies();
+  }, [isOpen, token, handleApiError, toast]);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -73,6 +101,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     if (isOpen) {
       form.reset({
         ...product,
+        agencyId: product.agency?.id,
         status: product.status.toLowerCase() as 'active' | 'inactive',
         category: product.category || 'lpg',
       });
@@ -90,9 +119,18 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
   }
   
   const handleSubmit = (values: ProductFormValues) => {
+    const selectedAgency = agencies.find(a => a.id === values.agencyId);
+    if (!selectedAgency) {
+      form.setError("agencyId", { message: "Selected agency not found."});
+      return;
+    }
+
+    const { agencyId, ...productData } = values;
+
     const updatedProduct = {
       ...product,
-      ...values,
+      ...productData,
+      agency: selectedAgency,
       status: values.status as 'active' | 'inactive',
       // Send back remaining original images
       images: imagePreviews.filter(p => !p.startsWith('blob:')),
@@ -143,6 +181,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
             <form onSubmit={form.handleSubmit(handleSubmit)} noValidate className="flex flex-col overflow-hidden">
               <ScrollArea className="flex-1 px-6">
                   <div className="space-y-6 py-2">
+                      <FormField control={form.control} name="agencyId" render={({ field }) => ( <FormItem><FormLabel>Select Agency</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select an active agency" /></SelectTrigger></FormControl><SelectContent>{agencies.map(agency => (<SelectItem key={agency.id} value={agency.id}>{agency.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
                       <FormField control={form.control} name="productName" render={({ field }) => (<FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                       <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
