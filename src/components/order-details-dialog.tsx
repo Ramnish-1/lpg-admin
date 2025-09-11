@@ -57,6 +57,11 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetails
     window.open(`https://wa.me/${cleanPhone}`, '_blank');
   };
 
+  const handleAddressClick = (e: React.MouseEvent, address: string) => {
+    e.stopPropagation();
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -88,6 +93,18 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange }: OrderDetails
                                     </Button>
                                 </div>
                             )}
+                        </div>
+                    </div>
+                     <div className="flex items-start gap-3">
+                        <MapPin className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
+                        <div className="text-sm">
+                           <a 
+                                href="#" 
+                                onClick={(e) => handleAddressClick(e, order.customerAddress)} 
+                                className="text-muted-foreground hover:underline"
+                            >
+                                {order.customerAddress}
+                            </a>
                         </div>
                     </div>
                     <Separator className="my-2" />
