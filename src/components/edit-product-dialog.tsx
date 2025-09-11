@@ -119,12 +119,17 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
       return;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, createdAt, updatedAt, status, ...agencyPayload } = selectedAgency;
+
     const { agencyId, ...productData } = values;
 
-    const { id, status, createdAt, updatedAt, ...agencyPayload } = selectedAgency;
+    // Exclude legacy fields from the original product object
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { unit, price, stock, ...restOfProduct } = product;
 
     const updatedProduct = {
-      ...product,
+      ...restOfProduct,
       ...productData,
       agency: agencyPayload,
       status: values.status as 'active' | 'inactive',
