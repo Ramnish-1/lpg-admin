@@ -179,9 +179,10 @@ export default function ProductsPage() {
   }
 
   const handleProductAdd = async (newProduct: Omit<Product, 'id'>, images: FileList): Promise<boolean> => {
-    if(!token) return false;
+    if(!token || !newProduct.agencyId) return false;
 
     const formData = new FormData();
+    formData.append('agencyId', newProduct.agencyId);
     formData.append('productName', newProduct.productName);
     formData.append('description', newProduct.description);
     formData.append('category', newProduct.category);
