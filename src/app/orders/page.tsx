@@ -121,7 +121,7 @@ function OrdersTable({
                                 value={order.status} 
                                 onValueChange={(newStatus) => onStatusChange(order, newStatus as Order['status'])}
                             >
-                            {orderStatusesForDropdown.filter(s => !['returned', 'assigned', 'out-for-delivery'].includes(s)).map(status => (
+                            {orderStatusesForDropdown.filter(s => !['assigned', 'out-for-delivery'].includes(s)).map(status => (
                                 <DropdownMenuRadioItem 
                                 key={status} 
                                 value={status}
@@ -144,7 +144,10 @@ function OrdersTable({
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     {order.status === 'pending' ? (
-                       <Button size="sm" onClick={() => onStatusChange(order, 'confirmed')}>Confirm Order</Button>
+                       <div className="flex gap-2">
+                            <Button size="sm" onClick={() => onStatusChange(order, 'confirmed')}>Confirm Order</Button>
+                            <Button size="sm" variant="destructive" onClick={() => onCancel(order)}>Cancel</Button>
+                       </div>
                     ) : (
                         <DropdownMenu>
                         <DropdownMenuTrigger asChild>
