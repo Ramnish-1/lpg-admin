@@ -139,29 +139,36 @@ export default function ProductsPage() {
          toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
     }
   };
+  
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
 
-  const handleProductUpdate = async (updatedProduct: Product, images?: FileList) => {
-    if(!token) return;
-    
-    const formData = new FormData();
-    formData.append('productName', updatedProduct.productName);
-    formData.append('description', updatedProduct.description);
-    formData.append('category', updatedProduct.category);
-    formData.append('status', updatedProduct.status);
-    formData.append('lowStockThreshold', updatedProduct.lowStockThreshold.toString());
-    formData.append('variants', JSON.stringify(updatedProduct.variants));
-    
-    if (images) {
-      Array.from(images).forEach(file => {
-        formData.append('images', file);
-      });
-    }
+  const handleProductUpdate = async (updatedProduct: Product, newImageFiles: File[] = []) => {
+    if (!token) return;
+
+    const newImagesBase64 = await Promise.all(newImageFiles.map(file => fileToBase64(file)));
+
+    const existingImages = updatedProduct.images.filter(img => !img.startsWith('blob:'));
+
+    const payload = {
+        ...updatedProduct,
+        images: [...existingImages, ...newImagesBase64],
+    };
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/products/${updatedProduct.id}`, {
             method: 'PUT',
-            headers: { 'Authorization': `Bearer ${token}` },
-            body: formData,
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
         });
         if (!response.ok) handleApiError(response);
         const result = await response.json();

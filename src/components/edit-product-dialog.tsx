@@ -33,7 +33,7 @@ interface EditProductDialogProps {
   product: Product;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onProductUpdate: (product: Product, images?: FileList) => void;
+  onProductUpdate: (product: Product, newImageFiles: File[]) => void;
 }
 
 const variantSchema = z.object({
@@ -111,12 +111,6 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     }
   }, [product, isOpen, form]);
 
-  const getFileList = (files: File[]): FileList | undefined => {
-    if (files.length === 0) return undefined;
-    const dt = new DataTransfer();
-    files.forEach(file => dt.items.add(file));
-    return dt.files;
-  }
   
   const handleSubmit = (values: ProductFormValues) => {
     const selectedAgency = agencies.find(a => a.id === values.agencyId);
@@ -127,15 +121,17 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
 
     const { agencyId, ...productData } = values;
 
+    const { id, status, createdAt, updatedAt, ...agencyPayload } = selectedAgency;
+
     const updatedProduct = {
       ...product,
       ...productData,
-      agency: selectedAgency,
+      agency: agencyPayload,
       status: values.status as 'active' | 'inactive',
       // Send back remaining original images
       images: imagePreviews.filter(p => !p.startsWith('blob:')),
     };
-    onProductUpdate(updatedProduct, getFileList(imageFiles));
+    onProductUpdate(updatedProduct, imageFiles);
   };
   
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
