@@ -18,6 +18,7 @@ import { EditAgencyDialog } from '@/components/edit-agency-dialog';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { AgencyDetailsDialog } from '@/components/agency-details-dialog';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -29,6 +30,7 @@ export default function AgenciesPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const { token, handleApiError } = useAuth();
@@ -140,6 +142,11 @@ export default function AgenciesPage() {
     setIsEditDialogOpen(true);
   };
 
+  const handleDetailsClick = (agency: Agency) => {
+    setSelectedAgency(agency);
+    setIsDetailsDialogOpen(true);
+  }
+
   const confirmDelete = async () => {
     if (!selectedAgency || !token) return;
     try {
@@ -215,7 +222,7 @@ export default function AgenciesPage() {
               </TableHeader>
               <TableBody>
                 {paginatedAgencies.map((agency: Agency) => (
-                  <TableRow key={agency.id}>
+                  <TableRow key={agency.id} onClick={() => handleDetailsClick(agency)} className="cursor-pointer">
                     <TableCell className="font-medium">{agency.name}</TableCell>
                     <TableCell>
                       <div>{agency.phone}</div>
@@ -231,7 +238,7 @@ export default function AgenciesPage() {
                         </Badge>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">{new Date(agency.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -240,6 +247,7 @@ export default function AgenciesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleDetailsClick(agency)}>View Details</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEditClick(agency)}>Edit</DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(agency)}>
                             <Trash2 className="mr-2 h-4 w-4" />
@@ -297,6 +305,11 @@ export default function AgenciesPage() {
           onAgencyUpdate={handleUpdateAgency}
         />
       )}
+      <AgencyDetailsDialog
+        agency={selectedAgency}
+        isOpen={isDetailsDialogOpen}
+        onOpenChange={setIsDetailsDialogOpen}
+      />
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
