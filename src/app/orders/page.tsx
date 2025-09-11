@@ -224,6 +224,7 @@ export default function OrdersPage() {
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isReturnOpen, setIsReturnOpen] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const { toast } = useToast();
   const { token } = useContext(AuthContext);
   const { handleApiError } = useAuth();
@@ -344,6 +345,7 @@ export default function OrdersPage() {
 
   const updateOrderStatus = async (order: Order, newStatus: Order['status'], notes?: string) => {
     if (!token) return;
+    setIsUpdatingStatus(true);
 
     const requestBody: { status: Order['status'], adminNotes?: string } = { status: newStatus };
     if (notes) {
@@ -370,11 +372,14 @@ export default function OrdersPage() {
             removeNotification(order.id);
         }
         fetchOrders();
+        setIsDetailsOpen(false); // Close dialog on success
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
+    } finally {
+      setIsUpdatingStatus(false);
     }
   }
 
@@ -532,6 +537,7 @@ export default function OrdersPage() {
         onOpenChange={setIsDetailsOpen}
         onConfirmOrder={() => handleStatusChange(selectedOrder, 'confirmed')}
         onCancelOrder={() => handleCancelOrder(selectedOrder)}
+        isUpdating={isUpdatingStatus}
       />}
       {selectedOrder && <AssignAgentDialog order={selectedOrder} isOpen={isAssignOpen} onOpenChange={setIsAssignOpen} onAgentAssigned={handleAgentAssigned} agents={agents} />}
       {selectedOrder && <CancelOrderDialog order={selectedOrder} isOpen={isCancelOpen} onOpenChange={setIsCancelOpen} onConfirm={confirmCancelOrder} />}

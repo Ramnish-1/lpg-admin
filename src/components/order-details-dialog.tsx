@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import type { Order } from '@/lib/types';
-import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package, Phone, MapPin, XCircle, Undo2, CheckCircle } from 'lucide-react';
+import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package, Phone, MapPin, XCircle, Undo2, CheckCircle, Loader2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Button } from './ui/button';
 import Link from 'next/link';
@@ -37,6 +37,7 @@ interface OrderDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
   onConfirmOrder: (order: Order) => void;
   onCancelOrder: (order: Order) => void;
+  isUpdating: boolean;
 }
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -50,7 +51,7 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
     'returned': 'destructive'
   };
 
-export function OrderDetailsDialog({ order, isOpen, onOpenChange, onConfirmOrder, onCancelOrder }: OrderDetailsDialogProps) {
+export function OrderDetailsDialog({ order, isOpen, onOpenChange, onConfirmOrder, onCancelOrder, isUpdating }: OrderDetailsDialogProps) {
   if (!order) return null;
 
    const handleWhatsAppClick = (phone?: string) => {
@@ -177,12 +178,12 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange, onConfirmOrder
         <DialogFooter className="mt-4 gap-2">
              {order.status === 'pending' && (
               <>
-                <Button variant="destructive" onClick={() => onCancelOrder(order)}>
-                  <XCircle className="mr-2 h-4 w-4" />
+                <Button variant="destructive" onClick={() => onCancelOrder(order)} disabled={isUpdating}>
+                  {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
                   Cancel Order
                 </Button>
-                <Button className="w-full" onClick={() => onConfirmOrder(order)}>
-                  <CheckCircle className="mr-2 h-4 w-4" />
+                <Button className="w-full" onClick={() => onConfirmOrder(order)} disabled={isUpdating}>
+                  {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                   Confirm Order
                 </Button>
               </>
