@@ -18,7 +18,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface EditAgencyDialogProps {
   agency: Agency;
@@ -30,7 +29,7 @@ interface EditAgencyDialogProps {
 const agencySchema = z.object({
   name: z.string().min(1, "Name is required."),
   email: z.string().email("Invalid email address.").min(1, "Email is required."),
-  phone: z.string().min(10, "Phone number must be at least 10 digits."),
+  phone: z.string().length(10, "Phone number must be exactly 10 digits."),
   addressTitle: z.string().min(1, "Address title is required."),
   address: z.string().min(1, "Address is required."),
   city: z.string().min(1, "City is required."),
@@ -72,7 +71,7 @@ export function EditAgencyDialog({ agency, isOpen, onOpenChange, onAgencyUpdate 
              <div className="grid grid-cols-2 gap-4 py-4">
                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Agency Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone</FormLabel><FormControl><Input type="tel" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone</FormLabel><FormControl><Input type="tel" {...field} maxLength={10} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField control={form.control} name="addressTitle" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
