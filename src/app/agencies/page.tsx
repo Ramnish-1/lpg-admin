@@ -104,14 +104,15 @@ export default function AgenciesPage() {
   
   const handleUpdateAgency = async (updatedAgency: Omit<Agency, 'createdAt' | 'updatedAt'>) => {
     if (!token) return false;
+    const { id, ...payload } = updatedAgency;
     try {
-      const response = await fetch(`${API_BASE_URL}/api/agencies/${updatedAgency.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/agencies/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(updatedAgency),
+        body: JSON.stringify(payload),
       });
       if (!response.ok) handleApiError(response);
       const result = await response.json();
@@ -342,5 +343,3 @@ export default function AgenciesPage() {
     </AppShell>
   );
 }
-
-    
