@@ -102,7 +102,7 @@ export default function AgenciesPage() {
     }
   };
   
-  const handleUpdateAgency = async (updatedAgency: Omit<Agency, 'createdAt' | 'updatedAt'>) => {
+  const handleUpdateAgency = async (updatedAgency: Omit<Agency, 'createdAt' | 'updatedAt' | 'status'>) => {
     if (!token) return false;
     const { id, ...payload } = updatedAgency;
     try {
@@ -139,31 +139,6 @@ export default function AgenciesPage() {
     setSelectedAgency(agency);
     setIsEditDialogOpen(true);
   };
-
-  const handleToggleStatus = async (agency: Agency) => {
-    if (!token) return;
-    const newStatus = agency.status === 'active' ? 'inactive' : 'active';
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/agencies/${agency.id}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-      if (!response.ok) handleApiError(response);
-      const result = await response.json();
-      if (result.success) {
-        toast({ title: 'Status Updated', description: `${agency.name} is now ${newStatus}.`});
-        fetchAgencies();
-      } else {
-        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
-      }
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
-    }
-  }
 
   const confirmDelete = async () => {
     if (!selectedAgency || !token) return;
@@ -266,9 +241,6 @@ export default function AgenciesPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => handleEditClick(agency)}>Edit</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleToggleStatus(agency)}>
-                            Set as {agency.status === 'active' ? 'Inactive' : 'Active'}
-                          </DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(agency)}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
