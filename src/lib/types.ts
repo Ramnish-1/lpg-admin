@@ -156,4 +156,19 @@ export interface Notification {
     read: boolean;
 }
 
+export interface Agency {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  addressTitle: string;
+  address: string;
+  city: string;
+  pincode: string;
+  landmark: string;
+  createdAt: string;
+  updatedAt: string;
+}
+    
+
     
