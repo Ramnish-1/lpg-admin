@@ -29,7 +29,7 @@ interface AddAgencyDialogProps {
 const agencySchema = z.object({
   name: z.string().min(1, "Name is required."),
   email: z.string().email("Invalid email address.").min(1, "Email is required."),
-  phone: z.string().min(10, "Phone number must be at least 10 digits."),
+  phone: z.string().length(10, "Phone number must be exactly 10 digits."),
   addressTitle: z.string().min(1, "Address title is required."),
   address: z.string().min(1, "Address is required."),
   city: z.string().min(1, "City is required."),
