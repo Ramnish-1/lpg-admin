@@ -149,8 +149,8 @@ export default function ProductsPage() {
     });
   };
 
-  const handleProductUpdate = async (updatedProduct: Product, newImageFiles: File[] = []) => {
-    if (!token) return;
+ const handleProductUpdate = async (updatedProduct: Product, newImageFiles: File[] = []) => {
+    if (!token) return false;
 
     const newImagesBase64 = await Promise.all(newImageFiles.map(file => fileToBase64(file)));
 
@@ -177,13 +177,17 @@ export default function ProductsPage() {
             fetchProducts();
             setIsEditOpen(false);
             setSelectedProduct(null);
+            return true;
         } else {
             toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update product.' });
+            return false;
         }
     } catch (error) {
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to update product.' });
+        return false;
     }
   }
+
 
   const handleProductAdd = async (newProduct: Omit<Product, 'id' | 'images'>, images: string[]): Promise<boolean> => {
     if(!token) return false;
@@ -246,6 +250,7 @@ export default function ProductsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Product Name</TableHead>
+                  <TableHead>Agency</TableHead>
                   <TableHead>Variants</TableHead>
                   <TableHead>Total Stock</TableHead>
                   <TableHead>Status</TableHead>
@@ -266,6 +271,9 @@ export default function ProductsPage() {
                       })}
                     >
                       <TableCell className="font-medium" onClick={() => handleShowDetails(product)}>{product.productName}</TableCell>
+                      <TableCell onClick={() => handleShowDetails(product)}>
+                        {product.agency?.name || <span className="text-muted-foreground">N/A</span>}
+                      </TableCell>
                       <TableCell onClick={() => handleShowDetails(product)}>
                         {product.variants.length > 0 ? `${product.variants.length} variant(s)` : 'No variants'}
                       </TableCell>
@@ -391,3 +399,5 @@ export default function ProductsPage() {
     </AppShell>
   );
 }
+
+    
