@@ -526,7 +526,13 @@ export default function OrdersPage() {
       </Tabs>
       )}
       
-      {selectedOrder && <OrderDetailsDialog order={selectedOrder} isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} />}
+      {selectedOrder && <OrderDetailsDialog 
+        order={selectedOrder} 
+        isOpen={isDetailsOpen} 
+        onOpenChange={setIsDetailsOpen}
+        onConfirmOrder={() => handleStatusChange(selectedOrder, 'confirmed')}
+        onCancelOrder={() => handleCancelOrder(selectedOrder)}
+      />}
       {selectedOrder && <AssignAgentDialog order={selectedOrder} isOpen={isAssignOpen} onOpenChange={setIsAssignOpen} onAgentAssigned={handleAgentAssigned} agents={agents} />}
       {selectedOrder && <CancelOrderDialog order={selectedOrder} isOpen={isCancelOpen} onOpenChange={setIsCancelOpen} onConfirm={confirmCancelOrder} />}
       {selectedOrder && <ReturnOrderDialog order={selectedOrder} isOpen={isReturnOpen} onOpenChange={setIsReturnOpen} onConfirm={confirmReturnOrder} />}
