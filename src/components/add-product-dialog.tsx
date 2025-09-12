@@ -19,7 +19,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
-import { PlusCircle, Trash2, X, ImagePlus } from 'lucide-react';
+import { PlusCircle, Trash2, X, ImagePlus, ChevronDown } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { useState, useRef, useEffect, useContext } from 'react';
 import Image from 'next/image';
@@ -28,6 +28,10 @@ import { ImageViewerDialog } from './image-viewer-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { AuthContext, useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
+import { Checkbox } from './ui/checkbox';
+import { Badge } from './ui/badge';
 
 type AddProductPayload = Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'history'>;
 
@@ -44,7 +48,7 @@ const variantSchema = z.object({
 });
 
 const productSchema = z.object({
-  agencyId: z.string().min(1, "Please select an agency."),
+  agencyIds: z.array(z.string()).min(1, "Please select at least one agency."),
   productName: z.string().min(1, "Product name is required."),
   description: z.string().min(1, "Description is required."),
   category: z.enum(['lpg', 'accessories']),
@@ -91,7 +95,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      agencyId: '',
+      agencyIds: [],
       productName: '',
       description: '',
       category: 'lpg',
@@ -120,21 +124,25 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
       return;
     }
 
-    const selectedAgency = agencies.find(a => a.id === values.agencyId);
-    if (!selectedAgency) {
-      form.setError("agencyId", { message: "Selected agency not found."});
+    const selectedAgencies = agencies.filter(a => values.agencyIds.includes(a.id));
+    if (selectedAgencies.length === 0) {
+      form.setError("agencyIds", { message: "Selected agencies not found."});
       return;
     }
 
-    const { agencyId, ...productData } = values;
+    const { agencyIds, ...productData } = values;
 
-    const { id, status, createdAt, updatedAt, ...agencyPayload } = selectedAgency;
+    const agenciesPayload = selectedAgencies.map(agency => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id, status, createdAt, updatedAt, ...rest } = agency;
+        return rest;
+    });
     
     const payload = {
         ...productData,
         status: 'active' as const,
         images: [], // Images will be handled separately
-        agency: agencyPayload,
+        agencies: agenciesPayload,
     };
 
     const imagesAsBase64 = await Promise.all(imageFiles.map(file => fileToBase64(file)));
@@ -208,7 +216,66 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
             <form onSubmit={form.handleSubmit(handleSubmit)} noValidate className="flex flex-col overflow-hidden">
               <ScrollArea className="flex-1 px-6">
                   <div className="space-y-6 py-2">
-                      <FormField control={form.control} name="agencyId" render={({ field }) => ( <FormItem><FormLabel>Select Agency</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select an active agency" /></SelectTrigger></FormControl><SelectContent>{agencies.map(agency => (<SelectItem key={agency.id} value={agency.id}>{agency.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
+                     <FormField
+                        control={form.control}
+                        name="agencyIds"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Select Agencies</FormLabel>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                className="w-full justify-between h-auto min-h-10"
+                                            >
+                                                <div className="flex gap-1 flex-wrap">
+                                                    {field.value.length > 0 ? (
+                                                        agencies
+                                                            .filter(a => field.value.includes(a.id))
+                                                            .map(a => <Badge key={a.id} variant="secondary">{a.name}</Badge>)
+                                                    ) : (
+                                                        <span className="text-muted-foreground font-normal">Select agencies...</span>
+                                                    )}
+                                                </div>
+                                                <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Search agencies..." />
+                                            <CommandEmpty>No agency found.</CommandEmpty>
+                                            <CommandGroup>
+                                                <CommandList>
+                                                    {agencies.map((agency) => (
+                                                        <CommandItem
+                                                            key={agency.id}
+                                                            onSelect={() => {
+                                                                const selected = field.value.includes(agency.id);
+                                                                const newValue = selected
+                                                                    ? field.value.filter((id) => id !== agency.id)
+                                                                    : [...field.value, agency.id];
+                                                                field.onChange(newValue);
+                                                            }}
+                                                        >
+                                                            <Checkbox
+                                                                checked={field.value.includes(agency.id)}
+                                                                className="mr-2"
+                                                            />
+                                                            {agency.name}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandList>
+                                            </CommandGroup>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                        />
                       <FormField control={form.control} name="productName" render={({ field }) => (<FormItem><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g. LPG Cylinder" {...field} /></FormControl><FormMessage /></FormItem>)} />
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                            <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl><SelectContent><SelectItem value="lpg">LPG</SelectItem><SelectItem value="accessories">Accessories</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
@@ -298,4 +365,5 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     </>
   );
 }
+
 

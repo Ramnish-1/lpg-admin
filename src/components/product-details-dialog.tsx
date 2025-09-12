@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {
@@ -109,23 +110,27 @@ export function ProductDetailsDialog({ product, isOpen, onOpenChange }: ProductD
               </CardContent>
             </Card>
 
-            {product.agency && (
+            {product.agencies && product.agencies.length > 0 && (
                  <Card>
                     <CardContent className="pt-6">
-                         <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-4"><Building2 className="h-4 w-4"/> Supplying Agency</h3>
-                         <div className="flex items-start gap-4">
-                            <div>
-                                <h4 className="font-semibold">{product.agency.name}</h4>
-                                <a 
-                                    href="#" 
-                                    onClick={(e) => handleAddressClick(e, `${product.agency?.address}, ${product.agency?.city}`)} 
-                                    className="text-xs text-muted-foreground hover:underline flex items-start gap-1.5 mt-1"
-                                >
-                                    <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                                    <span>{product.agency.address}, {product.agency.city}</span>
-                                </a>
-                            </div>
-                        </div>
+                         <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-4"><Building2 className="h-4 w-4"/> Supplying Agencies</h3>
+                          <div className="space-y-4">
+                            {product.agencies.map((agency, index) => (
+                              <div key={index} className="flex items-start gap-4">
+                                  <div>
+                                      <h4 className="font-semibold">{agency.name}</h4>
+                                      <a 
+                                          href="#" 
+                                          onClick={(e) => handleAddressClick(e, `${agency.address}, ${agency.city}`)} 
+                                          className="text-xs text-muted-foreground hover:underline flex items-start gap-1.5 mt-1"
+                                      >
+                                          <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                          <span>{agency.address}, {agency.city}</span>
+                                      </a>
+                                  </div>
+                              </div>
+                            ))}
+                          </div>
                     </CardContent>
                 </Card>
             )}

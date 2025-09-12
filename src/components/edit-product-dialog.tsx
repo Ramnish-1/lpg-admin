@@ -21,19 +21,23 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { PlusCircle, Trash2, X, ImagePlus } from 'lucide-react';
+import { PlusCircle, Trash2, X, ImagePlus, ChevronDown } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
 import { ImageViewerDialog } from './image-viewer-dialog';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
+import { Checkbox } from './ui/checkbox';
+import { Badge } from './ui/badge';
 
 interface EditProductDialogProps {
   product: Product;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onProductUpdate: (product: Product, newImageFiles: File[]) => void;
+  onProductUpdate: (product: Product, newImageFilesAsBase64: string[]) => void;
 }
 
 const variantSchema = z.object({
@@ -43,7 +47,7 @@ const variantSchema = z.object({
 });
 
 const productSchema = z.object({
-  agencyId: z.string().min(1, "Please select an agency."),
+  agencyIds: z.array(z.string()).min(1, "Please select at least one agency."),
   productName: z.string().min(1, "Product name is required."),
   description: z.string().min(1, "Description is required."),
   category: z.enum(['lpg', 'accessories']),
@@ -68,6 +72,9 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
+    defaultValues: {
+      status: 'active',
+    }
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -99,10 +106,14 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
 
   useEffect(() => {
     if (isOpen && agencies.length > 0) {
-      const currentAgency = agencies.find(a => a.name === product.agency?.name);
+      const currentAgencyIds = product.agencies?.map(a => {
+        const found = agencies.find(fa => fa.name === a.name);
+        return found ? found.id : null;
+      }).filter((id): id is string => id !== null) || [];
+
       form.reset({
         ...product,
-        agencyId: currentAgency?.id || '',
+        agencyIds: currentAgencyIds,
         status: product.status.toLowerCase() as 'active' | 'inactive',
         category: product.category || 'lpg',
       });
@@ -112,32 +123,41 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     }
   }, [product, isOpen, form, agencies]);
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
   
-  const handleSubmit = (values: ProductFormValues) => {
-    const selectedAgency = agencies.find(a => a.id === values.agencyId);
-    if (!selectedAgency) {
-      form.setError("agencyId", { message: "Selected agency not found."});
+  const handleSubmit = async (values: ProductFormValues) => {
+    const selectedAgencies = agencies.filter(a => values.agencyIds.includes(a.id));
+    if (selectedAgencies.length === 0) {
+      form.setError("agencyIds", { message: "Selected agencies not found."});
       return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id, createdAt, updatedAt, status, ...agencyPayload } = selectedAgency;
+    const agenciesPayload = selectedAgencies.map(agency => {
+        const { id, status, createdAt, updatedAt, ...rest } = agency;
+        return rest;
+    });
 
-    const { agencyId, ...productData } = values;
+    const { agencyIds, ...productData } = values;
 
-    // Exclude legacy fields from the original product object
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { unit, price, stock, ...restOfProduct } = product;
 
-    const updatedProduct = {
+    const updatedProduct: Product = {
       ...restOfProduct,
       ...productData,
-      agency: agencyPayload,
-      status: values.status as 'active' | 'inactive',
-      // Send back remaining original images
+      agencies: agenciesPayload,
       images: imagePreviews.filter(p => !p.startsWith('blob:')),
     };
-    onProductUpdate(updatedProduct, imageFiles);
+    
+    const newImagesAsBase64 = await Promise.all(imageFiles.map(file => fileToBase64(file)));
+    onProductUpdate(updatedProduct, newImagesAsBase64);
   };
   
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,7 +181,6 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
 
     setImagePreviews(previews => previews.filter((_, i) => i !== indexToRemove));
 
-    // If it's a blob URL, it's a new file that needs to be removed from the files state
     if (previewUrl.startsWith('blob:')) {
       const blobIndex = imagePreviews.filter(p => p.startsWith('blob:')).findIndex(p => p === previewUrl);
       if (blobIndex !== -1) {
@@ -183,13 +202,72 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
             <form onSubmit={form.handleSubmit(handleSubmit)} noValidate className="flex flex-col overflow-hidden">
               <ScrollArea className="flex-1 px-6">
                   <div className="space-y-6 py-2">
-                      <FormField control={form.control} name="agencyId" render={({ field }) => ( <FormItem><FormLabel>Select Agency</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select an active agency" /></SelectTrigger></FormControl><SelectContent>{agencies.map(agency => (<SelectItem key={agency.id} value={agency.id}>{agency.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
+                       <FormField
+                        control={form.control}
+                        name="agencyIds"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Select Agencies</FormLabel>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                className="w-full justify-between h-auto min-h-10"
+                                            >
+                                                <div className="flex gap-1 flex-wrap">
+                                                    {field.value && field.value.length > 0 ? (
+                                                        agencies
+                                                            .filter(a => field.value.includes(a.id))
+                                                            .map(a => <Badge key={a.id} variant="secondary">{a.name}</Badge>)
+                                                    ) : (
+                                                        <span className="text-muted-foreground font-normal">Select agencies...</span>
+                                                    )}
+                                                </div>
+                                                <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Search agencies..." />
+                                            <CommandEmpty>No agency found.</CommandEmpty>
+                                            <CommandGroup>
+                                                <CommandList>
+                                                    {agencies.map((agency) => (
+                                                        <CommandItem
+                                                            key={agency.id}
+                                                            onSelect={() => {
+                                                                const selected = field.value.includes(agency.id);
+                                                                const newValue = selected
+                                                                    ? field.value.filter((id) => id !== agency.id)
+                                                                    : [...field.value, agency.id];
+                                                                field.onChange(newValue);
+                                                            }}
+                                                        >
+                                                            <Checkbox
+                                                                checked={field.value.includes(agency.id)}
+                                                                className="mr-2"
+                                                            />
+                                                            {agency.name}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandList>
+                                            </CommandGroup>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                        />
                       <FormField control={form.control} name="productName" render={({ field }) => (<FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                       <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="lpg">LPG</SelectItem><SelectItem value="accessories">Accessories</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                           <FormField control={form.control} name="lowStockThreshold" render={({ field }) => (<FormItem><FormLabel>Low Stock Threshold</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={(field.value || 'active').toLowerCase()}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                       </div>
 
                       <div>

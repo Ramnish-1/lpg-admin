@@ -139,26 +139,15 @@ export default function ProductsPage() {
          toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
     }
   };
-  
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
-  };
 
- const handleProductUpdate = async (updatedProduct: Product, newImageFiles: File[] = []) => {
+ const handleProductUpdate = async (updatedProduct: Product, newImagesAsBase64: string[]) => {
     if (!token) return false;
-
-    const newImagesBase64 = await Promise.all(newImageFiles.map(file => fileToBase64(file)));
 
     const existingImages = updatedProduct.images.filter(img => !img.startsWith('blob:'));
 
     const payload = {
         ...updatedProduct,
-        images: [...existingImages, ...newImagesBase64],
+        images: [...existingImages, ...newImagesAsBase64],
     };
 
     try {
@@ -272,7 +261,10 @@ export default function ProductsPage() {
                     >
                       <TableCell className="font-medium" onClick={() => handleShowDetails(product)}>{product.productName}</TableCell>
                       <TableCell onClick={() => handleShowDetails(product)}>
-                        {product.agency?.name || <span className="text-muted-foreground">N/A</span>}
+                        {product.agencies && product.agencies.length > 0
+                          ? `${product.agencies.length} ${product.agencies.length === 1 ? 'Agency' : 'Agencies'}`
+                          : <span className="text-muted-foreground">N/A</span>
+                        }
                       </TableCell>
                       <TableCell onClick={() => handleShowDetails(product)}>
                         {product.variants.length > 0 ? `${product.variants.length} variant(s)` : 'No variants'}
