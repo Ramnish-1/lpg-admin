@@ -34,7 +34,7 @@ interface OrderDetailsDialogProps {
   order: Order | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirmOrder: (order: Order) => void;
+  onConfirmAndAssign: (order: Order) => void;
   onCancelOrder: (order: Order) => void;
   isUpdating: boolean;
 }
@@ -50,7 +50,7 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
     'returned': 'destructive'
   };
 
-export function OrderDetailsDialog({ order, isOpen, onOpenChange, onConfirmOrder, onCancelOrder, isUpdating }: OrderDetailsDialogProps) {
+export function OrderDetailsDialog({ order, isOpen, onOpenChange, onConfirmAndAssign, onCancelOrder, isUpdating }: OrderDetailsDialogProps) {
   if (!order) return null;
 
    const handleWhatsAppClick = (phone?: string) => {
@@ -190,9 +190,9 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange, onConfirmOrder
                   {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
                   Cancel Order
                 </Button>
-                <Button className="w-full" onClick={() => onConfirmOrder(order)} disabled={isUpdating}>
+                <Button className="w-full" onClick={() => onConfirmAndAssign(order)} disabled={isUpdating}>
                   {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                  Confirm Order
+                  Confirm & Assign
                 </Button>
               </>
             )}

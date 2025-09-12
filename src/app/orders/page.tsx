@@ -47,6 +47,7 @@ function OrdersTable({
   onStatusChange,
   onReturn,
   onCancel,
+  onConfirmAndAssign,
   updatingOrderId,
 }: { 
   orders: Order[],
@@ -55,6 +56,7 @@ function OrdersTable({
   onStatusChange: (order: Order, status: Order['status']) => void,
   onReturn: (order: Order) => void;
   onCancel: (order: Order) => void;
+  onConfirmAndAssign: (order: Order) => void;
   updatingOrderId: string | null;
 }) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -145,12 +147,11 @@ function OrdersTable({
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     {order.status === 'pending' ? (
                        <div className="flex gap-2">
-                            <Button size="sm" onClick={() => onStatusChange(order, 'confirmed')} disabled={!!updatingOrderId}>
+                            <Button size="sm" onClick={() => onConfirmAndAssign(order)} disabled={!!updatingOrderId}>
                               {updatingOrderId === order.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                              Confirm Order
+                              Confirm & Assign
                             </Button>
                             <Button size="sm" variant="destructive" onClick={() => onCancel(order)} disabled={!!updatingOrderId}>
-                              {updatingOrderId === order.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                               Cancel
                             </Button>
                        </div>
@@ -349,8 +350,8 @@ export default function OrdersPage() {
     }
   };
 
-  const updateOrderStatus = async (order: Order, newStatus: Order['status'], notes?: string) => {
-    if (!token) return;
+  const updateOrderStatus = async (order: Order, newStatus: Order['status'], notes?: string): Promise<boolean> => {
+    if (!token) return false;
     setUpdatingOrderId(order.id);
 
     const requestBody: { status: Order['status'], adminNotes?: string } = { status: newStatus };
@@ -378,12 +379,15 @@ export default function OrdersPage() {
             removeNotification(order.id);
         }
         fetchOrders();
-        setIsDetailsOpen(false); // Close dialog on success
+        setIsDetailsOpen(false);
+        return true;
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
+        return false;
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
+      return false;
     } finally {
       setUpdatingOrderId(null);
     }
@@ -406,6 +410,13 @@ export default function OrdersPage() {
     await updateOrderStatus(order, newStatus, notes);
   }
   
+  const handleConfirmAndAssign = async (order: Order) => {
+    const success = await updateOrderStatus(order, 'confirmed', 'Order confirmed and ready for delivery');
+    if (success) {
+        handleAssignAgent(order);
+    }
+  }
+
   const confirmCancelOrder = async (reason: string) => {
     if (selectedOrder) {
        await updateOrderStatus(selectedOrder, 'cancelled', reason);
@@ -531,6 +542,7 @@ export default function OrdersPage() {
               onStatusChange={handleStatusChange}
               onReturn={handleReturnOrder}
               onCancel={handleCancelOrder}
+              onConfirmAndAssign={handleConfirmAndAssign}
               updatingOrderId={updatingOrderId}
             />
           </TabsContent>
@@ -542,7 +554,7 @@ export default function OrdersPage() {
         order={selectedOrder} 
         isOpen={isDetailsOpen} 
         onOpenChange={setIsDetailsOpen}
-        onConfirmOrder={() => handleStatusChange(selectedOrder, 'confirmed')}
+        onConfirmAndAssign={() => handleConfirmAndAssign(selectedOrder)}
         onCancelOrder={() => handleCancelOrder(selectedOrder)}
         isUpdating={!!updatingOrderId}
       />}
