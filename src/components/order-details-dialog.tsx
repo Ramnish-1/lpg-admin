@@ -15,6 +15,7 @@ import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package, Phone
 import { Separator } from './ui/separator';
 import { Button } from './ui/button';
 import Link from 'next/link';
+import { ScrollArea } from './ui/scroll-area';
 
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -66,8 +67,8 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange, onConfirmAndAs
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh] p-0">
+        <DialogHeader className="p-6 pb-4">
           <DialogTitle className="flex items-center gap-2">
              <ShoppingBag className="h-6 w-6 text-primary" />
             <span>Order Details</span>
@@ -76,114 +77,115 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange, onConfirmAndAs
             Order #{order.orderNumber}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
-            
-            <div className="p-4 rounded-lg border bg-muted/20">
-                <h3 className="font-semibold mb-3 text-foreground">Customer & Agent</h3>
-                <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                        <User className="h-5 w-5 text-muted-foreground mt-1" />
-                        <div className="text-sm">
-                            <div className="font-medium">{order.customerName}</div>
-                            <div className="text-muted-foreground">Customer</div>
-                            <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                                <Mail className="h-3 w-3"/>
-                                <a href={`mailto:${order.customerEmail}`} className="hover:underline">{order.customerEmail}</a>
+        <ScrollArea className="px-6">
+            <div className="space-y-4 pr-1">
+                <div className="p-4 rounded-lg border bg-muted/20">
+                    <h3 className="font-semibold mb-3 text-foreground">Customer & Agent</h3>
+                    <div className="space-y-3">
+                        <div className="flex items-start gap-3">
+                            <User className="h-5 w-5 text-muted-foreground mt-1" />
+                            <div className="text-sm">
+                                <div className="font-medium">{order.customerName}</div>
+                                <div className="text-muted-foreground">Customer</div>
+                                <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                    <Mail className="h-3 w-3"/>
+                                    <a href={`mailto:${order.customerEmail}`} className="hover:underline">{order.customerEmail}</a>
+                                </div>
+                                {order.customerPhone && (
+                                    <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                        <Phone className="h-3 w-3"/>
+                                        <a href={`tel:${order.customerPhone}`} className="hover:underline">{order.customerPhone}</a>
+                                         <Button variant="ghost" size="icon" className="h-6 w-6 text-green-500 hover:text-green-600 -ml-1" onClick={() => handleWhatsAppClick(order.customerPhone)}>
+                                            <WhatsAppIcon className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
-                            {order.customerPhone && (
-                                <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                                    <Phone className="h-3 w-3"/>
-                                    <a href={`tel:${order.customerPhone}`} className="hover:underline">{order.customerPhone}</a>
-                                     <Button variant="ghost" size="icon" className="h-6 w-6 text-green-500 hover:text-green-600 -ml-1" onClick={() => handleWhatsAppClick(order.customerPhone)}>
-                                        <WhatsAppIcon className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            )}
                         </div>
-                    </div>
-                     <div className="flex items-start gap-3">
-                        <MapPin className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
-                        <div className="text-sm">
-                           <a 
-                                href="#" 
-                                onClick={(e) => handleAddressClick(e, order.customerAddress)} 
-                                className="text-muted-foreground hover:underline"
-                            >
-                                {order.customerAddress}
-                            </a>
+                         <div className="flex items-start gap-3">
+                            <MapPin className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
+                            <div className="text-sm">
+                               <a 
+                                    href="#" 
+                                    onClick={(e) => handleAddressClick(e, order.customerAddress)} 
+                                    className="text-muted-foreground hover:underline"
+                                >
+                                    {order.customerAddress}
+                                </a>
+                            </div>
                         </div>
-                    </div>
-                    <Separator className="my-2" />
-                    <div className="flex items-start gap-3">
-                        <Truck className="h-5 w-5 text-muted-foreground mt-1" />
-                        <div className="text-sm">
-                            <div className="font-medium">{order.assignedAgent?.name || 'Unassigned'}</div>
-                            <div className="text-muted-foreground">Delivery Agent</div>
-                             {order.assignedAgent?.phone && (
-                                <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                                    <Phone className="h-3 w-3"/>
-                                    <a href={`tel:${order.assignedAgent.phone}`} className="hover:underline">{order.assignedAgent.phone}</a>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-green-500 hover:text-green-600 -ml-1" onClick={() => handleWhatsAppClick(order.assignedAgent?.phone)}>
-                                        <WhatsAppIcon className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            )}
+                        <Separator className="my-2" />
+                        <div className="flex items-start gap-3">
+                            <Truck className="h-5 w-5 text-muted-foreground mt-1" />
+                            <div className="text-sm">
+                                <div className="font-medium">{order.assignedAgent?.name || 'Unassigned'}</div>
+                                <div className="text-muted-foreground">Delivery Agent</div>
+                                 {order.assignedAgent?.phone && (
+                                    <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                        <Phone className="h-3 w-3"/>
+                                        <a href={`tel:${order.assignedAgent.phone}`} className="hover:underline">{order.assignedAgent.phone}</a>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-green-500 hover:text-green-600 -ml-1" onClick={() => handleWhatsAppClick(order.assignedAgent?.phone)}>
+                                            <WhatsAppIcon className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4"/>Date</span>
-                    <span>{new Date(order.createdAt).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center gap-2"><Wallet className="h-4 w-4"/>Payment</span>
-                    <span className="capitalize">{order.paymentMethod.replace('_', ' ')} ({order.paymentStatus})</span>
-                </div>
-                 <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center gap-2">Status</span>
-                    <Badge variant={statusVariant[order.status]} className="text-xs capitalize">{order.status.replace('_', ' ')}</Badge>
-                </div>
-                {(order.status === 'cancelled' || order.status === 'returned') && order.adminNotes && (
-                   <div className="flex justify-between items-start pt-2">
-                        <span className="text-muted-foreground flex items-center gap-2"><XCircle className="h-4 w-4"/>Reason</span>
-                        <span className="text-right text-destructive text-sm font-medium">{order.adminNotes}</span>
+                <div className="space-y-3 text-sm">
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4"/>Date</span>
+                        <span>{new Date(order.createdAt).toLocaleString()}</span>
                     </div>
-                )}
-            </div>
-
-            <Separator />
-            
-            <div>
-                <h4 className="font-semibold mb-2 text-foreground">Items</h4>
-                <div className="space-y-2">
-                {order.items.map((item, i) => (
-                    <div key={i} className="flex justify-between items-start p-3 rounded-md bg-muted/40 text-sm">
-                        <div className="flex-1">
-                            <p className="font-medium">{item.productName}</p>
-                            <p className="text-xs text-muted-foreground">({item.variantLabel})</p>
-                        </div>
-                        <div className="text-right">
-                           <p className="font-medium">₹{item.total.toLocaleString()}</p>
-                           <p className="text-xs text-muted-foreground">
-                                {item.quantity} x ₹{item.variantPrice.toLocaleString()}
-                           </p>
-                        </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground flex items-center gap-2"><Wallet className="h-4 w-4"/>Payment</span>
+                        <span className="capitalize">{order.paymentMethod.replace('_', ' ')} ({order.paymentStatus})</span>
                     </div>
-                ))}
+                     <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground flex items-center gap-2">Status</span>
+                        <Badge variant={statusVariant[order.status]} className="text-xs capitalize">{order.status.replace('_', ' ')}</Badge>
+                    </div>
+                    {(order.status === 'cancelled' || order.status === 'returned') && order.adminNotes && (
+                       <div className="flex justify-between items-start pt-2">
+                            <span className="text-muted-foreground flex items-center gap-2"><XCircle className="h-4 w-4"/>Reason</span>
+                            <span className="text-right text-destructive text-sm font-medium">{order.adminNotes}</span>
+                        </div>
+                    )}
+                </div>
+
+                <Separator />
+                
+                <div>
+                    <h4 className="font-semibold mb-2 text-foreground">Items</h4>
+                    <div className="space-y-2">
+                    {order.items.map((item, i) => (
+                        <div key={i} className="flex justify-between items-start p-3 rounded-md bg-muted/40 text-sm">
+                            <div className="flex-1">
+                                <p className="font-medium">{item.productName}</p>
+                                <p className="text-xs text-muted-foreground">({item.variantLabel})</p>
+                            </div>
+                            <div className="text-right">
+                               <p className="font-medium">₹{item.total.toLocaleString()}</p>
+                               <p className="text-xs text-muted-foreground">
+                                    {item.quantity} x ₹{item.variantPrice.toLocaleString()}
+                               </p>
+                            </div>
+                        </div>
+                    ))}
+                    </div>
+                </div>
+                
+                <Separator />
+
+                <div className="flex justify-between items-center font-bold text-lg p-3 bg-primary/10 rounded-lg">
+                    <span className="text-primary">Total Amount</span>
+                    <span className="flex items-center text-primary"><IndianRupee className="h-5 w-5" />{parseFloat(order.totalAmount).toLocaleString()}</span>
                 </div>
             </div>
-            
-            <Separator />
-
-            <div className="flex justify-between items-center font-bold text-lg p-3 bg-primary/10 rounded-lg">
-                <span className="text-primary">Total Amount</span>
-                <span className="flex items-center text-primary"><IndianRupee className="h-5 w-5" />{parseFloat(order.totalAmount).toLocaleString()}</span>
-            </div>
-        </div>
-        <DialogFooter className="mt-4 gap-2">
+        </ScrollArea>
+        <DialogFooter className="mt-4 gap-2 p-6 pt-0 border-t">
              {order.status === 'pending' && (
               <>
                 <Button variant="destructive" onClick={() => onCancelOrder(order)} disabled={isUpdating}>
