@@ -67,7 +67,7 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange, onConfirmAndAs
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh] p-0">
+      <DialogContent className="sm:max-w-2xl grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh] p-0">
         <DialogHeader className="p-6 pb-4">
           <DialogTitle className="flex items-center gap-2">
              <ShoppingBag className="h-6 w-6 text-primary" />
@@ -194,7 +194,7 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange, onConfirmAndAs
                 </Button>
                 <Button className="w-full" onClick={() => onConfirmAndAssign(order)} disabled={isUpdating}>
                   {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                  Confirm & Assign
+                  Confirm
                 </Button>
               </>
             )}
@@ -211,5 +211,3 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange, onConfirmAndAs
     </Dialog>
   );
 }
-
-    

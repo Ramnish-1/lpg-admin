@@ -150,7 +150,7 @@ function OrdersTable({
                        <div className="flex gap-2">
                             <Button size="sm" onClick={() => onConfirmAndAssign(order)} disabled={!!updatingOrderId}>
                               {updatingOrderId === order.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                              Confirm & Assign
+                              Confirm
                             </Button>
                             <Button size="sm" variant="destructive" onClick={() => onCancel(order)} disabled={!!updatingOrderId}>
                               Cancel
