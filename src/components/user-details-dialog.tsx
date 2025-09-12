@@ -67,7 +67,7 @@ export function UserDetailsDialog({ user, isOpen, onOpenChange }: UserDetailsDia
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
                 <AvatarImage src={displayPhotoUrl} alt={user.name} data-ai-hint="person portrait" />
-                <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                <AvatarFallback>{user.name ? user.name.charAt(0).toUpperCase() : ''}</AvatarFallback>
             </Avatar>
             <div>
                 <DialogTitle className="text-2xl">{user.name}</DialogTitle>
@@ -124,3 +124,5 @@ export function UserDetailsDialog({ user, isOpen, onOpenChange }: UserDetailsDia
     </Dialog>
   );
 }
+
+    
