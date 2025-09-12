@@ -175,20 +175,6 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                   <div className="space-y-6 py-2">
                      <FormField
                         control={form.control}
-                        name="productName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Product Name</FormLabel>
-                            <FormControl><Input placeholder="e.g. LPG Cylinder" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl><SelectContent><SelectItem value="lpg">LPG</SelectItem><SelectItem value="accessories">Accessories</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="lowStockThreshold" render={({ field }) => (<FormItem><FormLabel>Low Stock Threshold</FormLabel><FormControl><Input type="number" placeholder="e.g. 10" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                      </div>
-                      <FormField
-                        control={form.control}
                         name="agencyIds"
                         render={({ field }) => (
                           <FormItem>
@@ -249,6 +235,20 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                           </FormItem>
                         )}
                       />
+                     <FormField
+                        control={form.control}
+                        name="productName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Product Name</FormLabel>
+                            <FormControl><Input placeholder="e.g. LPG Cylinder" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl><SelectContent><SelectItem value="lpg">LPG</SelectItem><SelectItem value="accessories">Accessories</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="lowStockThreshold" render={({ field }) => (<FormItem><FormLabel>Low Stock Threshold</FormLabel><FormControl><Input type="number" placeholder="e.g. 10" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                      </div>
                       <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="e.g. Standard household cooking gas cylinder" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       
                       <div>
@@ -333,5 +333,3 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     </>
   );
 }
-
-    
