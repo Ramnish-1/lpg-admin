@@ -29,14 +29,14 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
 import { Checkbox } from './ui/checkbox';
 import { Badge } from './ui/badge';
-import { getAgentsData } from '@/lib/data';
+import { useAuth } from '@/context/auth-context';
 
-type AddProductPayload = Omit<Product, 'id'>;
+type AddProductPayload = Omit<Product, 'id' | 'status'>;
 
 interface AddProductDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onProductAdd: (product: AddProductPayload) => Promise<boolean>;
+  onProductAdd: (product: AddProductPayload, images: File[]) => Promise<boolean>;
 }
 
 const variantSchema = z.object({
@@ -46,7 +46,7 @@ const variantSchema = z.object({
 });
 
 const productSchema = z.object({
-  agencyIds: z.array(z.string()).optional(), // Made optional
+  agencyIds: z.array(z.string()).optional(),
   productName: z.string().min(1, "Product name is required."),
   description: z.string().min(1, "Description is required."),
   category: z.enum(['lpg', 'accessories']),
@@ -55,19 +55,38 @@ const productSchema = z.object({
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProductDialogProps) {
   const [agencies, setAgencies] = useState<Agency[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const { token, handleApiError } = useAuth();
 
 
-  // Simplified: Not fetching agencies as it's not critical for adding a product locally
   useEffect(() => {
-    // In a real app, you'd fetch this. For local demo, we can omit.
-  }, []);
+    const fetchAgencies = async () => {
+      if (!token) return;
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/agencies`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) handleApiError(response);
+        const result = await response.json();
+        if (result.success) {
+          setAgencies(result.data.agencies);
+        }
+      } catch (e) {
+        console.error("Failed to fetch agencies");
+      }
+    }
+    if (isOpen) {
+      fetchAgencies();
+    }
+  }, [isOpen, token, handleApiError]);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -86,34 +105,38 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     name: "variants"
   });
 
+  const resetDialog = () => {
+    form.reset();
+    setImageFiles([]);
+    setImagePreviews([]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   const handleSubmit = async (values: ProductFormValues) => {
-    if (imagePreviews.length === 0) {
+    if (imageFiles.length === 0) {
       form.setError("root", { message: "At least one image is required." });
       return;
     }
     
     const payload: AddProductPayload = {
         ...values,
-        status: 'Active',
-        images: imagePreviews, 
-        agencies: [], // Simplified
+        images: [], // Will be handled by form data
+        agencies: [], 
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
     };
 
-    const success = await onProductAdd(payload);
+    const success = await onProductAdd(payload, imageFiles);
     
     if (success) {
-      form.reset();
-      setImagePreviews([]);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      resetDialog();
       onOpenChange(false);
     }
   };
   
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      form.reset();
-      setImagePreviews([]);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      resetDialog();
     }
     onOpenChange(open);
   }
@@ -121,15 +144,21 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-        const newFilePreviews = Array.from(files).map(file => URL.createObjectURL(file));
+        const newFiles = Array.from(files);
+        setImageFiles(prev => [...prev, ...newFiles]);
+        const newFilePreviews = newFiles.map(file => URL.createObjectURL(file));
         setImagePreviews(prevPreviews => [...prevPreviews, ...newFilePreviews]);
     }
   };
   
   const removeImage = (index: number) => {
-    const newPreviews = [...imagePreviews];
-    newPreviews.splice(index, 1);
-    setImagePreviews(newPreviews);
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => {
+        const newPreviews = [...prev];
+        URL.revokeObjectURL(newPreviews[index]); // Clean up memory
+        newPreviews.splice(index, 1);
+        return newPreviews;
+    });
   }
   
   const openImageViewer = (imageUrl: string) => {
@@ -250,3 +279,5 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     </>
   );
 }
+
+    

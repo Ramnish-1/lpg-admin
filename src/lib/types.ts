@@ -41,10 +41,10 @@ export interface Product {
   lowStockThreshold: number;
   variants: ProductVariant[];
   images: string[]; // URLs to images
-  agencies?: Agency[];
-  createdAt?: string;
-  updatedAt?: string;
-  history?: { date: Date; type: 'price_change' | 'stock_update', oldValue: number, newValue: number }[];
+  agencies: Agency[];
+  createdAt: string;
+  updatedAt: string;
+  agencyIds?: string[];
 }
 
 
@@ -158,21 +158,18 @@ export interface Notification {
 }
 
 export interface Agency {
-  id: string;
+  id?: string; // Made optional for product -> agencies array from API
   name: string;
-  email: string;
-  phone: string;
-  addressTitle: string;
+  email?: string;
+  phone?: string;
+  addressTitle?: string;
   address: string;
   city: string;
-  pincode: string;
-  landmark: string;
-  status: 'active' | 'inactive';
-  createdAt: string;
-  updatedAt: string;
+  pincode?: string;
+  landmark?: string;
+  status?: 'active' | 'inactive';
+  createdAt?: string;
+  updatedAt?: string;
 }
-    
-
-    
 
     

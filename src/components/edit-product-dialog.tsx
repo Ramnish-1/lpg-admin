@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Product, Agency } from '@/lib/types';
+import { Product } from '@/lib/types';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -30,7 +30,7 @@ interface EditProductDialogProps {
   product: Product;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onProductUpdate: (product: Product) => Promise<boolean>;
+  onProductUpdate: (product: Product, imagesToDelete?: string[], newImages?: File[]) => Promise<boolean>;
 }
 
 const variantSchema = z.object({
@@ -51,6 +51,8 @@ type ProductFormValues = z.infer<typeof productSchema>;
 
 export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpdate }: EditProductDialogProps) {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
+  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -66,6 +68,14 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     control: form.control,
     name: "variants"
   });
+  
+  const resetState = () => {
+    form.reset();
+    setImagePreviews([]);
+    setImagesToDelete([]);
+    setNewImageFiles([]);
+    if(fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   useEffect(() => {
     if (isOpen && product) {
@@ -74,26 +84,38 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
         category: product.category || 'lpg',
       });
       setImagePreviews(product.images || []);
+      setImagesToDelete([]);
+      setNewImageFiles([]);
     }
   }, [product, isOpen, form]);
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      resetState();
+    }
+    onOpenChange(open);
+  }
 
   const handleSubmit = async (values: ProductFormValues) => {
     const updatedProduct: Product = {
       ...product,
       ...values,
-      images: imagePreviews,
+      images: imagePreviews.filter(img => !img.startsWith('blob:')), // Only keep existing images
     };
     
-    const success = await onProductUpdate(updatedProduct);
+    const success = await onProductUpdate(updatedProduct, imagesToDelete, newImageFiles);
     if(success) {
-      onOpenChange(false);
+      handleOpenChange(false);
     }
   };
   
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-        const newFilePreviews = Array.from(files).map(file => URL.createObjectURL(file));
+        const newFiles = Array.from(files);
+        setNewImageFiles(prev => [...prev, ...newFiles]);
+
+        const newFilePreviews = newFiles.map(file => URL.createObjectURL(file));
         setImagePreviews(prevPreviews => [...prevPreviews, ...newFilePreviews]);
     }
   };
@@ -104,12 +126,25 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
   };
   
   const removeImage = (indexToRemove: number) => {
+    const imageToRemove = imagePreviews[indexToRemove];
+    
+    // If it's an existing image (http URL), add it to imagesToDelete
+    if (imageToRemove.startsWith('http')) {
+        setImagesToDelete(prev => [...prev, imageToRemove]);
+    } else { // If it's a new blob image, remove it from newImageFiles
+        const blobIndex = imagePreviews.filter(p => p.startsWith('blob:')).indexOf(imageToRemove);
+        if (blobIndex > -1) {
+            setNewImageFiles(prev => prev.filter((_, i) => i !== blobIndex));
+        }
+    }
+    
+    // Remove from previews
     setImagePreviews(previews => previews.filter((_, i) => i !== indexToRemove));
   };
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-2xl grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh] p-0">
           <DialogHeader className="p-6 pb-4">
             <DialogTitle>Edit Product</DialogTitle>
@@ -194,8 +229,8 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                   </div>
               </ScrollArea>
               <DialogFooter className="p-6 pt-4 mt-4 border-t bg-muted/40">
-                <DialogClose asChild><Button variant="outline" type="button">Cancel</Button></DialogClose>
-                <Button type="submit" disabled={form.formState.isSubmitting}>Save Changes</Button>
+                <DialogClose asChild><Button variant="outline" type="button" onClick={() => handleOpenChange(false)}>Cancel</Button></DialogClose>
+                <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? 'Saving...' : 'Save Changes'}</Button>
               </DialogFooter>
             </form>
           </Form>
@@ -209,3 +244,5 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     </>
   );
 }
+
+    

@@ -10,17 +10,17 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, AlertCircle, ChevronDown, Loader2, Trash2 } from 'lucide-react';
 import type { Product } from '@/lib/types';
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useContext } from 'react';
 import { ProductDetailsDialog } from '@/components/product-details-dialog';
 import { EditProductDialog } from '@/components/edit-product-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { AddProductDialog } from '@/components/add-product-dialog';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { getProductsData } from '@/lib/data';
+import { AuthContext, useAuth } from '@/context/auth-context';
 
 const ITEMS_PER_PAGE = 10;
-const PRODUCTS_STORAGE_KEY = 'gastrack-products';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -32,45 +32,35 @@ export default function ProductsPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  const updateProductsState = (newProducts: Product[]) => {
-    setProducts(newProducts);
-    try {
-      window.localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(newProducts));
-    } catch (error) {
-      console.error("Failed to save products to localStorage", error);
-    }
-  };
+  const { token, handleApiError } = useAuth();
 
   const fetchProducts = useCallback(async () => {
+    if (!token) return;
     setIsLoading(true);
     try {
-      const savedProducts = window.localStorage.getItem(PRODUCTS_STORAGE_KEY);
-      if (savedProducts) {
-        setProducts(JSON.parse(savedProducts));
+      const response = await fetch(`${API_BASE_URL}/api/products`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) handleApiError(response);
+      const result = await response.json();
+      if (result.success) {
+        setProducts(result.data.products.map((p: any) => ({
+          ...p,
+          status: p.status.charAt(0).toUpperCase() + p.status.slice(1) // Capitalize status
+        })));
       } else {
-        const data = await getProductsData();
-        updateProductsState(data);
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch products.' });
       }
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch products.' });
-      const data = await getProductsData();
-      updateProductsState(data);
+      toast({ variant: 'destructive', title: 'Error', description: 'An error occurred while fetching products.' });
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [token, toast, handleApiError]);
 
   useEffect(() => {
-    if(isClient) {
-      fetchProducts();
-    }
-  }, [isClient, fetchProducts]);
+    fetchProducts();
+  }, [fetchProducts]);
 
   const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
 
@@ -96,47 +86,126 @@ export default function ProductsPage() {
   };
 
   const confirmDeleteProduct = async () => {
-    if (!selectedProduct) return;
-    
-    const newProducts = products.filter(p => p.id !== selectedProduct.id);
-    updateProductsState(newProducts);
-    
-    toast({ title: 'Product Deleted', description: `${selectedProduct.productName} has been deleted.` });
-    
-    setIsDeleteOpen(false);
-    setSelectedProduct(null);
+    if (!selectedProduct || !token) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/products/${selectedProduct.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) handleApiError(response);
+      
+      toast({ title: 'Product Deleted', description: `${selectedProduct.productName} has been deleted.` });
+      fetchProducts(); // Re-fetch
+    } catch (error) {
+       toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete product.' });
+    } finally {
+      setIsDeleteOpen(false);
+      setSelectedProduct(null);
+    }
   }
 
   const handleToggleStatus = async (productToToggle: Product) => {
-    const newStatus = productToToggle.status === 'Active' ? 'Inactive' : 'Active';
-    const newProducts = products.map(p => p.id === productToToggle.id ? {...p, status: newStatus} : p);
-    updateProductsState(newProducts);
-    toast({
-        title: 'Product Status Updated',
-        description: `${productToToggle.productName} is now ${newStatus}.`,
-    });
+    if (!token) return;
+    const newStatus = productToToggle.status.toLowerCase() === 'active' ? 'inactive' : 'active';
+    try {
+       const response = await fetch(`${API_BASE_URL}/api/products/${productToToggle.id}`, {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+        if (!response.ok) handleApiError(response);
+        const result = await response.json();
+        if (result.success) {
+            toast({
+                title: 'Product Status Updated',
+                description: `${productToToggle.productName} is now ${newStatus}.`,
+            });
+            fetchProducts();
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
+        }
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
+    }
   };
 
- const handleProductUpdate = async (updatedProduct: Product) => {
-    const newProducts = products.map(p => p.id === updatedProduct.id ? updatedProduct : p);
-    updateProductsState(newProducts);
-    toast({ title: 'Product Updated', description: `${updatedProduct.productName} has been successfully updated.` });
-    setIsEditOpen(false);
-    setSelectedProduct(null);
-    return true;
+ const handleProductUpdate = async (updatedProduct: Product, imagesToDelete?: string[], newImages?: File[]): Promise<boolean> => {
+    if(!token) return false;
+
+    const formData = new FormData();
+    formData.append('productName', updatedProduct.productName);
+    formData.append('description', updatedProduct.description);
+    formData.append('category', updatedProduct.category);
+    formData.append('lowStockThreshold', String(updatedProduct.lowStockThreshold));
+    formData.append('variants', JSON.stringify(updatedProduct.variants));
+    
+    if (imagesToDelete && imagesToDelete.length > 0) {
+      formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
+    }
+    if (newImages) {
+        newImages.forEach(file => formData.append('images', file));
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/products/${updatedProduct.id}`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData,
+        });
+        if (!response.ok) handleApiError(response);
+        const result = await response.json();
+        if (result.success) {
+            toast({ title: 'Product Updated', description: `${updatedProduct.productName} has been successfully updated.` });
+            fetchProducts();
+            return true;
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update product.' });
+            return false;
+        }
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update product.' });
+        return false;
+    }
   }
 
 
-  const handleProductAdd = async (newProduct: Omit<Product, 'id'>): Promise<boolean> => {
-    const productToAdd: Product = {
-      ...newProduct,
-      id: `prod_${Date.now()}`
+  const handleProductAdd = async (newProduct: Omit<Product, 'id' | 'status'>, images: File[]): Promise<boolean> => {
+    if (!token) return false;
+    
+    const formData = new FormData();
+    formData.append('productName', newProduct.productName);
+    formData.append('description', newProduct.description);
+    formData.append('category', newProduct.category);
+    formData.append('lowStockThreshold', String(newProduct.lowStockThreshold));
+    formData.append('variants', JSON.stringify(newProduct.variants));
+    if (newProduct.agencyIds) {
+        formData.append('agencyIds', JSON.stringify(newProduct.agencyIds));
     }
-    const newProducts = [...products, productToAdd];
-    updateProductsState(newProducts);
+    images.forEach(file => formData.append('images', file));
 
-    toast({ title: 'Product Added', description: `${newProduct.productName} has been successfully added.` });
-    return true;
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/products`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData,
+        });
+        if (!response.ok) handleApiError(response);
+        const result = await response.json();
+        if (result.success) {
+            toast({ title: 'Product Added', description: `${newProduct.productName} has been successfully added.` });
+            fetchProducts();
+            return true;
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to add product.' });
+            return false;
+        }
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to add product.' });
+        return false;
+    }
   }
 
 
@@ -317,3 +386,5 @@ export default function ProductsPage() {
     </AppShell>
   );
 }
+
+    

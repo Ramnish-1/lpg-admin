@@ -26,14 +26,13 @@ export async function getOrdersData(): Promise<Order[]> {
   // Enrich order data with customer and agent names
   return sampleOrders.map(order => {
     const customer = sampleUsers.find(u => u.id === order.customerId);
-    const agent = sampleAgents.find(a => a.id === order.assignedAgentId);
+    // This logic needs to be updated or removed if switching to live API
+    // The live API should return all necessary data
     return {
       ...order,
       customerName: customer?.name || 'Unknown Customer',
       customerPhone: customer?.phone || 'N/A',
-      agentName: agent?.name,
-      agentPhone: agent?.phone,
-    };
+    } as any;
   });
 }
 
@@ -54,8 +53,9 @@ export async function getOrderById(orderId: string): Promise<Order | undefined> 
     const order = orders.find(o => o.id === orderId);
     if (!order) return undefined;
 
-    const customer = await getUserById(order.customerId);
-    const agent = order.assignedAgentId ? await getAgentById(order.assignedAgentId) : undefined;
+    // This logic needs to be updated or removed if switching to live API
+    const customer = await getUserById(order.customerId as unknown as string);
+    const agent = order.assignedAgent ? await getAgentById(order.assignedAgent.id) : undefined;
     
     return {
         ...order,
@@ -75,3 +75,5 @@ export async function getAgentById(agentId: string): Promise<Agent | undefined> 
     const agents = await getAgentsData();
     return agents.find(a => a.id === agentId);
 }
+
+    
