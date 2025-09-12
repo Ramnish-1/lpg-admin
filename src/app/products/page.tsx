@@ -243,9 +243,7 @@ export default function ProductsPage() {
                   <TableHead>Variants</TableHead>
                   <TableHead>Total Stock</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
+                  <TableHead>Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
