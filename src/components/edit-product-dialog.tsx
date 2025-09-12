@@ -131,7 +131,10 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
   }
 
   const handleSubmit = async (values: ProductFormValues) => {
-    const selectedAgencies = allAgencies.filter(agency => values.agencyIds?.includes(agency.id));
+    const selectedAgencies = allAgencies
+      .filter(agency => values.agencyIds?.includes(agency.id))
+      .map(({ id, status, createdAt, updatedAt, ...rest }) => rest); // Exclude unwanted fields
+
     const payload: EditProductPayload = {
         ...values,
         id: product.id,

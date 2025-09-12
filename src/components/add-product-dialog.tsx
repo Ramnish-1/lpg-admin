@@ -118,7 +118,10 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
       return;
     }
 
-    const selectedAgencies = allAgencies.filter(agency => values.agencyIds?.includes(agency.id));
+    const selectedAgencies = allAgencies
+        .filter(agency => values.agencyIds?.includes(agency.id))
+        .map(({ id, status, createdAt, updatedAt, ...rest }) => rest); // Exclude unwanted fields
+
     const payload: AddProductPayload = {
         ...values,
         agencies: selectedAgencies,
