@@ -75,6 +75,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     defaultValues: {
       agencyIds: [],
       status: 'active',
+      variants: [{ label: '', price: 0, stock: 0 }],
     }
   });
 
@@ -107,13 +108,16 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
 
   useEffect(() => {
     if (isOpen && agencies.length > 0 && product) {
-        const currentAgencyId = product.agencies && product.agencies.length > 0
-        ? agencies.find(a => a.name === product.agencies[0].name)?.id
-        : undefined;
+        const currentAgencyIds = product.agencies
+            ? product.agencies.map(agency => {
+                const foundAgency = agencies.find(a => a.name === agency.name);
+                return foundAgency ? foundAgency.id : null;
+            }).filter((id): id is string => id !== null)
+            : [];
 
       form.reset({
         ...product,
-        agencyIds: currentAgencyId ? [currentAgencyId] : [],
+        agencyIds: currentAgencyIds,
         status: product.status ? (product.status.toLowerCase() as 'active' | 'inactive') : 'active',
         category: product.category || 'lpg',
       });
@@ -142,12 +146,14 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     }
 
     const agenciesPayload = selectedAgencies.map(agency => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id, status, createdAt, updatedAt, ...rest } = agency;
         return rest;
     });
 
     const { agencyIds, ...productData } = values;
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { unit, price, stock, ...restOfProduct } = product;
 
     const updatedProduct: Product = {
@@ -268,7 +274,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="lpg">LPG</SelectItem><SelectItem value="accessories">Accessories</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                           <FormField control={form.control} name="lowStockThreshold" render={({ field }) => (<FormItem><FormLabel>Low Stock Threshold</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                       </div>
 
                       <div>
@@ -293,14 +299,14 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                         <FormLabel>Product Images</FormLabel>
                           <FormControl>
                             <div>
-                              <input ref={fileInputRef} id="image-upload-edit" type="file" multiple onChange={handleImageChange} className="hidden" accept="image/*"/>
-                              <div
-                                className="mt-2 flex justify-center items-center flex-col w-full h-32 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted/50"
-                                onClick={() => fileInputRef.current?.click()}
-                              >
-                                <ImagePlus className="h-8 w-8 text-muted-foreground"/>
-                                <p className="text-sm text-muted-foreground mt-2">Click or drag to add images</p>
-                              </div>
+                                <input ref={fileInputRef} id="image-upload-edit" type="file" multiple onChange={handleImageChange} className="hidden" accept="image/*"/>
+                                <div
+                                    className="mt-2 flex justify-center items-center flex-col w-full h-32 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted/50"
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
+                                    <ImagePlus className="h-8 w-8 text-muted-foreground"/>
+                                    <p className="text-sm text-muted-foreground mt-2">Click or drag to add images</p>
+                                </div>
                             </div>
                           </FormControl>
                          {imagePreviews.length > 0 && (
