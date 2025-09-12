@@ -105,7 +105,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
   }, [isOpen, token, handleApiError, toast]);
 
   useEffect(() => {
-    if (isOpen && agencies.length > 0) {
+    if (isOpen && agencies.length > 0 && product) {
       const currentAgencyIds = product.agencies?.map(a => {
         const found = agencies.find(fa => fa.name === a.name);
         return found ? found.id : null;
@@ -114,7 +114,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
       form.reset({
         ...product,
         agencyIds: currentAgencyIds,
-        status: product.status.toLowerCase() as 'active' | 'inactive',
+        status: product.status ? (product.status.toLowerCase() as 'active' | 'inactive') : 'active',
         category: product.category || 'lpg',
       });
       setImagePreviews(product.images.map(img => img.startsWith('http') ? img : `${API_BASE_URL}${img}`));
@@ -122,6 +122,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }, [product, isOpen, form, agencies]);
+
 
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -264,7 +265,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                         />
                       <FormField control={form.control} name="productName" render={({ field }) => (<FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                       <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="lpg">LPG</SelectItem><SelectItem value="accessories">Accessories</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                           <FormField control={form.control} name="lowStockThreshold" render={({ field }) => (<FormItem><FormLabel>Low Stock Threshold</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                           <FormField control={form.control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
@@ -291,7 +292,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                       <div>
                         <FormLabel>Product Images</FormLabel>
                           <FormControl>
-                            <>
+                            <div>
                               <input ref={fileInputRef} id="image-upload-edit" type="file" multiple onChange={handleImageChange} className="hidden" accept="image/*"/>
                               <div
                                 className="mt-2 flex justify-center items-center flex-col w-full h-32 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted/50"
@@ -300,7 +301,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                                 <ImagePlus className="h-8 w-8 text-muted-foreground"/>
                                 <p className="text-sm text-muted-foreground mt-2">Click or drag to add images</p>
                               </div>
-                            </>
+                            </div>
                           </FormControl>
                          {imagePreviews.length > 0 && (
                             <Carousel className="w-full mt-4">
@@ -353,3 +354,4 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     </>
   );
 }
+
