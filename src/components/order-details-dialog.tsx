@@ -67,7 +67,7 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange, onConfirmOrder
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
              <ShoppingBag className="h-6 w-6 text-primary" />
@@ -156,13 +156,18 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange, onConfirmOrder
             <div>
                 <h4 className="font-semibold mb-2 text-foreground">Items</h4>
                 <div className="space-y-2">
-                {order.items.map((p, i) => (
-                    <div key={i} className="flex justify-between items-center p-2 rounded-md bg-muted/40 text-sm">
-                        <div>
-                            <span>{p.productName}</span>
-                            <span className="text-muted-foreground ml-2 text-xs">({p.variantLabel})</span>
+                {order.items.map((item, i) => (
+                    <div key={i} className="flex justify-between items-start p-3 rounded-md bg-muted/40 text-sm">
+                        <div className="flex-1">
+                            <p className="font-medium">{item.productName}</p>
+                            <p className="text-xs text-muted-foreground">({item.variantLabel})</p>
                         </div>
-                        <span className="text-muted-foreground">x{p.quantity}</span>
+                        <div className="text-right">
+                           <p className="font-medium">₹{item.total.toLocaleString()}</p>
+                           <p className="text-xs text-muted-foreground">
+                                {item.quantity} x ₹{item.variantPrice.toLocaleString()}
+                           </p>
+                        </div>
                     </div>
                 ))}
                 </div>
