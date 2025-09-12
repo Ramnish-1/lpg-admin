@@ -52,7 +52,6 @@ const productSchema = z.object({
   description: z.string().min(1, "Description is required."),
   category: z.enum(['lpg', 'accessories']),
   lowStockThreshold: z.coerce.number().int().min(0, "Threshold must be a whole number."),
-  status: z.enum(['active', 'inactive']),
   variants: z.array(variantSchema).min(1, "At least one product variant is required."),
 });
 
@@ -74,7 +73,6 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     resolver: zodResolver(productSchema),
     defaultValues: {
       agencyIds: [],
-      status: 'active',
       variants: [{ label: '', price: 0, stock: 0 }],
     }
   });
@@ -118,7 +116,6 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
       form.reset({
         ...product,
         agencyIds: currentAgencyIds,
-        status: product.status ? (product.status.toLowerCase() as 'active' | 'inactive') : 'active',
         category: product.category || 'lpg',
       });
       setImagePreviews(product.images.map(img => img.startsWith('http') ? img : `${API_BASE_URL}${img}`));
@@ -159,6 +156,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     const updatedProduct: Product = {
       ...restOfProduct,
       ...productData,
+      status: product.status,
       agencies: agenciesPayload,
       images: imagePreviews.filter(p => !p.startsWith('blob:')),
     };
@@ -271,10 +269,9 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                         />
                       <FormField control={form.control} name="productName" render={({ field }) => (<FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                       <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="lpg">LPG</SelectItem><SelectItem value="accessories">Accessories</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                           <FormField control={form.control} name="lowStockThreshold" render={({ field }) => (<FormItem><FormLabel>Low Stock Threshold</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                       </div>
 
                       <div>
