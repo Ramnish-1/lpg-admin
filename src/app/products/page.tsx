@@ -9,15 +9,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, AlertCircle, ChevronDown, Loader2, Trash2 } from 'lucide-react';
-import type { Product } from '@/lib/types';
-import { useEffect, useState, useMemo, useCallback, useContext } from 'react';
+import type { Product, Agency } from '@/lib/types';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { ProductDetailsDialog } from '@/components/product-details-dialog';
 import { EditProductDialog } from '@/components/edit-product-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { AddProductDialog } from '@/components/add-product-dialog';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { AuthContext, useAuth } from '@/context/auth-context';
+import { useAuth } from '@/context/auth-context';
+import { AgencyListDialog } from '@/components/agency-list-dialog';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -30,6 +31,8 @@ export default function ProductsPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isAgencyListOpen, setIsAgencyListOpen] = useState(false);
+  const [agenciesToShow, setAgenciesToShow] = useState<Agency[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const { token, handleApiError } = useAuth();
@@ -84,6 +87,12 @@ export default function ProductsPage() {
     setSelectedProduct(product);
     setIsDeleteOpen(true);
   };
+  
+  const handleShowAgencies = (product: Product) => {
+    setSelectedProduct(product);
+    setAgenciesToShow(product.agencies || []);
+    setIsAgencyListOpen(true);
+  }
 
   const confirmDeleteProduct = async () => {
     if (!selectedProduct || !token) return;
@@ -250,21 +259,31 @@ export default function ProductsPage() {
                   return (
                     <TableRow 
                       key={product.id} 
-                      className={cn({
+                      className={cn("cursor-pointer", {
                         "bg-red-100 hover:bg-red-100/80 dark:bg-red-900/20 dark:hover:bg-red-900/30": isLowStock
                       })}
+                      onClick={() => handleShowDetails(product)}
                     >
-                      <TableCell className="font-medium" onClick={() => handleShowDetails(product)}>{product.productName}</TableCell>
-                      <TableCell onClick={() => handleShowDetails(product)}>
-                        {product.agencies && product.agencies.length > 0
-                          ? `${product.agencies.length} ${product.agencies.length === 1 ? 'Agency' : 'Agencies'}`
-                          : <span className="text-muted-foreground">N/A</span>
-                        }
+                      <TableCell className="font-medium">{product.productName}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="link"
+                          className="p-0 h-auto text-muted-foreground hover:text-primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleShowAgencies(product);
+                          }}
+                        >
+                          {product.agencies && product.agencies.length > 0
+                            ? `${product.agencies.length} ${product.agencies.length === 1 ? 'Agency' : 'Agencies'}`
+                            : <span className="text-muted-foreground">N/A</span>
+                          }
+                        </Button>
                       </TableCell>
-                      <TableCell onClick={() => handleShowDetails(product)}>
+                      <TableCell>
                         {product.variants && product.variants.length > 0 ? `${product.variants.length} variant(s)` : 'No variants'}
                       </TableCell>
-                      <TableCell onClick={() => handleShowDetails(product)}>
+                      <TableCell>
                         <div className="flex items-center gap-2">
                           <span>{totalStock}</span>
                           {isLowStock && (
@@ -382,6 +401,12 @@ export default function ProductsPage() {
         isOpen={isAddOpen}
         onOpenChange={setIsAddOpen}
         onProductAdd={handleProductAdd}
+      />
+       <AgencyListDialog 
+        agencies={agenciesToShow}
+        isOpen={isAgencyListOpen}
+        onOpenChange={setIsAgencyListOpen}
+        productName={selectedProduct?.productName}
       />
     </AppShell>
   );
