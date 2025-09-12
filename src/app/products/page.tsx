@@ -141,7 +141,7 @@ export default function ProductsPage() {
     }
   };
 
- const handleProductUpdate = async (updatedProduct: Product, imagesToDelete?: string[], newImages?: File[]): Promise<boolean> => {
+ const handleProductUpdate = async (updatedProduct: Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images'> & { id: string }, imagesToDelete?: string[], newImages?: File[]): Promise<boolean> => {
     if(!token) return false;
 
     const formData = new FormData();
@@ -151,8 +151,8 @@ export default function ProductsPage() {
     formData.append('lowStockThreshold', String(updatedProduct.lowStockThreshold));
     formData.append('variants', JSON.stringify(updatedProduct.variants));
     
-    if (updatedProduct.agencyIds) {
-        formData.append('agencyIds', JSON.stringify(updatedProduct.agencyIds));
+    if (updatedProduct.agencies) {
+        formData.append('agencies', JSON.stringify(updatedProduct.agencies));
     }
     if (imagesToDelete && imagesToDelete.length > 0) {
       formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
@@ -184,7 +184,7 @@ export default function ProductsPage() {
   }
 
 
-  const handleProductAdd = async (newProduct: Omit<Product, 'id' | 'status'>, images: File[]): Promise<boolean> => {
+  const handleProductAdd = async (newProduct: Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images'>, images: File[]): Promise<boolean> => {
     if (!token) return false;
     
     const formData = new FormData();
@@ -193,8 +193,8 @@ export default function ProductsPage() {
     formData.append('category', newProduct.category);
     formData.append('lowStockThreshold', String(newProduct.lowStockThreshold));
     formData.append('variants', JSON.stringify(newProduct.variants));
-    if (newProduct.agencyIds) {
-        formData.append('agencyIds', JSON.stringify(newProduct.agencyIds));
+    if (newProduct.agencies) {
+        formData.append('agencies', JSON.stringify(newProduct.agencies));
     }
     images.forEach(file => formData.append('images', file));
 
@@ -414,5 +414,3 @@ export default function ProductsPage() {
     </AppShell>
   );
 }
-
-    

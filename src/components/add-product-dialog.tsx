@@ -31,7 +31,7 @@ import { Checkbox } from './ui/checkbox';
 import { Badge } from './ui/badge';
 import { useAuth } from '@/context/auth-context';
 
-type AddProductPayload = Omit<Product, 'id' | 'status' | 'agencies' | 'createdAt' | 'updatedAt' | 'images'>;
+type AddProductPayload = Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images'>;
 
 interface AddProductDialogProps {
   isOpen: boolean;
@@ -58,7 +58,7 @@ type ProductFormValues = z.infer<typeof productSchema>;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProductDialogProps) {
-  const [agencies, setAgencies] = useState<Agency[]>([]);
+  const [allAgencies, setAllAgencies] = useState<Agency[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -77,7 +77,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
         if (!response.ok) handleApiError(response);
         const result = await response.json();
         if (result.success) {
-          setAgencies(result.data.agencies);
+          setAllAgencies(result.data.agencies);
         }
       } catch (e) {
         console.error("Failed to fetch agencies");
@@ -117,8 +117,17 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
       form.setError("root", { message: "At least one image is required." });
       return;
     }
+
+    const selectedAgencies = allAgencies.filter(agency => values.agencyIds?.includes(agency.id));
+    const payload: AddProductPayload = {
+        ...values,
+        agencies: selectedAgencies,
+    };
     
-    const success = await onProductAdd(values, imageFiles);
+    // @ts-ignore
+    delete payload.agencyIds;
+
+    const success = await onProductAdd(payload, imageFiles);
     
     if (success) {
       resetDialog();
@@ -202,7 +211,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                                   <CommandEmpty>No agencies found.</CommandEmpty>
                                   <CommandGroup>
                                     <CommandList>
-                                      {agencies.map((agency) => (
+                                      {allAgencies.map((agency) => (
                                         <CommandItem
                                           key={agency.id}
                                           onSelect={() => {
@@ -226,7 +235,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                             </Popover>
                              {field.value && field.value.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mt-2">
-                                {agencies.filter(a => field.value?.includes(a.id!)).map(agency => (
+                                {allAgencies.filter(a => field.value?.includes(a.id!)).map(agency => (
                                     <Badge key={agency.id} variant="secondary">{agency.name}</Badge>
                                 ))}
                                 </div>

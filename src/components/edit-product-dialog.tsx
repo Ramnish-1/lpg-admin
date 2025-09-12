@@ -31,11 +31,13 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Checkbox } from './ui/checkbox';
 import { Badge } from './ui/badge';
 
+type EditProductPayload = Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images'> & { id: string };
+
 interface EditProductDialogProps {
   product: Product;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onProductUpdate: (product: Product, imagesToDelete?: string[], newImages?: File[]) => Promise<boolean>;
+  onProductUpdate: (product: EditProductPayload, imagesToDelete?: string[], newImages?: File[]) => Promise<boolean>;
 }
 
 const variantSchema = z.object({
@@ -57,7 +59,7 @@ type ProductFormValues = z.infer<typeof productSchema>;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpdate }: EditProductDialogProps) {
-  const [agencies, setAgencies] = useState<Agency[]>([]);
+  const [allAgencies, setAllAgencies] = useState<Agency[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
@@ -76,7 +78,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
       if (!response.ok) handleApiError(response);
       const result = await response.json();
       if (result.success) {
-        setAgencies(result.data.agencies);
+        setAllAgencies(result.data.agencies);
       }
     } catch (e) {
       console.error("Failed to fetch agencies");
@@ -107,7 +109,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
 
   useEffect(() => {
     if (isOpen && product) {
-       if (agencies.length === 0) {
+       if (allAgencies.length === 0) {
             fetchAgencies();
        }
       form.reset({
@@ -119,7 +121,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
       setImagesToDelete([]);
       setNewImageFiles([]);
     }
-  }, [product, isOpen, form, agencies.length]);
+  }, [product, isOpen, form, allAgencies.length]);
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -129,13 +131,17 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
   }
 
   const handleSubmit = async (values: ProductFormValues) => {
-    const updatedProduct: Product = {
-      ...product,
-      ...values,
-      images: imagePreviews.filter(img => !img.startsWith('blob:')), // Only keep existing images
+    const selectedAgencies = allAgencies.filter(agency => values.agencyIds?.includes(agency.id));
+    const payload: EditProductPayload = {
+        ...values,
+        id: product.id,
+        agencies: selectedAgencies,
     };
+
+    // @ts-ignore
+    delete payload.agencyIds;
     
-    const success = await onProductUpdate(updatedProduct, imagesToDelete, newImageFiles);
+    const success = await onProductUpdate(payload, imagesToDelete, newImageFiles);
     if(success) {
       handleOpenChange(false);
     }
@@ -215,7 +221,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                                   <CommandEmpty>No agencies found.</CommandEmpty>
                                   <CommandGroup>
                                     <CommandList>
-                                      {agencies.map((agency) => (
+                                      {allAgencies.map((agency) => (
                                         <CommandItem
                                           key={agency.id}
                                           onSelect={() => {
@@ -239,7 +245,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                             </Popover>
                              {field.value && field.value.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mt-2">
-                                {agencies.filter(a => field.value?.includes(a.id!)).map(agency => (
+                                {allAgencies.filter(a => field.value?.includes(a.id!)).map(agency => (
                                     <Badge key={agency.id} variant="secondary">{agency.name}</Badge>
                                 ))}
                                 </div>
