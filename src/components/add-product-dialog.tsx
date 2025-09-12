@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { Button } from '@/components/ui/button';
@@ -21,24 +20,23 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { PlusCircle, Trash2, X, ImagePlus, ChevronDown } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
-import { useState, useRef, useEffect, useContext } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
 import { ImageViewerDialog } from './image-viewer-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { AuthContext, useAuth } from '@/context/auth-context';
-import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
 import { Checkbox } from './ui/checkbox';
 import { Badge } from './ui/badge';
+import { getAgentsData } from '@/lib/data';
 
-type AddProductPayload = Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'history'>;
+type AddProductPayload = Omit<Product, 'id'>;
 
 interface AddProductDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onProductAdd: (product: AddProductPayload, imagesAsBase64: string[]) => Promise<boolean>;
+  onProductAdd: (product: AddProductPayload) => Promise<boolean>;
 }
 
 const variantSchema = z.object({
@@ -48,7 +46,7 @@ const variantSchema = z.object({
 });
 
 const productSchema = z.object({
-  agencyIds: z.array(z.string()).min(1, "Please select at least one agency."),
+  agencyIds: z.array(z.string()).optional(), // Made optional
   productName: z.string().min(1, "Product name is required."),
   description: z.string().min(1, "Description is required."),
   category: z.enum(['lpg', 'accessories']),
@@ -58,39 +56,18 @@ const productSchema = z.object({
 
 type ProductFormValues = z.infer<typeof productSchema>;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-
 export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProductDialogProps) {
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { token, handleApiError } = useAuth();
-  const { toast } = useToast();
 
+
+  // Simplified: Not fetching agencies as it's not critical for adding a product locally
   useEffect(() => {
-    const fetchAgencies = async () => {
-      if (!token || !isOpen) return;
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/agencies/active`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!response.ok) handleApiError(response);
-        const result = await response.json();
-        if (result.success) {
-          setAgencies(result.data.agencies);
-        } else {
-          toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch active agencies.' });
-        }
-      } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch active agencies.' });
-      }
-    };
-
-    fetchAgencies();
-  }, [isOpen, token, handleApiError, toast]);
+    // In a real app, you'd fetch this. For local demo, we can omit.
+  }, []);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -109,50 +86,24 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     name: "variants"
   });
 
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
-  };
-
   const handleSubmit = async (values: ProductFormValues) => {
-    if (imageFiles.length === 0) {
+    if (imagePreviews.length === 0) {
       form.setError("root", { message: "At least one image is required." });
       return;
     }
-
-    const selectedAgencies = agencies.filter(a => values.agencyIds.includes(a.id));
-    if (selectedAgencies.length === 0) {
-      form.setError("agencyIds", { message: "Selected agencies not found."});
-      return;
-    }
-
-    const { agencyIds, ...productData } = values;
-
-    const agenciesPayload = selectedAgencies.map(agency => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, status, createdAt, updatedAt, ...rest } = agency;
-        return rest;
-    });
     
-    const payload = {
-        ...productData,
-        status: 'active' as const,
-        images: [], // Images will be handled separately
-        agencies: agenciesPayload,
+    const payload: AddProductPayload = {
+        ...values,
+        status: 'Active',
+        images: imagePreviews, 
+        agencies: [], // Simplified
     };
 
-    const imagesAsBase64 = await Promise.all(imageFiles.map(file => fileToBase64(file)));
-
-    const success = await onProductAdd(payload, imagesAsBase64);
+    const success = await onProductAdd(payload);
     
     if (success) {
       form.reset();
       setImagePreviews([]);
-      setImageFiles([]);
       if (fileInputRef.current) fileInputRef.current.value = "";
       onOpenChange(false);
     }
@@ -162,8 +113,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     if (!open) {
       form.reset();
       setImagePreviews([]);
-      setImageFiles([]);
-       if (fileInputRef.current) fileInputRef.current.value = "";
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
     onOpenChange(open);
   }
@@ -171,10 +121,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-        const newFiles = Array.from(files);
-        const newFilePreviews = newFiles.map(file => URL.createObjectURL(file));
-
-        setImageFiles(prevFiles => [...prevFiles, ...newFiles]);
+        const newFilePreviews = Array.from(files).map(file => URL.createObjectURL(file));
         setImagePreviews(prevPreviews => [...prevPreviews, ...newFilePreviews]);
     }
   };
@@ -183,17 +130,6 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     const newPreviews = [...imagePreviews];
     newPreviews.splice(index, 1);
     setImagePreviews(newPreviews);
-
-    const newFiles = [...imageFiles];
-    newFiles.splice(index, 1);
-    setImageFiles(newFiles);
-
-    // Reset the file input if all images are removed
-    if (newFiles.length === 0) {
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
-    }
   }
   
   const openImageViewer = (imageUrl: string) => {
@@ -218,65 +154,14 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                   <div className="space-y-6 py-2">
                      <FormField
                         control={form.control}
-                        name="agencyIds"
+                        name="productName"
                         render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Select Agencies</FormLabel>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                className="w-full justify-between h-auto min-h-10"
-                                            >
-                                                <div className="flex gap-1 flex-wrap">
-                                                    {field.value.length > 0 ? (
-                                                        agencies
-                                                            .filter(a => field.value.includes(a.id))
-                                                            .map(a => <Badge key={a.id} variant="secondary">{a.name}</Badge>)
-                                                    ) : (
-                                                        <span className="text-muted-foreground font-normal">Select agencies...</span>
-                                                    )}
-                                                </div>
-                                                <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                        <Command>
-                                            <CommandInput placeholder="Search agencies..." />
-                                            <CommandEmpty>No agency found.</CommandEmpty>
-                                            <CommandGroup>
-                                                <CommandList>
-                                                    {agencies.map((agency) => (
-                                                        <CommandItem
-                                                            key={agency.id}
-                                                            onSelect={() => {
-                                                                const selected = field.value.includes(agency.id);
-                                                                const newValue = selected
-                                                                    ? field.value.filter((id) => id !== agency.id)
-                                                                    : [...field.value, agency.id];
-                                                                field.onChange(newValue);
-                                                            }}
-                                                        >
-                                                            <Checkbox
-                                                                checked={field.value.includes(agency.id)}
-                                                                className="mr-2"
-                                                            />
-                                                            {agency.name}
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandList>
-                                            </CommandGroup>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                      <FormField control={form.control} name="productName" render={({ field }) => (<FormItem><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g. LPG Cylinder" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                          <FormItem>
+                            <FormLabel>Product Name</FormLabel>
+                            <FormControl><Input placeholder="e.g. LPG Cylinder" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                            <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl><SelectContent><SelectItem value="lpg">LPG</SelectItem><SelectItem value="accessories">Accessories</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                           <FormField control={form.control} name="lowStockThreshold" render={({ field }) => (<FormItem><FormLabel>Low Stock Threshold</FormLabel><FormControl><Input type="number" placeholder="e.g. 10" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -365,5 +250,3 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     </>
   );
 }
-
-

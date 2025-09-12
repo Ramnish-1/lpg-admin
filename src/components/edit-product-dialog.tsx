@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
@@ -21,23 +20,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { PlusCircle, Trash2, X, ImagePlus, ChevronDown } from 'lucide-react';
+import { PlusCircle, Trash2, X, ImagePlus } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
 import { ImageViewerDialog } from './image-viewer-dialog';
-import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/hooks/use-toast';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
-import { Checkbox } from './ui/checkbox';
-import { Badge } from './ui/badge';
 
 interface EditProductDialogProps {
   product: Product;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onProductUpdate: (product: Product, newImageFilesAsBase64: string[]) => void;
+  onProductUpdate: (product: Product) => Promise<boolean>;
 }
 
 const variantSchema = z.object({
@@ -47,7 +40,6 @@ const variantSchema = z.object({
 });
 
 const productSchema = z.object({
-  agencyIds: z.array(z.string()).min(1, "Please select at least one agency."),
   productName: z.string().min(1, "Product name is required."),
   description: z.string().min(1, "Description is required."),
   category: z.enum(['lpg', 'accessories']),
@@ -57,22 +49,15 @@ const productSchema = z.object({
 
 type ProductFormValues = z.infer<typeof productSchema>;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-
 export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpdate }: EditProductDialogProps) {
-  const [agencies, setAgencies] = useState<Agency[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { token, handleApiError } = useAuth();
-  const { toast } = useToast();
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      agencyIds: [],
       variants: [{ label: '', price: 0, stock: 0 }],
     }
   });
@@ -83,92 +68,32 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
   });
 
   useEffect(() => {
-    const fetchAgencies = async () => {
-      if (!token || !isOpen) return;
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/agencies/active`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!response.ok) handleApiError(response);
-        const result = await response.json();
-        if (result.success) {
-          setAgencies(result.data.agencies);
-        } else {
-          toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch active agencies.' });
-        }
-      } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch active agencies.' });
-      }
-    };
-
-    fetchAgencies();
-  }, [isOpen, token, handleApiError, toast]);
-
-  useEffect(() => {
-    if (isOpen && agencies.length > 0 && product) {
-        const currentAgencyIds = product.agencies
-            ? product.agencies.map(agency => {
-                const foundAgency = agencies.find(a => a.name === agency.name);
-                return foundAgency ? foundAgency.id : null;
-            }).filter((id): id is string => id !== null)
-            : [];
-
+    if (isOpen && product) {
       form.reset({
         ...product,
-        agencyIds: currentAgencyIds,
         category: product.category || 'lpg',
       });
-      setImagePreviews(product.images.map(img => img.startsWith('http') ? img : `${API_BASE_URL}${img}`));
-      setImageFiles([]);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      setImagePreviews(product.images || []);
     }
-  }, [product, isOpen, form, agencies]);
+  }, [product, isOpen, form]);
 
-
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
-  };
-
-  
   const handleSubmit = async (values: ProductFormValues) => {
-    const selectedAgencies = agencies.filter(a => values.agencyIds.includes(a.id));
-    if (selectedAgencies.length === 0) {
-      form.setError("agencyIds", { message: "Selected agencies not found."});
-      return;
-    }
-
-    const agenciesPayload = selectedAgencies.map(agency => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, status, createdAt, updatedAt, ...rest } = agency;
-        return rest;
-    });
-
-    const { agencyIds, ...productData } = values;
-
     const updatedProduct: Product = {
       ...product,
-      ...productData,
-      status: product.status,
-      agencies: agenciesPayload,
-      images: imagePreviews.filter(p => !p.startsWith('blob:')),
+      ...values,
+      images: imagePreviews,
     };
     
-    const newImagesAsBase64 = await Promise.all(imageFiles.map(file => fileToBase64(file)));
-    onProductUpdate(updatedProduct, newImagesAsBase64);
+    const success = await onProductUpdate(updatedProduct);
+    if(success) {
+      onOpenChange(false);
+    }
   };
   
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-        const newFiles = Array.from(files);
-        const newFilePreviews = newFiles.map(file => URL.createObjectURL(file));
-
-        setImageFiles(prevFiles => [...prevFiles, ...newFiles]);
+        const newFilePreviews = Array.from(files).map(file => URL.createObjectURL(file));
         setImagePreviews(prevPreviews => [...prevPreviews, ...newFilePreviews]);
     }
   };
@@ -179,18 +104,8 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
   };
   
   const removeImage = (indexToRemove: number) => {
-    const previewUrl = imagePreviews[indexToRemove];
-
     setImagePreviews(previews => previews.filter((_, i) => i !== indexToRemove));
-
-    if (previewUrl.startsWith('blob:')) {
-      const blobIndex = imagePreviews.filter(p => p.startsWith('blob:')).findIndex(p => p === previewUrl);
-      if (blobIndex !== -1) {
-        setImageFiles(files => files.filter((_, i) => i !== blobIndex));
-      }
-    }
   };
-
 
   return (
     <>
@@ -204,66 +119,6 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
             <form onSubmit={form.handleSubmit(handleSubmit)} noValidate className="flex flex-col overflow-hidden">
               <ScrollArea className="flex-1 px-6">
                   <div className="space-y-6 py-2">
-                       <FormField
-                        control={form.control}
-                        name="agencyIds"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Select Agencies</FormLabel>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                className="w-full justify-between h-auto min-h-10"
-                                            >
-                                                <div className="flex gap-1 flex-wrap">
-                                                    {field.value && field.value.length > 0 ? (
-                                                        agencies
-                                                            .filter(a => field.value.includes(a.id))
-                                                            .map(a => <Badge key={a.id} variant="secondary">{a.name}</Badge>)
-                                                    ) : (
-                                                        <span className="text-muted-foreground font-normal">Select agencies...</span>
-                                                    )}
-                                                </div>
-                                                <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                        <Command>
-                                            <CommandInput placeholder="Search agencies..." />
-                                            <CommandEmpty>No agency found.</CommandEmpty>
-                                            <CommandGroup>
-                                                <CommandList>
-                                                    {agencies.map((agency) => (
-                                                        <CommandItem
-                                                            key={agency.id}
-                                                            onSelect={() => {
-                                                                const selected = field.value.includes(agency.id);
-                                                                const newValue = selected
-                                                                    ? field.value.filter((id) => id !== agency.id)
-                                                                    : [...field.value, agency.id];
-                                                                field.onChange(newValue);
-                                                            }}
-                                                        >
-                                                            <Checkbox
-                                                                checked={field.value.includes(agency.id)}
-                                                                className="mr-2"
-                                                            />
-                                                            {agency.name}
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandList>
-                                            </CommandGroup>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                        />
                       <FormField control={form.control} name="productName" render={({ field }) => (<FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                       <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -354,5 +209,3 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     </>
   );
 }
-
-    
