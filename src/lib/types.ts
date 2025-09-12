@@ -37,7 +37,7 @@ export interface Product {
   productName: string;
   description: string;
   category: 'lpg' | 'accessories';
-  status: 'active' | 'inactive';
+  status: 'Active' | 'Inactive';
   lowStockThreshold: number;
   variants: ProductVariant[];
   images: string[]; // URLs to images

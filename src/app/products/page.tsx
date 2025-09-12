@@ -113,7 +113,7 @@ export default function ProductsPage() {
 
   const handleToggleStatus = async (product: Product) => {
     if (!token) return;
-    const newStatus = product.status?.toLowerCase() === 'active' ? 'inactive' : 'active';
+    const newStatus = product.status === 'Active' ? 'Inactive' : 'Active';
     try {
         const response = await fetch(`${API_BASE_URL}/api/products/${product.id}/status`, {
             method: 'PATCH',
@@ -121,7 +121,7 @@ export default function ProductsPage() {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}` 
             },
-            body: JSON.stringify({ status: newStatus })
+            body: JSON.stringify({ status: newStatus.toLowerCase() })
         });
         if (!response.ok) handleApiError(response);
         const result = await response.json();
@@ -281,8 +281,8 @@ export default function ProductsPage() {
                               <DropdownMenuTrigger asChild>
                                   <Button variant="outline" size="sm" className="w-28 justify-between capitalize" onClick={(e) => e.stopPropagation()}>
                                       <span className={cn({
-                                          'text-green-600': product.status?.toLowerCase() === 'active',
-                                          'text-gray-500': product.status?.toLowerCase() === 'inactive'
+                                          'text-green-600': product.status === 'Active',
+                                          'text-gray-500': product.status === 'Inactive'
                                       })}>
                                           {product.status || 'N/A'}
                                       </span>
@@ -291,7 +291,7 @@ export default function ProductsPage() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
                                   <DropdownMenuItem onClick={() => handleToggleStatus(product)}>
-                                      Set as {product.status?.toLowerCase() === 'active' ? 'Inactive' : 'Active'}
+                                      Set as {product.status === 'Active' ? 'Inactive' : 'Active'}
                                   </DropdownMenuItem>
                               </DropdownMenuContent>
                           </DropdownMenu>
