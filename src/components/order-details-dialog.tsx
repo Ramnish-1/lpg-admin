@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import {
@@ -12,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import type { Order } from '@/lib/types';
-import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package, Phone, MapPin, XCircle, Undo2, CheckCircle, Loader2 } from 'lucide-react';
+import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package, Phone, MapPin, XCircle, Undo2, CheckCircle, Loader2, Mail } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Button } from './ui/button';
 import Link from 'next/link';
@@ -74,7 +73,7 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange, onConfirmOrder
             <span>Order Details</span>
           </DialogTitle>
           <DialogDescription>
-            Order #{order.orderNumber.slice(-8)}
+            Order #{order.orderNumber}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -87,6 +86,10 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange, onConfirmOrder
                         <div className="text-sm">
                             <div className="font-medium">{order.customerName}</div>
                             <div className="text-muted-foreground">Customer</div>
+                            <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                <Mail className="h-3 w-3"/>
+                                <a href={`mailto:${order.customerEmail}`} className="hover:underline">{order.customerEmail}</a>
+                            </div>
                             {order.customerPhone && (
                                 <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                                     <Phone className="h-3 w-3"/>
@@ -206,3 +209,5 @@ export function OrderDetailsDialog({ order, isOpen, onOpenChange, onConfirmOrder
     </Dialog>
   );
 }
+
+    
