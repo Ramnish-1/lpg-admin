@@ -247,7 +247,7 @@ export default function ProductsPage() {
               </TableHeader>
               <TableBody>
                 {paginatedProducts.map((product: Product) => {
-                  const totalStock = product.variants.reduce((sum, v) => sum + v.stock, 0);
+                  const totalStock = Array.isArray(product.variants) ? product.variants.reduce((sum, v) => sum + v.stock, 0) : 0;
                   const isLowStock = totalStock < product.lowStockThreshold;
                   return (
                     <TableRow 
@@ -264,7 +264,7 @@ export default function ProductsPage() {
                         }
                       </TableCell>
                       <TableCell onClick={() => handleShowDetails(product)}>
-                        {product.variants.length > 0 ? `${product.variants.length} variant(s)` : 'No variants'}
+                        {product.variants && product.variants.length > 0 ? `${product.variants.length} variant(s)` : 'No variants'}
                       </TableCell>
                       <TableCell onClick={() => handleShowDetails(product)}>
                         <div className="flex items-center gap-2">
