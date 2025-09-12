@@ -45,10 +45,6 @@ export interface Product {
   createdAt?: string;
   updatedAt?: string;
   history?: { date: Date; type: 'price_change' | 'stock_update', oldValue: number, newValue: number }[];
-  // Legacy fields that might exist on old data, but should not be sent to APIs
-  unit?: any;
-  price?: any;
-  stock?: any;
 }
 
 
