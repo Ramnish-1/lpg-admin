@@ -73,6 +73,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
+      agencyIds: [],
       status: 'active',
     }
   });
@@ -106,14 +107,13 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
 
   useEffect(() => {
     if (isOpen && agencies.length > 0 && product) {
-      const currentAgencyIds = product.agencies?.map(a => {
-        const found = agencies.find(fa => fa.name === a.name);
-        return found ? found.id : null;
-      }).filter((id): id is string => id !== null) || [];
+        const currentAgencyId = product.agencies && product.agencies.length > 0
+        ? agencies.find(a => a.name === product.agencies[0].name)?.id
+        : undefined;
 
       form.reset({
         ...product,
-        agencyIds: currentAgencyIds,
+        agencyIds: currentAgencyId ? [currentAgencyId] : [],
         status: product.status ? (product.status.toLowerCase() as 'active' | 'inactive') : 'active',
         category: product.category || 'lpg',
       });
@@ -354,4 +354,3 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     </>
   );
 }
-
