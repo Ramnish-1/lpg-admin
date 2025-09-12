@@ -169,4 +169,8 @@ export interface Agency {
   status: 'active' | 'inactive';
   createdAt: string;
   updatedAt: string;
+  confirmationToken: string | null;
+  confirmationExpiresAt: Date | null;
 }
+
+    

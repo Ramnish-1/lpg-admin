@@ -133,7 +133,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
   const handleSubmit = async (values: ProductFormValues) => {
     const selectedAgencies = allAgencies
       .filter(agency => values.agencyIds?.includes(agency.id))
-      .map(({ id, status, createdAt, updatedAt, ...rest }) => rest); // Exclude unwanted fields
+      .map(({ id, status, createdAt, updatedAt, confirmationToken, confirmationExpiresAt, ...rest }) => rest);
 
     const payload: EditProductPayload = {
         ...values,
@@ -347,3 +347,5 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     </>
   );
 }
+
+    

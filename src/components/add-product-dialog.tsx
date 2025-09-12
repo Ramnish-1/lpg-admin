@@ -120,7 +120,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
 
     const selectedAgencies = allAgencies
         .filter(agency => values.agencyIds?.includes(agency.id))
-        .map(({ id, status, createdAt, updatedAt, ...rest }) => rest); // Exclude unwanted fields
+        .map(({ id, status, createdAt, updatedAt, confirmationToken, confirmationExpiresAt, ...rest }) => rest);
 
     const payload: AddProductPayload = {
         ...values,
@@ -345,3 +345,5 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     </>
   );
 }
+
+    
