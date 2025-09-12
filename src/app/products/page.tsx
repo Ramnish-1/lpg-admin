@@ -281,8 +281,8 @@ export default function ProductsPage() {
                               <DropdownMenuTrigger asChild>
                                   <Button variant="outline" size="sm" className="w-28 justify-between capitalize" onClick={(e) => e.stopPropagation()}>
                                       <span className={cn({
-                                          'text-green-600': product.status.toLowerCase() === 'active',
-                                          'text-gray-500': product.status.toLowerCase() === 'inactive'
+                                          'text-green-600': product.status?.toLowerCase() === 'active',
+                                          'text-gray-500': product.status?.toLowerCase() === 'inactive'
                                       })}>
                                           {product.status}
                                       </span>
@@ -291,7 +291,7 @@ export default function ProductsPage() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
                                   <DropdownMenuItem onClick={() => handleToggleStatus(product)}>
-                                      Set as {product.status.toLowerCase() === 'active' ? 'Inactive' : 'Active'}
+                                      Set as {product.status?.toLowerCase() === 'active' ? 'Inactive' : 'Active'}
                                   </DropdownMenuItem>
                               </DropdownMenuContent>
                           </DropdownMenu>
