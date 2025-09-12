@@ -34,8 +34,7 @@ export default function ProductsPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
-  const { token } = useContext(AuthContext);
-  const { handleApiError } = useAuth();
+  const { token, handleApiError } = useAuth();
 
 
   const fetchProducts = useCallback(async () => {
@@ -45,7 +44,10 @@ export default function ProductsPage() {
       const response = await fetch(`${API_BASE_URL}/api/products`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (!response.ok) handleApiError(response);
+      if (!response.ok) {
+        handleApiError(response);
+        return;
+      };
       const result = await response.json();
       if (result.success) {
         setProducts(result.data.products);
@@ -95,7 +97,10 @@ export default function ProductsPage() {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (!response.ok) handleApiError(response);
+      if (!response.ok) {
+        handleApiError(response);
+        return;
+      }
       if (response.ok) {
         toast({ title: 'Product Deleted', description: `${selectedProduct.productName} has been deleted.` });
         fetchProducts(); // Re-fetch
@@ -121,9 +126,12 @@ export default function ProductsPage() {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}` 
             },
-            body: JSON.stringify({ status: newStatus.toLowerCase() })
+            body: JSON.stringify({ status: newStatus })
         });
-        if (!response.ok) handleApiError(response);
+        if (!response.ok) {
+          handleApiError(response);
+          return;
+        }
         const result = await response.json();
         if (result.success) {
             toast({
@@ -158,7 +166,10 @@ export default function ProductsPage() {
             },
             body: JSON.stringify(payload),
         });
-        if (!response.ok) handleApiError(response);
+        if (!response.ok) {
+          handleApiError(response);
+          return false;
+        }
         const result = await response.json();
         if (result.success) {
             toast({ title: 'Product Updated', description: `${updatedProduct.productName} has been successfully updated.` });
@@ -194,7 +205,10 @@ export default function ProductsPage() {
             },
             body: JSON.stringify(payload)
         });
-        if (!response.ok) handleApiError(response);
+        if (!response.ok) {
+          handleApiError(response);
+          return false;
+        }
         const result = await response.json();
         if(result.success) {
             toast({ title: 'Product Added', description: `${newProduct.productName} has been successfully added.` });
@@ -388,3 +402,5 @@ export default function ProductsPage() {
     </AppShell>
   );
 }
+
+    

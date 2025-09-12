@@ -138,3 +138,5 @@ export function ProductDetailsDialog({ product, isOpen, onOpenChange }: ProductD
     </Dialog>
   );
 }
+
+    

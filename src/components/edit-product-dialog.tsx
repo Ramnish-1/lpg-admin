@@ -150,11 +150,8 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
 
     const { agencyIds, ...productData } = values;
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { unit, price, stock, ...restOfProduct } = product;
-
     const updatedProduct: Product = {
-      ...restOfProduct,
+      ...product,
       ...productData,
       status: product.status,
       agencies: agenciesPayload,
@@ -357,3 +354,5 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     </>
   );
 }
+
+    
