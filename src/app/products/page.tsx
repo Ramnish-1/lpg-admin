@@ -113,7 +113,7 @@ export default function ProductsPage() {
 
   const handleToggleStatus = async (product: Product) => {
     if (!token) return;
-    const newStatus = product.status.toLowerCase() === 'active' ? 'inactive' : 'active';
+    const newStatus = product.status?.toLowerCase() === 'active' ? 'inactive' : 'active';
     try {
         const response = await fetch(`${API_BASE_URL}/api/products/${product.id}/status`, {
             method: 'PATCH',
@@ -284,7 +284,7 @@ export default function ProductsPage() {
                                           'text-green-600': product.status?.toLowerCase() === 'active',
                                           'text-gray-500': product.status?.toLowerCase() === 'inactive'
                                       })}>
-                                          {product.status}
+                                          {product.status || 'N/A'}
                                       </span>
                                       <ChevronDown className="h-4 w-4 text-muted-foreground"/>
                                   </Button>
