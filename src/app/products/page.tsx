@@ -388,7 +388,3 @@ export default function ProductsPage() {
     </AppShell>
   );
 }
-
-    
-
-    
