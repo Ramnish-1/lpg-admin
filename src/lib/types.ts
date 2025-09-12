@@ -34,7 +34,6 @@ export interface ProductVariant {
 
 export interface Product {
   id: string;
-  agencies?: Agency[];
   productName: string;
   description: string;
   category: 'lpg' | 'accessories';
@@ -42,6 +41,7 @@ export interface Product {
   lowStockThreshold: number;
   variants: ProductVariant[];
   images: string[]; // URLs to images
+  agencies?: Agency[];
   createdAt?: string;
   updatedAt?: string;
   history?: { date: Date; type: 'price_change' | 'stock_update', oldValue: number, newValue: number }[];
