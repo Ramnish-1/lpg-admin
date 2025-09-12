@@ -32,6 +32,7 @@ import {
   Bell,
   Check,
   Building2,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -70,15 +71,23 @@ const navItems = [
   { href: '/add-user', label: 'Manage Users', icon: UserPlus },
 ];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+interface AppShellProps {
+  children: React.ReactNode;
+  onConfirmAndAssignFromNotification?: (order: Order) => void;
+  orders?: Order[];
+}
+
+
+export function AppShell({ children, onConfirmAndAssignFromNotification, orders }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
   const { profile } = React.useContext(ProfileContext);
   const { settings } = React.useContext(SettingsContext);
-  const { isAuthenticated, logout, token, handleApiError } = useAuth();
-  const { notifications, removeNotification } = useNotifications();
-  
+  const { isAuthenticated, logout } = useAuth();
+  const { notifications } = useNotifications();
+  const [confirmingOrderId, setConfirmingOrderId] = React.useState<string | null>(null);
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
   React.useEffect(() => {
@@ -103,31 +112,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const handleConfirmOrder = async (e: React.MouseEvent, orderId: string) => {
       e.stopPropagation();
-      if (!token) return;
+      setConfirmingOrderId(orderId);
+      
+      const order = orders?.find(o => o.id === orderId);
 
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/status`, {
-            method: 'PUT',
-            headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ status: 'confirmed', adminNotes: 'Order confirmed and ready for delivery' })
-        });
-        if (!response.ok) handleApiError(response);
-        const result = await response.json();
-        if (result.success) {
-            toast({
-                title: 'Order Confirmed',
-                description: `Order has been marked as confirmed.`
-            });
-            removeNotification(orderId);
+      if (onConfirmAndAssignFromNotification && order) {
+        if (pathname !== '/orders') {
+          router.push(`/orders?assignAgent=${orderId}`);
         } else {
-            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to confirm order.' });
+          onConfirmAndAssignFromNotification(order);
         }
-      } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to confirm order.' });
       }
+      setConfirmingOrderId(null);
   }
 
   const sidebarNav = (
@@ -213,9 +209,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 <p className="font-medium">{n.message}</p>
                                 <p className="text-xs text-muted-foreground">{formatDistanceToNow(n.timestamp, { addSuffix: true })}</p>
                             </div>
-                             <Button size="sm" variant="outline" className="h-7 gap-1" onClick={(e) => handleConfirmOrder(e, n.orderId)}>
-                                <Check className="h-3.5 w-3.5" />
-                                Confirm
+                             <Button size="sm" variant="outline" className="h-7 gap-1" onClick={(e) => handleConfirmOrder(e, n.orderId)} disabled={confirmingOrderId === n.orderId}>
+                                {confirmingOrderId === n.orderId ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Check className="h-3.5 w-3.5" />
+                                )}
+                                <span className="ml-1">Confirm</span>
                             </Button>
                         </DropdownMenuItem>
                     ))

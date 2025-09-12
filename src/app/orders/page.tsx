@@ -21,6 +21,7 @@ import { ReturnOrderDialog } from '@/components/return-order-dialog';
 import { Input } from '@/components/ui/input';
 import { AuthContext, useAuth } from '@/context/auth-context';
 import { useNotifications } from '@/context/notification-context';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -222,7 +223,10 @@ function OrdersTable({
   )
 }
 
-export default function OrdersPage() {
+function OrdersPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -293,6 +297,19 @@ export default function OrdersPage() {
     fetchOrders();
     fetchAgents();
   }, [token, fetchOrders, fetchAgents]);
+  
+  useEffect(() => {
+    const assignAgentOrderId = searchParams.get('assignAgent');
+    if (assignAgentOrderId) {
+      const orderToAssign = orders.find(o => o.id === assignAgentOrderId);
+      if (orderToAssign) {
+        handleAssignAgent(orderToAssign);
+        // Remove the query param from URL
+        router.replace('/orders', { scroll: false });
+      }
+    }
+  }, [searchParams, orders, router]);
+
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order =>
@@ -477,7 +494,10 @@ export default function OrdersPage() {
 
 
   return (
-    <AppShell>
+    <AppShell
+      onConfirmAndAssignFromNotification={handleConfirmAndAssign}
+      orders={orders}
+    >
       <PageHeader title="Orders Management">
         <div className="flex items-center gap-2">
            <div className="relative">
@@ -564,4 +584,10 @@ export default function OrdersPage() {
 
     </AppShell>
   );
+}
+
+export default function OrdersPage() {
+    return (
+        <OrdersPageContent />
+    );
 }
