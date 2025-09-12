@@ -151,6 +151,9 @@ export default function ProductsPage() {
     formData.append('lowStockThreshold', String(updatedProduct.lowStockThreshold));
     formData.append('variants', JSON.stringify(updatedProduct.variants));
     
+    if (updatedProduct.agencyIds) {
+        formData.append('agencyIds', JSON.stringify(updatedProduct.agencyIds));
+    }
     if (imagesToDelete && imagesToDelete.length > 0) {
       formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
     }

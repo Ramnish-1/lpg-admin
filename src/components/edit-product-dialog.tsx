@@ -14,17 +14,22 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Product } from '@/lib/types';
+import { Product, Agency } from '@/lib/types';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { PlusCircle, Trash2, X, ImagePlus } from 'lucide-react';
+import { PlusCircle, Trash2, X, ImagePlus, ChevronDown } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
 import { ImageViewerDialog } from './image-viewer-dialog';
+import { useAuth } from '@/context/auth-context';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
+import { Checkbox } from './ui/checkbox';
+import { Badge } from './ui/badge';
 
 interface EditProductDialogProps {
   product: Product;
@@ -45,22 +50,45 @@ const productSchema = z.object({
   category: z.enum(['lpg', 'accessories']),
   lowStockThreshold: z.coerce.number().int().min(0, "Threshold must be a whole number."),
   variants: z.array(variantSchema).min(1, "At least one product variant is required."),
+  agencyIds: z.array(z.string()).optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpdate }: EditProductDialogProps) {
+  const [agencies, setAgencies] = useState<Agency[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { token, handleApiError } = useAuth();
+
+
+  const fetchAgencies = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/agencies`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) handleApiError(response);
+      const result = await response.json();
+      if (result.success) {
+        setAgencies(result.data.agencies);
+      }
+    } catch (e) {
+      console.error("Failed to fetch agencies");
+    }
+  }
+
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       variants: [{ label: '', price: 0, stock: 0 }],
+      agencyIds: [],
     }
   });
 
@@ -79,15 +107,19 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
 
   useEffect(() => {
     if (isOpen && product) {
+       if (agencies.length === 0) {
+            fetchAgencies();
+       }
       form.reset({
         ...product,
         category: product.category || 'lpg',
+        agencyIds: product.agencies?.map(a => a.id!) || [],
       });
       setImagePreviews(product.images || []);
       setImagesToDelete([]);
       setNewImageFiles([]);
     }
-  }, [product, isOpen, form]);
+  }, [product, isOpen, form, agencies.length]);
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -132,9 +164,9 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     if (imageToRemove.startsWith('http')) {
         setImagesToDelete(prev => [...prev, imageToRemove]);
     } else { // If it's a new blob image, remove it from newImageFiles
-        const blobIndex = imagePreviews.filter(p => p.startsWith('blob:')).indexOf(imageToRemove);
-        if (blobIndex > -1) {
-            setNewImageFiles(prev => prev.filter((_, i) => i !== blobIndex));
+        const blobUrlIndex = imagePreviews.filter(p => p.startsWith("blob:")).findIndex(p => p === imageToRemove);
+        if (blobUrlIndex > -1) {
+            setNewImageFiles(prev => prev.filter((_, i) => i !== blobUrlIndex));
         }
     }
     
@@ -160,6 +192,69 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                           <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="lpg">LPG</SelectItem><SelectItem value="accessories">Accessories</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                           <FormField control={form.control} name="lowStockThreshold" render={({ field }) => (<FormItem><FormLabel>Low Stock Threshold</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
+
+                       <FormField
+                        control={form.control}
+                        name="agencyIds"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Agencies</FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className="w-full justify-between font-normal"
+                                  >
+                                    <span className="truncate">
+                                      {field.value && field.value.length > 0
+                                        ? `${field.value.length} selected`
+                                        : "Select agencies"}
+                                    </span>
+                                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                <Command>
+                                  <CommandInput placeholder="Search agencies..." />
+                                  <CommandEmpty>No agencies found.</CommandEmpty>
+                                  <CommandGroup>
+                                    <CommandList>
+                                      {agencies.map((agency) => (
+                                        <CommandItem
+                                          key={agency.id}
+                                          onSelect={() => {
+                                            const selected = field.value || [];
+                                            const isSelected = selected.includes(agency.id!);
+                                            const newSelection = isSelected
+                                              ? selected.filter((id) => id !== agency.id)
+                                              : [...selected, agency.id!];
+                                            field.onChange(newSelection);
+                                          }}
+                                          className="flex items-center gap-2"
+                                        >
+                                          <Checkbox checked={field.value?.includes(agency.id!)} />
+                                          <span>{agency.name}</span>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandList>
+                                  </CommandGroup>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                             {field.value && field.value.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                {agencies.filter(a => field.value?.includes(a.id!)).map(agency => (
+                                    <Badge key={agency.id} variant="secondary">{agency.name}</Badge>
+                                ))}
+                                </div>
+                            )}
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
                       <div>
                           <FormLabel>Product Variants</FormLabel>
@@ -200,11 +295,11 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                                     <CarouselItem key={src} className="pl-2 basis-1/3 sm:basis-1/4 md:basis-1/5">
                                         <div className="relative aspect-square group">
                                             <Image 
-                                                src={src} 
+                                                src={src.startsWith('http') || src.startsWith('blob:') ? src : `${API_BASE_URL}${src}`} 
                                                 alt={`Preview ${index + 1}`} 
                                                 fill
                                                 className="rounded-md object-cover cursor-pointer"
-                                                onClick={() => openImageViewer(src)}
+                                                onClick={() => openImageViewer(src.startsWith('http') || src.startsWith('blob:') ? src : `${API_BASE_URL}${src}`)}
                                             />
                                             <Button 
                                                 type="button" 
