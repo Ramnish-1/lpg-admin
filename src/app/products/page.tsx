@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, AlertCircle, ChevronDown, Loader2, Trash2 } from 'lucide-react';
 import type { Product } from '@/lib/types';
-import { useEffect, useState, useMemo, useContext } from 'react';
+import { useEffect, useState, useMemo, useContext, useCallback } from 'react';
 import { ProductDetailsDialog } from '@/components/product-details-dialog';
 import { EditProductDialog } from '@/components/edit-product-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -38,7 +38,7 @@ export default function ProductsPage() {
   const { handleApiError } = useAuth();
 
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     if (!token) return;
     setIsLoading(true);
     try {
@@ -57,13 +57,13 @@ export default function ProductsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token, handleApiError, toast]);
 
   useEffect(() => {
     if (token) {
         fetchProducts();
     }
-  }, [token]);
+  }, [token, fetchProducts]);
 
   const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
 
