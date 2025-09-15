@@ -71,7 +71,7 @@ const navItems = [
   { href: '/payments', label: 'Payments', icon: CreditCard },
   { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/add-user', label: 'Manage Users', icon: UserPlus },
-  { href: '/terms-and-conditions', label: 'Terms &amp; Conditions', icon: FileText },
+  { href: '/terms-and-conditions', label: 'Terms & Conditions', icon: FileText },
   { href: '/privacy-policy', label: 'Privacy Policy', icon: ShieldCheck },
 ];
 
