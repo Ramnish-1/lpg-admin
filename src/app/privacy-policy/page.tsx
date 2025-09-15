@@ -42,12 +42,14 @@ export default function PrivacyPolicyPage() {
       if (!response.ok) handleApiError(response);
       const result = await response.json();
       if (result.success) {
-        setPolicies(result.data.policies);
+        setPolicies(result.data.policies || []);
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch policies.' });
+        setPolicies([]);
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch policies.' });
+      setPolicies([]);
     } finally {
       setIsLoading(false);
     }

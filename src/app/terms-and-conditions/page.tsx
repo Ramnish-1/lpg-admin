@@ -42,12 +42,14 @@ export default function TermsPage() {
       if (!response.ok) handleApiError(response);
       const result = await response.json();
       if (result.success) {
-        setTerms(result.data.terms);
+        setTerms(result.data.terms || []);
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch terms.' });
+        setTerms([]);
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch terms.' });
+      setTerms([]);
     } finally {
       setIsLoading(false);
     }
