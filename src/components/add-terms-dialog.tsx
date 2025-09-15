@@ -19,7 +19,7 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Textarea } from './ui/textarea';
 
-type NewTermPayload = Omit<TermsAndCondition, 'id' | 'createdAt' | 'updatedAt' | 'status'>;
+type NewTermPayload = Omit<TermsAndCondition, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'version'>;
 
 interface AddTermsDialogProps {
   isOpen: boolean;
@@ -30,7 +30,6 @@ interface AddTermsDialogProps {
 const termSchema = z.object({
   title: z.string().min(1, "Title is required."),
   description: z.string().min(1, "Description is required."),
-  version: z.string().min(1, "Version is required."),
 });
 
 type TermFormValues = z.infer<typeof termSchema>;
@@ -41,7 +40,6 @@ export function AddTermsDialog({ isOpen, onOpenChange, onTermAdd }: AddTermsDial
     defaultValues: {
       title: '',
       description: '',
-      version: '1.0',
     }
   });
 
@@ -74,7 +72,6 @@ export function AddTermsDialog({ isOpen, onOpenChange, onTermAdd }: AddTermsDial
              <div className="grid gap-4 py-4">
                 <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Title</FormLabel><FormControl><Input placeholder="e.g. Terms and Conditions - Delivery Policy" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Enter the full description of the term..." {...field} rows={6} /></FormControl><FormMessage /></FormItem>)}/>
-                <FormField control={form.control} name="version" render={({ field }) => ( <FormItem><FormLabel>Version</FormLabel><FormControl><Input placeholder="e.g. 1.0" {...field} /></FormControl><FormMessage /></FormItem>)}/>
               </div>
             <DialogFooter className="pt-4">
               <DialogClose asChild>

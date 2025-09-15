@@ -19,7 +19,7 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Textarea } from './ui/textarea';
 
-type NewPolicyPayload = Omit<PrivacyPolicy, 'id' | 'createdAt' | 'updatedAt' | 'status'>;
+type NewPolicyPayload = Omit<PrivacyPolicy, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'version'>;
 
 interface AddPolicyDialogProps {
   isOpen: boolean;
@@ -30,7 +30,6 @@ interface AddPolicyDialogProps {
 const policySchema = z.object({
   title: z.string().min(1, "Title is required."),
   description: z.string().min(1, "Description is required."),
-  version: z.string().min(1, "Version is required."),
 });
 
 type PolicyFormValues = z.infer<typeof policySchema>;
@@ -41,7 +40,6 @@ export function AddPolicyDialog({ isOpen, onOpenChange, onPolicyAdd }: AddPolicy
     defaultValues: {
       title: '',
       description: '',
-      version: '1.0',
     }
   });
 
@@ -74,7 +72,6 @@ export function AddPolicyDialog({ isOpen, onOpenChange, onPolicyAdd }: AddPolicy
              <div className="grid gap-4 py-4">
                 <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Title</FormLabel><FormControl><Input placeholder="e.g. Privacy Policy - Data Collection" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Enter the full description of the policy..." {...field} rows={6} /></FormControl><FormMessage /></FormItem>)}/>
-                <FormField control={form.control} name="version" render={({ field }) => ( <FormItem><FormLabel>Version</FormLabel><FormControl><Input placeholder="e.g. 1.0" {...field} /></FormControl><FormMessage /></FormItem>)}/>
               </div>
             <DialogFooter className="pt-4">
               <DialogClose asChild>

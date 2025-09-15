@@ -24,13 +24,12 @@ interface EditPolicyDialogProps {
   policy: PrivacyPolicy;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onPolicyUpdate: (policy: Omit<PrivacyPolicy, 'createdAt' | 'updatedAt' | 'status'>) => Promise<boolean>;
+  onPolicyUpdate: (policy: Omit<PrivacyPolicy, 'createdAt' | 'updatedAt' | 'status' | 'version'>) => Promise<boolean>;
 }
 
 const policySchema = z.object({
   title: z.string().min(1, "Title is required."),
   description: z.string().min(1, "Description is required."),
-  version: z.string().min(1, "Version is required."),
 });
 
 type PolicyFormValues = z.infer<typeof policySchema>;
@@ -67,7 +66,6 @@ export function EditPolicyDialog({ policy, isOpen, onOpenChange, onPolicyUpdate 
             <div className="grid gap-4 py-4">
                <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} rows={6} /></FormControl><FormMessage /></FormItem>)}/>
-               <FormField control={form.control} name="version" render={({ field }) => ( <FormItem><FormLabel>Version</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
             </div>
             <DialogFooter className="pt-4">
               <DialogClose asChild>
