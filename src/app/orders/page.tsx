@@ -454,7 +454,7 @@ function OrdersPageContent() {
     if (status === 'in-progress') {
       return filteredOrders.filter(o => ['assigned', 'in-progress'].includes(o.status)).length;
     }
-    if (status === 'out_for_delivery') {
+    if (status === 'out-for-delivery') {
       return filteredOrders.filter(o => o.status === 'out_for_delivery').length;
     }
     return filteredOrders.filter(o => o.status === status).length;
