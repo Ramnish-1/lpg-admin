@@ -124,7 +124,7 @@ function OrdersTable({
                                 value={order.status} 
                                 onValueChange={(newStatus) => onStatusChange(order, newStatus as Order['status'])}
                             >
-                            {orderStatusesForDropdown.filter(s => !['assigned', 'out-for-delivery'].includes(s)).map(status => (
+                            {orderStatusesForDropdown.filter(s => !['assigned', 'out-for-delivery', 'confirmed'].includes(s)).map(status => (
                                 <DropdownMenuRadioItem 
                                 key={status} 
                                 value={status}
@@ -168,7 +168,7 @@ function OrdersTable({
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem onClick={() => onShowDetails(order)}>View Details</DropdownMenuItem>
                             {(order.status === 'confirmed') && (
-                            <DropdownMenuItem onClick={() => onAssignAgent(order)}>Assign Agent</DropdownMenuItem>
+                            <DropdownMenuItem className="bg-green-500 text-white hover:!bg-green-600 hover:!text-white focus:!bg-green-600 focus:!text-white" onClick={() => onAssignAgent(order)}>Assign Agent</DropdownMenuItem>
                             )}
                             {order.status === 'delivered' && (
                                 <DropdownMenuItem onClick={() => onReturn(order)}>Return</DropdownMenuItem>
