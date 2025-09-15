@@ -33,6 +33,8 @@ import {
   Check,
   Building2,
   Loader2,
+  FileText,
+  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -69,6 +71,8 @@ const navItems = [
   { href: '/payments', label: 'Payments', icon: CreditCard },
   { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/add-user', label: 'Manage Users', icon: UserPlus },
+  { href: '/terms-and-conditions', label: 'Terms &amp; Conditions', icon: FileText },
+  { href: '/privacy-policy', label: 'Privacy Policy', icon: ShieldCheck },
 ];
 
 interface AppShellProps {

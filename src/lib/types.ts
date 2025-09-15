@@ -41,7 +41,7 @@ export interface Product {
   lowStockThreshold: number;
   variants: ProductVariant[];
   images: string[]; // URLs to images
-  agencies: Agency[];
+  agencies: Omit<Agency, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'confirmationToken' | 'confirmationExpiresAt'>[];
   createdAt: string;
   updatedAt: string;
 }
@@ -173,4 +173,23 @@ export interface Agency {
   confirmationExpiresAt: Date | null;
 }
 
+export interface TermsAndCondition {
+    id: string;
+    title: string;
+    description: string;
+    status: 'active' | 'inactive';
+    version: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface PrivacyPolicy {
+    id: string;
+    title: string;
+    description: string;
+    status: 'active' | 'inactive';
+    version: string;
+    createdAt: string;
+    updatedAt: string;
+}
     
