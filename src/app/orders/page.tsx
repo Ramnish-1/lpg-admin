@@ -37,7 +37,7 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
   'returned': 'destructive',
 };
 
-const orderStatusesForDropdown: Order['status'][] = ['pending', 'confirmed', 'delivered', 'cancelled', 'returned'];
+const orderStatusesForDropdown: Order['status'][] = ['pending', 'delivered', 'cancelled', 'returned'];
 const orderStatusesForTabs: (Order['status'] | 'in-progress')[] = ['pending', 'confirmed', 'in-progress', 'out-for-delivery', 'delivered', 'cancelled', 'returned'];
 
 
@@ -591,3 +591,5 @@ export default function OrdersPage() {
         <OrdersPageContent />
     );
 }
+
+    
