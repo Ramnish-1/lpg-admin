@@ -42,7 +42,7 @@ export default function TermsPage() {
       if (!response.ok) handleApiError(response);
       const result = await response.json();
       if (result.success) {
-        setTerms(result.data.terms || []);
+        setTerms(result.data.termsAndConditions || []);
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch terms.' });
         setTerms([]);
@@ -59,12 +59,12 @@ export default function TermsPage() {
     fetchTerms();
   }, [fetchTerms]);
 
-  const totalPages = Math.ceil(terms.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil((terms || []).length / ITEMS_PER_PAGE);
 
   const paginatedTerms = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    return terms.slice(startIndex, endIndex);
+    return (terms || []).slice(startIndex, endIndex);
   }, [terms, currentPage]);
 
   const handleAddTerm = async (newTerm: Omit<TermsAndCondition, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => {

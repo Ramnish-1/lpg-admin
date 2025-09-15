@@ -42,7 +42,7 @@ export default function PrivacyPolicyPage() {
       if (!response.ok) handleApiError(response);
       const result = await response.json();
       if (result.success) {
-        setPolicies(result.data.policies || []);
+        setPolicies(result.data.privacyPolicies || []);
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch policies.' });
         setPolicies([]);
@@ -59,12 +59,12 @@ export default function PrivacyPolicyPage() {
     fetchPolicies();
   }, [fetchPolicies]);
 
-  const totalPages = Math.ceil(policies.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil((policies || []).length / ITEMS_PER_PAGE);
 
   const paginatedPolicies = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    return policies.slice(startIndex, endIndex);
+    return (policies || []).slice(startIndex, endIndex);
   }, [policies, currentPage]);
 
   const handleAddPolicy = async (newPolicy: Omit<PrivacyPolicy, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => {
