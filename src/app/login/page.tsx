@@ -73,7 +73,7 @@ export default function LoginPage() {
            <div className="grid gap-2 text-center">
              <Link href="/" className="flex items-center justify-center gap-2 font-semibold mb-4 text-primary">
                 <GasPump className="h-8 w-8" />
-                <span className="text-3xl font-bold">GasTrack Admin</span>
+                <span className="text-3xl font-bold">GasTrack Super Admin</span>
               </Link>
             <h1 className="text-3xl font-bold">Login</h1>
             <p className="text-balance text-muted-foreground">

@@ -22,7 +22,7 @@ interface SettingsContextType {
 }
 
 const defaultSettings: Settings = {
-  appName: 'GasTrack Admin',
+  appName: 'GasTrack Super Admin',
   timezone: 'Asia/Kolkata',
   emailNotifications: true,
   pushNotifications: false,
