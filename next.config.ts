@@ -31,9 +31,9 @@ const nextConfig: NextConfig = {
       },
        {
         protocol: 'https',
-        hostname: 'c5d511eb9159.ngrok-free.app',
+        hostname: '*.ngrok-free.app',
         port: '',
-        pathname: '/uploads/**',
+        pathname: '/**',
       },
       {
         protocol: 'https',
@@ -42,6 +42,19 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       }
     ],
+  },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'ngrok-skip-browser-warning',
+            value: 'true',
+          },
+        ],
+      },
+    ];
   },
 };
 
