@@ -72,7 +72,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
       if (!token) return;
       try {
         const response = await fetch(`${API_BASE_URL}/api/agencies`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
         });
         if (!response.ok) handleApiError(response);
         const result = await response.json();
@@ -120,7 +120,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
 
     const selectedAgencies = allAgencies
         .filter(agency => values.agencyIds?.includes(agency.id))
-        .map(({ id, status, createdAt, updatedAt, confirmationToken, confirmationExpiresAt, ...rest }) => rest);
+        .map(({ id, ...rest }) => rest);
 
     const payload: AddProductPayload = {
         ...values,
@@ -345,5 +345,3 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     </>
   );
 }
-
-    

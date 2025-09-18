@@ -51,7 +51,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       try {
         const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'ngrok-skip-browser-warning': 'true'
           }
         });
         if (!response.ok) handleApiError(response);
@@ -94,7 +95,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
             method: 'PUT',
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
+                'ngrok-skip-browser-warning': 'true'
             },
             body: formData
         });

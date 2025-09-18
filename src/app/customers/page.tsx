@@ -41,7 +41,7 @@ export default function CustomersPage() {
       setIsLoading(true);
       try {
         const response = await fetch(`${API_BASE_URL}/api/auth/customers`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
         });
         if (!response.ok) handleApiError(response);
         const result = await response.json();
@@ -114,7 +114,8 @@ export default function CustomersPage() {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true' 
         },
         body: JSON.stringify({ isBlocked })
       });

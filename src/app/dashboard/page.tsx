@@ -45,10 +45,10 @@ export default function DashboardPage() {
       try {
         const [dashboardResponse, agentsResponse] = await Promise.all([
           fetch(`${API_BASE_URL}/api/dashboard`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
           }),
           fetch(`${API_BASE_URL}/api/delivery-agents`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
           })
         ]);
 

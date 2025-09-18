@@ -29,7 +29,7 @@ export function OrderHoverCard({ children }: { children: React.ReactNode }) {
       if (!token) return;
       try {
         const response = await fetch(`${API_BASE_URL}/api/orders?limit=10`, { // Fetch last 10 orders
-             headers: { 'Authorization': `Bearer ${token}` }
+             headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
         });
         const result = await response.json();
         if (result.success) {

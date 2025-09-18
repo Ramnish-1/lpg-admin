@@ -20,7 +20,7 @@ export function UserHoverCard({ children }: { children: React.ReactNode }) {
       if (!token) return;
       try {
          const response = await fetch(`${API_BASE_URL}/api/users?limit=10`, { // Fetch last 10 users
-             headers: { 'Authorization': `Bearer ${token}` }
+             headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
         });
         if (!response.ok) handleApiError(response);
         const result = await response.json();

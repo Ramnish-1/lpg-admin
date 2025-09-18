@@ -37,7 +37,7 @@ export default function TermsPage() {
     setIsLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/terms-and-conditions`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
       });
       if (!response.ok) handleApiError(response);
       const result = await response.json();
@@ -59,12 +59,12 @@ export default function TermsPage() {
     fetchTerms();
   }, [fetchTerms]);
 
-  const totalPages = Math.ceil((terms || []).length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(terms.length / ITEMS_PER_PAGE);
 
   const paginatedTerms = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    return (terms || []).slice(startIndex, endIndex);
+    return terms.slice(startIndex, endIndex);
   }, [terms, currentPage]);
 
   const handleAddTerm = async (newTerm: Omit<TermsAndCondition, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => {
@@ -74,7 +74,8 @@ export default function TermsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true'
         },
         body: JSON.stringify(newTerm),
       });
@@ -102,7 +103,8 @@ export default function TermsPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true'
         },
         body: JSON.stringify(payload),
       });
@@ -137,7 +139,7 @@ export default function TermsPage() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/terms-and-conditions/${selectedTerm.id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' },
       });
       if (!response.ok) handleApiError(response);
 
@@ -168,7 +170,8 @@ export default function TermsPage() {
             method: 'PATCH',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` 
+                'Authorization': `Bearer ${token}`,
+                'ngrok-skip-browser-warning': 'true'
             },
             body: JSON.stringify({ status: newStatus })
         });
@@ -190,7 +193,7 @@ export default function TermsPage() {
 
   return (
     <AppShell>
-      <PageHeader title="Terms &amp; Conditions">
+      <PageHeader title="Terms & Conditions">
         <Button size="sm" className="h-9 gap-1" onClick={() => setIsAddDialogOpen(true)}>
           <PlusCircle className="h-3.5 w-3.5" />
           <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -200,7 +203,7 @@ export default function TermsPage() {
       </PageHeader>
       <Card>
         <CardHeader>
-          <CardTitle>Manage Terms &amp; Conditions</CardTitle>
+          <CardTitle>Manage Terms & Conditions</CardTitle>
           <CardDescription>
             Create, edit, and manage your application's terms and conditions.
           </CardDescription>

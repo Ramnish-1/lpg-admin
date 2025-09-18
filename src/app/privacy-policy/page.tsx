@@ -37,7 +37,7 @@ export default function PrivacyPolicyPage() {
     setIsLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/privacy-policies`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
       });
       if (!response.ok) handleApiError(response);
       const result = await response.json();
@@ -59,12 +59,12 @@ export default function PrivacyPolicyPage() {
     fetchPolicies();
   }, [fetchPolicies]);
 
-  const totalPages = Math.ceil((policies || []).length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(policies.length / ITEMS_PER_PAGE);
 
   const paginatedPolicies = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    return (policies || []).slice(startIndex, endIndex);
+    return policies.slice(startIndex, endIndex);
   }, [policies, currentPage]);
 
   const handleAddPolicy = async (newPolicy: Omit<PrivacyPolicy, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => {
@@ -74,7 +74,8 @@ export default function PrivacyPolicyPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true'
         },
         body: JSON.stringify(newPolicy),
       });
@@ -102,7 +103,8 @@ export default function PrivacyPolicyPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true'
         },
         body: JSON.stringify(payload),
       });
@@ -137,7 +139,7 @@ export default function PrivacyPolicyPage() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/privacy-policies/${selectedPolicy.id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' },
       });
       if (!response.ok) handleApiError(response);
 
@@ -168,7 +170,8 @@ export default function PrivacyPolicyPage() {
             method: 'PATCH',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` 
+                'Authorization': `Bearer ${token}`,
+                'ngrok-skip-browser-warning': 'true'
             },
             body: JSON.stringify({ status: newStatus })
         });

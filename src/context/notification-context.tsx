@@ -35,7 +35,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     if (isAuthenticated && token) {
       try {
         const response = await fetch(`${API_BASE_URL}/api/orders?status=pending`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
         });
         if (!response.ok) {
             handleApiError(response);
@@ -69,7 +69,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   
     if (isAuthenticated && token) {
       const newSocket = io(API_BASE_URL, {
-        query: { token }
+        query: { token },
+        extraHeaders: {
+            'ngrok-skip-browser-warning': 'true'
+        }
       });
       setSocket(newSocket);
 

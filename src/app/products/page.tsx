@@ -42,7 +42,7 @@ export default function ProductsPage() {
     setIsLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/products`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
       });
       if (!response.ok) handleApiError(response);
       const result = await response.json();
@@ -99,7 +99,7 @@ export default function ProductsPage() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/products/${selectedProduct.id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
       });
       if (!response.ok) handleApiError(response);
       
@@ -121,7 +121,8 @@ export default function ProductsPage() {
             method: 'PUT',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` 
+                'Authorization': `Bearer ${token}`,
+                'ngrok-skip-browser-warning': 'true'
             },
             body: JSON.stringify({ status: newStatus })
         });
@@ -164,7 +165,7 @@ export default function ProductsPage() {
     try {
         const response = await fetch(`${API_BASE_URL}/api/products/${updatedProduct.id}`, {
             method: 'PUT',
-            headers: { 'Authorization': `Bearer ${token}` },
+            headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' },
             body: formData,
         });
         if (!response.ok) handleApiError(response);
@@ -201,7 +202,7 @@ export default function ProductsPage() {
     try {
         const response = await fetch(`${API_BASE_URL}/api/products`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
+            headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' },
             body: formData,
         });
         if (!response.ok) handleApiError(response);

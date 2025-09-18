@@ -21,7 +21,7 @@ export function AgentHoverCard({ children }: { children: React.ReactNode }) {
       if (!token) return;
       try {
         const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
         });
         if (!response.ok) handleApiError(response);
         const result = await response.json();

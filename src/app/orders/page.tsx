@@ -124,7 +124,7 @@ function OrdersTable({
                                 value={order.status} 
                                 onValueChange={(newStatus) => onStatusChange(order, newStatus as Order['status'])}
                             >
-                            {orderStatusesForDropdown.filter(s => !['assigned', 'out-for-delivery', 'confirmed'].includes(s)).map(status => (
+                            {orderStatusesForDropdown.filter(s => !['assigned', 'out-for-delivery'].includes(s)).map(status => (
                                 <DropdownMenuRadioItem 
                                 key={status} 
                                 value={status}
@@ -248,7 +248,7 @@ function OrdersPageContent() {
       setIsLoading(true);
       try {
           const response = await fetch(`${API_BASE_URL}/api/orders`, {
-              headers: { 'Authorization': `Bearer ${token}` }
+              headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
           });
           if (!response.ok) handleApiError(response);
           const result = await response.json();
@@ -281,7 +281,7 @@ function OrdersPageContent() {
      if (!token) return;
      try {
        const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
         });
         if (!response.ok) handleApiError(response);
         const result = await response.json();
@@ -347,7 +347,8 @@ function OrdersPageContent() {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true'
         },
         body: JSON.stringify({ agentId })
       });
@@ -381,7 +382,8 @@ function OrdersPageContent() {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true'
         },
         body: JSON.stringify(requestBody)
       });

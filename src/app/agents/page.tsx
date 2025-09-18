@@ -66,7 +66,7 @@ export default function AgentsPage() {
     setIsLoading(true);
     try {
         const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
         });
         if (!response.ok) handleApiError(response);
         const result = await response.json();
@@ -131,7 +131,7 @@ export default function AgentsPage() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/delivery-agents/${agentId}`, {
         method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' },
         body: formData,
       });
       if (!response.ok) handleApiError(response);
@@ -170,7 +170,7 @@ export default function AgentsPage() {
      try {
         const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
+            headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' },
             body: formData,
         });
         if (!response.ok) handleApiError(response);
@@ -198,7 +198,7 @@ export default function AgentsPage() {
       const deletePromises = idsToDelete.map(id => 
         fetch(`${API_BASE_URL}/api/delivery-agents/${id}`, {
           method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
         })
       );
       

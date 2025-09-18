@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
             body: JSON.stringify({ email, password }),
         });
         
@@ -91,7 +91,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${currentToken}`
+                    'Authorization': `Bearer ${currentToken}`,
+                    'ngrok-skip-browser-warning': 'true'
                 },
             });
         } catch (error) {
@@ -119,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
             body: JSON.stringify({ name, email, password, phone }),
         });
 

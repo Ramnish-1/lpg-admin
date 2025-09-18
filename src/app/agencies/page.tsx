@@ -41,7 +41,7 @@ export default function AgenciesPage() {
     setIsLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/agencies`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
       });
       if (!response.ok) handleApiError(response);
       const result = await response.json();
@@ -84,7 +84,8 @@ export default function AgenciesPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true'
         },
         body: JSON.stringify(newAgency),
       });
@@ -112,7 +113,8 @@ export default function AgenciesPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true'
         },
         body: JSON.stringify(payload),
       });
@@ -152,7 +154,7 @@ export default function AgenciesPage() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/agencies/${selectedAgency.id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' },
       });
       if (!response.ok) handleApiError(response);
 
