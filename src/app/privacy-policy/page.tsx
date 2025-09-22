@@ -67,7 +67,7 @@ export default function PrivacyPolicyPage() {
     return policies.slice(startIndex, endIndex);
   }, [policies, currentPage]);
 
-  const handleAddPolicy = async (newPolicy: Omit<PrivacyPolicy, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => {
+  const handleAddPolicy = async (newPolicy: Omit<PrivacyPolicy, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'version'>) => {
     if (!token) return false;
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/privacy-policies`, {
@@ -94,7 +94,7 @@ export default function PrivacyPolicyPage() {
     }
   };
   
-  const handleUpdatePolicy = async (updatedPolicy: Omit<PrivacyPolicy, 'createdAt' | 'updatedAt' | 'status'>) => {
+  const handleUpdatePolicy = async (updatedPolicy: Omit<PrivacyPolicy, 'createdAt' | 'updatedAt' | 'status' | 'version'>) => {
     if (!token) return false;
     const { id, ...payload } = updatedPolicy;
     try {

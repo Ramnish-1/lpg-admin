@@ -67,7 +67,7 @@ export default function TermsPage() {
     return terms.slice(startIndex, endIndex);
   }, [terms, currentPage]);
 
-  const handleAddTerm = async (newTerm: Omit<TermsAndCondition, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => {
+  const handleAddTerm = async (newTerm: Omit<TermsAndCondition, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'version'>) => {
     if (!token) return false;
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/terms-and-conditions`, {
@@ -94,7 +94,7 @@ export default function TermsPage() {
     }
   };
   
-  const handleUpdateTerm = async (updatedTerm: Omit<TermsAndCondition, 'createdAt' | 'updatedAt' | 'status'>) => {
+  const handleUpdateTerm = async (updatedTerm: Omit<TermsAndCondition, 'createdAt' | 'updatedAt' | 'status' | 'version'>) => {
     if (!token) return false;
     const { id, ...payload } = updatedTerm;
     try {
@@ -191,7 +191,7 @@ export default function TermsPage() {
 
   return (
     <AppShell>
-      <PageHeader title="Terms & Conditions">
+      <PageHeader title="Terms &amp; Conditions">
         <Button size="sm" className="h-9 gap-1" onClick={() => setIsAddDialogOpen(true)}>
           <PlusCircle className="h-3.5 w-3.5" />
           <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -201,7 +201,7 @@ export default function TermsPage() {
       </PageHeader>
       <Card>
         <CardHeader>
-          <CardTitle>Manage Terms & Conditions</CardTitle>
+          <CardTitle>Manage Terms &amp; Conditions</CardTitle>
           <CardDescription>
             Create, edit, and manage your application's terms and conditions.
           </CardDescription>

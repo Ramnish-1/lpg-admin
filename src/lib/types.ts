@@ -190,10 +190,15 @@ export interface Agency {
   confirmationExpiresAt: Date | null;
 }
 
+interface ContentSection {
+    title: string;
+    description: string;
+}
+
 export interface TermsAndCondition {
     id: string;
     title: string;
-    description: string;
+    content: ContentSection[];
     status: 'active' | 'inactive';
     version: string;
     createdAt: string;
@@ -203,11 +208,9 @@ export interface TermsAndCondition {
 export interface PrivacyPolicy {
     id: string;
     title: string;
-    description: string;
+    content: ContentSection[];
     status: 'active' | 'inactive';
     version: string;
     createdAt: string;
     updatedAt: string;
 }
-
-    
