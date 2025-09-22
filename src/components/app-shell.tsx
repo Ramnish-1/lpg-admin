@@ -206,7 +206,7 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
                <div className="flex items-center gap-2">
                     <Badge 
                         variant={profile.agencyStatus === 'active' ? 'default' : 'destructive'}
-                        className="capitalize flex items-center gap-1.5"
+                        className="capitalize flex items-center gap-2"
                     >
                          <span className={cn("h-2 w-2 rounded-full", {
                             'bg-green-400': profile.agencyStatus === 'active',
