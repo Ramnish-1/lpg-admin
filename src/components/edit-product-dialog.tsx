@@ -89,7 +89,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      variants: [{ label: '', price: 0, stock: 0 }],
+      variants: [{ label: '', price: '' as any, stock: '' as any }],
       agencyIds: [],
     }
   });
@@ -278,7 +278,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                                   </div>
                               ))}
                           </div>
-                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ label: '', price: 0, stock: 0 })}><PlusCircle className="mr-2 h-4 w-4"/>Add Variant</Button>
+                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ label: '', price: '' as any, stock: '' as any })}><PlusCircle className="mr-2 h-4 w-4"/>Add Variant</Button>
                           <FormMessage>{form.formState.errors.variants?.message || form.formState.errors.variants?.root?.message}</FormMessage>
                       </div>
 
