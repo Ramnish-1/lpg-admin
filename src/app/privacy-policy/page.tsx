@@ -79,16 +79,15 @@ export default function PrivacyPolicyPage() {
         },
         body: JSON.stringify(newPolicy),
       });
-      if (!response.ok) handleApiError(response);
       const result = await response.json();
-      if (result.success) {
-        toast({ title: 'Policy Added', description: `Policy "${newPolicy.title}" has been successfully added.` });
-        fetchPolicies();
-        return true;
-      } else {
+      if (!response.ok) {
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to add policy.' });
         return false;
       }
+      
+      toast({ title: 'Policy Added', description: `Policy "${newPolicy.title}" has been successfully added.` });
+      fetchPolicies();
+      return true;
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to add policy.' });
       return false;
@@ -108,16 +107,15 @@ export default function PrivacyPolicyPage() {
         },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) handleApiError(response);
       const result = await response.json();
-      if (result.success) {
-        toast({ title: 'Policy Updated', description: `Policy "${updatedPolicy.title}" has been successfully updated.` });
-        fetchPolicies();
-        return true;
-      } else {
+      if (!response.ok) {
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update policy.' });
         return false;
       }
+      
+      toast({ title: 'Policy Updated', description: `Policy "${updatedPolicy.title}" has been successfully updated.` });
+      fetchPolicies();
+      return true;
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to update policy.' });
       return false;

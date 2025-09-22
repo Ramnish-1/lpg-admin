@@ -79,16 +79,15 @@ export default function TermsPage() {
         },
         body: JSON.stringify(newTerm),
       });
-      if (!response.ok) handleApiError(response);
       const result = await response.json();
-      if (result.success) {
-        toast({ title: 'Term Added', description: `Term "${newTerm.title}" has been successfully added.` });
-        fetchTerms();
-        return true;
-      } else {
-        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to add term.' });
-        return false;
+      if (!response.ok) {
+          toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to add term.' });
+          return false;
       }
+      
+      toast({ title: 'Term Added', description: `Term "${newTerm.title}" has been successfully added.` });
+      fetchTerms();
+      return true;
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to add term.' });
       return false;
@@ -108,16 +107,15 @@ export default function TermsPage() {
         },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) handleApiError(response);
       const result = await response.json();
-      if (result.success) {
-        toast({ title: 'Term Updated', description: `Term "${updatedTerm.title}" has been successfully updated.` });
-        fetchTerms();
-        return true;
-      } else {
+      if (!response.ok) {
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update term.' });
         return false;
       }
+      
+      toast({ title: 'Term Updated', description: `Term "${updatedTerm.title}" has been successfully updated.` });
+      fetchTerms();
+      return true;
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to update term.' });
       return false;
