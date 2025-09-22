@@ -7,10 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Trash2, Mail, Loader2, ChevronDown } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, PlusCircle, Trash2, Mail, Loader2, ChevronDown, Filter } from 'lucide-react';
 import type { Agent, Agency } from '@/lib/types';
-import { useEffect, useState, useMemo, useContext } from 'react';
+import { useEffect, useState, useMemo, useContext, useCallback } from 'react';
 import { EditAgentDialog } from '@/components/edit-agent-dialog';
 import { AddAgentDialog } from '@/components/add-agent-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -50,6 +50,7 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [agencies, setAgencies] = useState<Agency[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
@@ -58,10 +59,12 @@ export default function AgentsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedAgency, setSelectedAgency] = useState('all');
   const { toast } = useToast();
   const { token } = useContext(AuthContext);
   const { handleApiError } = useAuth();
   const { profile } = useContext(ProfileContext);
+  const isAdmin = profile.role === 'admin';
 
 
   const fetchAgents = async () => {
@@ -89,17 +92,45 @@ export default function AgentsPage() {
     }
   };
 
+  const fetchAgencies = useCallback(async () => {
+    if (!token || !isAdmin) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/agencies/active`, {
+         headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
+      });
+       if (!response.ok) {
+        handleApiError(response);
+        return;
+      }
+      const result = await response.json();
+      if (result.success) {
+        setAgencies(result.data.agencies);
+      }
+    } catch (error) {
+      console.error("Failed to fetch agencies:", error);
+    }
+  }, [token, isAdmin, handleApiError]);
+
+
   useEffect(() => {
     fetchAgents();
-  }, [token]);
+    fetchAgencies();
+  }, [token, fetchAgencies]);
+  
+  const filteredAgents = useMemo(() => {
+    if (selectedAgency === 'all') {
+      return agents;
+    }
+    return agents.filter(p => p.Agency?.id === selectedAgency);
+  }, [agents, selectedAgency]);
 
-  const totalPages = Math.ceil(agents.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredAgents.length / ITEMS_PER_PAGE);
 
   const paginatedAgents = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    return agents.slice(startIndex, endIndex);
-  }, [agents, currentPage]);
+    return filteredAgents.slice(startIndex, endIndex);
+  }, [filteredAgents, currentPage]);
 
   const handleEdit = (agent: Agent) => {
     setSelectedAgent(agent);
@@ -269,7 +300,6 @@ export default function AgentsPage() {
     window.open(`https://wa.me/${cleanPhone}`, '_blank');
   };
 
-  const isAdmin = profile.role === 'admin';
 
   const handleToggleAgencyStatus = async (agency: Agency, newStatus: 'active' | 'inactive') => {
     if (!token) return;
@@ -324,11 +354,32 @@ export default function AgentsPage() {
         )}
       </PageHeader>
       <Card>
-        <CardHeader>
-          <CardTitle>Delivery Agents</CardTitle>
-          <CardDescription>
-            Manage your delivery agents and view their status.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Delivery Agents</CardTitle>
+              <CardDescription>
+                Manage your delivery agents and view their status.
+              </CardDescription>
+            </div>
+             {isAdmin && agencies.length > 0 && (
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="flex items-center gap-2">
+                           <Filter className="h-4 w-4"/>
+                           <span>Filter by Agency</span>
+                           <ChevronDown className="h-4 w-4"/>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuRadioGroup value={selectedAgency} onValueChange={setSelectedAgency}>
+                            <DropdownMenuRadioItem value="all">All Agencies</DropdownMenuRadioItem>
+                            {agencies.map(agency => (
+                                <DropdownMenuRadioItem key={agency.id} value={agency.id}>{agency.name}</DropdownMenuRadioItem>
+                            ))}
+                        </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -459,7 +510,7 @@ export default function AgentsPage() {
         {totalPages > 1 && (
           <CardFooter className="flex justify-between">
             <div className="text-sm text-muted-foreground">
-              Showing {paginatedAgents.length} of {agents.length} agents.
+              Showing {paginatedAgents.length} of {filteredAgents.length} agents.
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -529,3 +580,4 @@ export default function AgentsPage() {
     
 
     
+
