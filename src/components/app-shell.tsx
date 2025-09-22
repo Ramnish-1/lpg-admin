@@ -225,6 +225,39 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1" />
+            {profile.role === 'agency_owner' && profile.agencyStatus && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <span className={cn("h-2 w-2 rounded-full", {
+                      'bg-green-500': profile.agencyStatus === 'active',
+                      'bg-red-500': profile.agencyStatus === 'inactive'
+                    })} />
+                    <span className="capitalize">{profile.agencyStatus}</span>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>Set Agency Status</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => handleToggleAgencyStatus('active')}
+                    disabled={profile.agencyStatus === 'active'}
+                  >
+                    <Power className="mr-2 h-4 w-4 text-green-500" />
+                    Active
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleToggleAgencyStatus('inactive')}
+                    disabled={profile.agencyStatus === 'inactive'}
+                    className="text-destructive"
+                  >
+                    <PowerOff className="mr-2 h-4 w-4" />
+                    Inactive
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
            <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative">
