@@ -127,7 +127,7 @@ export function EditAgentDialog({ agent, isOpen, onOpenChange, onAgentUpdate }: 
                   </div>
                   <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                      <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} maxLength={10} /></FormControl><FormMessage /></FormItem>)}/>
                       <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                       <FormField control={form.control} name="panCardNumber" render={({ field }) => (<FormItem><FormLabel>PAN Card</FormLabel><FormControl><Input {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} maxLength={10} /></FormControl><FormMessage /></FormItem>)}/>
                       <FormField control={form.control} name="aadharCardNumber" render={({ field }) => (<FormItem><FormLabel>Aadhar Card Number</FormLabel><FormControl><Input {...field} maxLength={12} /></FormControl><FormMessage /></FormItem>)}/>
