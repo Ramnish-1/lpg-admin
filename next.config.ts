@@ -57,11 +57,10 @@ const nextConfig: NextConfig = {
     ];
   },
   experimental: {
-    allowedDevOrigins: [
-        "https://*.cluster-xpmcxs2fjnhg6xvn446ubtgpio.cloudworkstations.dev"
-    ]
-  }
+  },
+  allowedDevOrigins: [
+      "https://*.cluster-xpmcxs2fjnhg6xvn446ubtgpio.cloudworkstations.dev"
+  ]
 };
 
 export default nextConfig;
-
