@@ -21,13 +21,15 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 type NewAgentPayload = Omit<Agent, 'id' | 'joinedAt' | 'createdAt' | 'status' | 'report' | 'currentLocation' | 'updatedAt' | 'vehicleDetails' | 'panCard' | 'aadharCard' | 'drivingLicense' | 'accountDetails' | 'profileImage'>;
 
 interface AddAgentDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onAgentAdd: (agent: NewAgentPayload, image?: File) => Promise<boolean>;
+  onAgentAdd: (agent: NewAgentPayload, image?: File) => Promise<{success: boolean, error?: string}>;
 }
 
 const agentSchema = z.object({
@@ -46,6 +48,7 @@ type AgentFormValues = z.infer<typeof agentSchema>;
 export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDialogProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<AgentFormValues>({
@@ -60,14 +63,18 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
     form.reset();
     setImagePreview(null);
     setImageFile(null);
+    setApiError(null);
     if(fileInputRef.current) fileInputRef.current.value = "";
   }
 
   const handleSubmit = async (values: AgentFormValues) => {
-    const success = await onAgentAdd(values, imageFile || undefined);
-    if (success) {
+    setApiError(null);
+    const result = await onAgentAdd(values, imageFile || undefined);
+    if (result.success) {
       resetForm();
       onOpenChange(false);
+    } else {
+      setApiError(result.error || "An unknown error occurred.");
     }
   };
 
@@ -96,20 +103,28 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} noValidate className="overflow-hidden flex flex-col h-full">
              <ScrollArea className="flex-1">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-6 py-4">
-                  <div className="md:col-span-1 space-y-4">
-                      <FormItem>
-                        <FormLabel>Profile Photo</FormLabel>
-                        <FormControl>
-                          <>
-                            <Avatar className="h-32 w-32 mx-auto cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                              <AvatarImage src={imagePreview || undefined} alt="Agent photo" />
-                              <AvatarFallback>{form.watch('name')?.charAt(0) || 'A'}</AvatarFallback>
-                            </Avatar>
-                            <input ref={fileInputRef} type="file" className="hidden" onChange={handleImageChange} accept="image/*" />
-                          </>
-                        </FormControl>
-                         <p className="text-xs text-muted-foreground text-center">Click avatar to upload image</p>
+                <div className="space-y-4 px-6">
+                    {apiError && (
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>{apiError}</AlertDescription>
+                        </Alert>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
+                      <div className="md:col-span-1 space-y-4">
+                          <FormItem>
+                            <FormLabel>Profile Photo</FormLabel>
+                            <FormControl>
+                              <>
+                                <Avatar className="h-32 w-32 mx-auto cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                                  <AvatarImage src={imagePreview || undefined} alt="Agent photo" />
+                                  <AvatarFallback>{form.watch('name')?.charAt(0) || 'A'}</AvatarFallback>
+                                </Avatar>
+                                <input ref={fileInputRef} type="file" className="hidden" onChange={handleImageChange} accept="image/*" />
+                              </>
+                            </FormControl>
+                            <p className="text-xs text-muted-foreground text-center">Click avatar to upload image</p>
                       </FormItem>
                       <FormField control={form.control} name="vehicleNumber" render={({ field }) => (<FormItem><FormLabel>Vehicle Number</FormLabel><FormControl><Input placeholder="e.g. KA-01-AB-1234" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   </div>
@@ -122,6 +137,7 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
                       <FormField control={form.control} name="drivingLicence" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Driving License</FormLabel><FormControl><Input placeholder="e.g. DL1420110012345" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                       <FormField control={form.control} name="bankDetails" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Bank Account Details</FormLabel><FormControl><Textarea placeholder="e.g. State Bank of India, Account: 1234567890, IFSC: SBIN0001234" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   </div>
+                </div>
                 </div>
             </ScrollArea>
             <DialogFooter className="p-6 pt-4 border-t bg-muted/40">

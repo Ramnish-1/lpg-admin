@@ -160,8 +160,8 @@ export default function AgentsPage() {
     }
   }
 
-  const handleAgentAdd = async (newAgent: Omit<Agent, 'id' | 'createdAt' | 'updatedAt' | 'joinedAt'>, image?: File): Promise<boolean> => {
-     if (!token) return false;
+  const handleAgentAdd = async (newAgent: Omit<Agent, 'id' | 'createdAt' | 'updatedAt' | 'joinedAt'>, image?: File): Promise<{success: boolean, error?: string}> => {
+     if (!token) return { success: false, error: "Authentication token not found."};
 
      const formData = new FormData();
      Object.entries(newAgent).forEach(([key, value]) => {
@@ -181,23 +181,23 @@ export default function AgentsPage() {
             headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' },
             body: formData,
         });
-        if (!response.ok) {
-            handleApiError(response);
-            return false;
-        }
+        
         const result = await response.json();
+
+        if (!response.ok) {
+           return { success: false, error: result.error || "An unknown error occurred." };
+        }
+
         if (result.success) {
             toast({ title: 'Agent Added', description: `${newAgent.name} has been successfully added.` });
             fetchAgents();
-            return true;
+            return { success: true };
         } else {
-            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to add agent.' });
-            return false;
+            return { success: false, error: result.error || 'Failed to add agent.' };
         }
      } catch (error) {
         console.error("Failed to add agent:", error);
-        toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred while adding agent.' });
-        return false;
+        return { success: false, error: 'An unexpected error occurred while adding agent.' };
      }
   }
 
