@@ -7,9 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Trash2, Loader2 } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, Loader2, ChevronDown } from 'lucide-react';
 import type { Agency } from '@/lib/types';
-import { useEffect, useState, useMemo, useContext } from 'react';
+import { useEffect, useState, useMemo, useContext, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { AuthContext, useAuth } from '@/context/auth-context';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -36,7 +36,7 @@ export default function AgenciesPage() {
   const { token, handleApiError } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchAgencies = async () => {
+  const fetchAgencies = useCallback(async () => {
     if (!token) return;
     setIsLoading(true);
     try {
@@ -59,11 +59,11 @@ export default function AgenciesPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token, toast, handleApiError]);
 
   useEffect(() => {
     fetchAgencies();
-  }, [token]);
+  }, [fetchAgencies]);
   
   const filteredAgencies = useMemo(() => {
     return agencies.filter(agency =>
@@ -93,11 +93,13 @@ export default function AgenciesPage() {
         },
         body: JSON.stringify(newAgency),
       });
-      if (!response.ok) {
-        handleApiError(response);
-        return false;
-      }
       const result = await response.json();
+
+       if (!response.ok) {
+          toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to add agency.' });
+          return false;
+        }
+
       if (result.success) {
         toast({ title: 'Agency Added', description: `${newAgency.name} has been successfully added.` });
         fetchAgencies();
@@ -126,11 +128,12 @@ export default function AgenciesPage() {
         },
         body: JSON.stringify(payload),
       });
+      const result = await response.json();
       if (!response.ok) {
-        handleApiError(response);
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update agency.' });
         return false;
       }
-      const result = await response.json();
+
       if (result.success) {
         toast({ title: 'Agency Updated', description: `${updatedAgency.name} has been successfully updated.` });
         fetchAgencies();
@@ -177,7 +180,8 @@ export default function AgenciesPage() {
         });
         fetchAgencies();
       } else {
-         handleApiError(response);
+         const result = await response.json();
+         toast({ variant: 'destructive', title: 'Error', description: result.error || "Could not delete agency." });
       }
 
     } catch (error) {
@@ -186,6 +190,39 @@ export default function AgenciesPage() {
     } finally {
       setIsDeleteDialogOpen(false);
       setSelectedAgency(null);
+    }
+  };
+
+  const handleToggleStatus = async (agency: Agency, newStatus: 'active' | 'inactive') => {
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/agencies/${agency.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
+        return;
+      }
+      
+      if (result.success) {
+        toast({
+            title: 'Status Updated',
+            description: `${agency.name}'s status is now ${newStatus}.`,
+        });
+        fetchAgencies();
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
+      }
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
     }
   };
 
@@ -243,13 +280,35 @@ export default function AgenciesPage() {
                       <div className="text-sm text-muted-foreground">{agency.email}</div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{`${agency.address}, ${agency.city}, ${agency.pincode}`}</TableCell>
-                    <TableCell>
-                        <Badge className={cn('capitalize', {
-                            'bg-green-100 text-green-800': agency.status === 'active',
-                            'bg-red-100 text-red-800': agency.status === 'inactive'
-                        })}>
-                            {agency.status}
-                        </Badge>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                       <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="w-28 justify-between capitalize">
+                                <span className={cn({
+                                    'text-green-600': agency.status === 'active',
+                                    'text-gray-500': agency.status === 'inactive'
+                                })}>
+                                    {agency.status}
+                                </span>
+                                <ChevronDown className="h-4 w-4 text-muted-foreground"/>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                            <DropdownMenuItem 
+                              onClick={() => handleToggleStatus(agency, 'active')}
+                              disabled={agency.status === 'active'}
+                            >
+                                Set as Active
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleToggleStatus(agency, 'inactive')}
+                              disabled={agency.status === 'inactive'}
+                              className="text-destructive"
+                            >
+                                Set as Inactive
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">{new Date(agency.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
