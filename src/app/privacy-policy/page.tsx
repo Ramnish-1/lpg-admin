@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, Trash2, Loader2, ChevronDown } from 'lucide-react';
-import type { PrivacyPolicy } from '@/lib/types';
+import type { PrivacyPolicy, ContentSection } from '@/lib/types';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -67,7 +67,7 @@ export default function PrivacyPolicyPage() {
     return policies.slice(startIndex, endIndex);
   }, [policies, currentPage]);
 
-  const handleAddPolicy = async (newPolicy: Omit<PrivacyPolicy, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'version'>) => {
+  const handleAddPolicy = async (content: ContentSection[]) => {
     if (!token) return false;
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/privacy-policies`, {
@@ -77,7 +77,7 @@ export default function PrivacyPolicyPage() {
           'Authorization': `Bearer ${token}`,
           'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify(newPolicy),
+        body: JSON.stringify(content),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -94,9 +94,8 @@ export default function PrivacyPolicyPage() {
     }
   };
   
-  const handleUpdatePolicy = async (updatedPolicy: Omit<PrivacyPolicy, 'createdAt' | 'updatedAt' | 'status' | 'version'>) => {
+  const handleUpdatePolicy = async (id: string, content: ContentSection[]) => {
     if (!token) return false;
-    const { id, ...payload } = updatedPolicy;
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/privacy-policies/${id}`, {
         method: 'PUT',
@@ -105,7 +104,7 @@ export default function PrivacyPolicyPage() {
           'Authorization': `Bearer ${token}`,
           'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(content),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -113,7 +112,7 @@ export default function PrivacyPolicyPage() {
         return false;
       }
       
-      toast({ title: 'Policy Updated', description: `Policy version "${updatedPolicy.version}" has been successfully updated.` });
+      toast({ title: 'Policy Updated', description: `Policy has been successfully updated.` });
       fetchPolicies();
       return true;
     } catch (error) {

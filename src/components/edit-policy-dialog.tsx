@@ -13,7 +13,7 @@ import {
   DialogClose
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { PrivacyPolicy } from '@/lib/types';
+import { PrivacyPolicy, ContentSection } from '@/lib/types';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,7 +26,7 @@ interface EditPolicyDialogProps {
   policy: PrivacyPolicy;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onPolicyUpdate: (policy: Omit<PrivacyPolicy, 'createdAt' | 'updatedAt' | 'status' | 'version'>) => Promise<boolean>;
+  onPolicyUpdate: (id: string, content: ContentSection[]) => Promise<boolean>;
 }
 
 const contentSchema = z.object({
@@ -57,7 +57,7 @@ export function EditPolicyDialog({ policy, isOpen, onOpenChange, onPolicyUpdate 
   }, [policy, isOpen, replace]);
 
   const handleSubmit = async (values: PolicyFormValues) => {
-    const success = await onPolicyUpdate({ id: policy.id, ...values });
+    const success = await onPolicyUpdate(policy.id, values.content);
     if (success) {
       onOpenChange(false);
     }

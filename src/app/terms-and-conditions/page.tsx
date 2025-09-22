@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, Trash2, Loader2, ChevronDown } from 'lucide-react';
-import type { TermsAndCondition } from '@/lib/types';
+import type { TermsAndCondition, ContentSection } from '@/lib/types';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -67,7 +67,7 @@ export default function TermsPage() {
     return terms.slice(startIndex, endIndex);
   }, [terms, currentPage]);
 
-  const handleAddTerm = async (newTerm: Omit<TermsAndCondition, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'version'>) => {
+  const handleAddTerm = async (content: ContentSection[]) => {
     if (!token) return false;
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/terms-and-conditions`, {
@@ -77,7 +77,7 @@ export default function TermsPage() {
           'Authorization': `Bearer ${token}`,
           'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify(newTerm),
+        body: JSON.stringify(content),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -94,9 +94,8 @@ export default function TermsPage() {
     }
   };
   
-  const handleUpdateTerm = async (updatedTerm: Omit<TermsAndCondition, 'createdAt' | 'updatedAt' | 'status' | 'version'>) => {
+  const handleUpdateTerm = async (id: string, content: ContentSection[]) => {
     if (!token) return false;
-    const { id, ...payload } = updatedTerm;
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/terms-and-conditions/${id}`, {
         method: 'PUT',
@@ -105,7 +104,7 @@ export default function TermsPage() {
           'Authorization': `Bearer ${token}`,
           'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(content),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -113,7 +112,7 @@ export default function TermsPage() {
         return false;
       }
       
-      toast({ title: 'Term Updated', description: `Term version "${updatedTerm.version}" has been successfully updated.` });
+      toast({ title: 'Term Updated', description: `Term has been successfully updated.` });
       fetchTerms();
       return true;
     } catch (error) {

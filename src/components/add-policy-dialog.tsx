@@ -12,7 +12,7 @@ import {
   DialogClose
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { PrivacyPolicy } from '@/lib/types';
+import { ContentSection } from '@/lib/types';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,12 +21,10 @@ import { Textarea } from './ui/textarea';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 
-type NewPolicyPayload = Omit<PrivacyPolicy, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'version'>;
-
 interface AddPolicyDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onPolicyAdd: (policy: NewPolicyPayload) => Promise<boolean>;
+  onPolicyAdd: (content: ContentSection[]) => Promise<boolean>;
 }
 
 const contentSchema = z.object({
@@ -54,7 +52,7 @@ export function AddPolicyDialog({ isOpen, onOpenChange, onPolicyAdd }: AddPolicy
   });
 
   const handleSubmit = async (values: PolicyFormValues) => {
-    const success = await onPolicyAdd(values);
+    const success = await onPolicyAdd(values.content);
     if (success) {
       form.reset();
       onOpenChange(false);

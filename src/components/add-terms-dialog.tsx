@@ -12,7 +12,7 @@ import {
   DialogClose
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { TermsAndCondition } from '@/lib/types';
+import { ContentSection } from '@/lib/types';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,12 +21,10 @@ import { Textarea } from './ui/textarea';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 
-type NewTermPayload = Omit<TermsAndCondition, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'version'>;
-
 interface AddTermsDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onTermAdd: (term: NewTermPayload) => Promise<boolean>;
+  onTermAdd: (content: ContentSection[]) => Promise<boolean>;
 }
 
 const contentSchema = z.object({
@@ -54,7 +52,7 @@ export function AddTermsDialog({ isOpen, onOpenChange, onTermAdd }: AddTermsDial
   });
 
   const handleSubmit = async (values: TermFormValues) => {
-    const success = await onTermAdd(values);
+    const success = await onTermAdd(values.content);
     if (success) {
       form.reset();
       onOpenChange(false);

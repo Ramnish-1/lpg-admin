@@ -13,7 +13,7 @@ import {
   DialogClose
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { TermsAndCondition } from '@/lib/types';
+import { TermsAndCondition, ContentSection } from '@/lib/types';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -37,7 +37,7 @@ interface EditTermsDialogProps {
   term: TermsAndCondition;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onTermUpdate: (term: Omit<TermsAndCondition, 'createdAt' | 'updatedAt' | 'status' | 'version'>) => Promise<boolean>;
+  onTermUpdate: (id: string, content: ContentSection[]) => Promise<boolean>;
 }
 
 export function EditTermsDialog({ term, isOpen, onOpenChange, onTermUpdate }: EditTermsDialogProps) {
@@ -57,7 +57,7 @@ export function EditTermsDialog({ term, isOpen, onOpenChange, onTermUpdate }: Ed
   }, [term, isOpen, replace]);
 
   const handleSubmit = async (values: TermFormValues) => {
-    const success = await onTermUpdate({ id: term.id, ...values });
+    const success = await onTermUpdate(term.id, values.content);
     if (success) {
       onOpenChange(false);
     }
