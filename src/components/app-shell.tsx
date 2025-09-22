@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import * as React from 'react';
@@ -139,7 +138,16 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
       setConfirmingOrderId(null);
   }
 
-  const appNameToDisplay = profile.role === 'agency_owner' ? 'GasTrack Agency' : settings.appName;
+  const appNameToDisplay = () => {
+    switch (profile.role) {
+      case 'super_admin':
+        return 'GasTrack Super Admin';
+      case 'agency_owner':
+        return 'GasTrack Agency';
+      default:
+        return settings.appName;
+    }
+  };
 
   const sidebarNav = (
     <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
@@ -174,7 +182,7 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold">
               <GasPump className="h-6 w-6 text-primary" />
-              <span className="">{appNameToDisplay}</span>
+              <span className="">{appNameToDisplay()}</span>
             </Link>
           </div>
           <div className="flex-1">
@@ -195,7 +203,7 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
               <div className="flex h-14 items-center border-b mb-4">
                   <Link href="/" className="flex items-center gap-2 font-semibold">
                     <GasPump className="h-6 w-6 text-primary" />
-                    <span className="">{appNameToDisplay}</span>
+                    <span className="">{appNameToDisplay()}</span>
                   </Link>
               </div>
               {sidebarNav}
