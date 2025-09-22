@@ -86,7 +86,7 @@ export default function SignupPage() {
           <div className="grid gap-2 text-center">
             <Link href="/" className="flex items-center justify-center gap-2 font-semibold mb-4 text-primary">
               <GasPump className="h-8 w-8" />
-              <span className="text-3xl font-bold">GasTrack Super Admin</span>
+              <span className="text-3xl font-bold">lpg GasTrack</span>
             </Link>
             <h1 className="text-3xl font-bold">Sign Up</h1>
             <p className="text-balance text-muted-foreground">

@@ -22,7 +22,7 @@ interface SettingsContextType {
 }
 
 const defaultSettings: Settings = {
-  appName: 'GasTrack Super Admin',
+  appName: 'lpg GasTrack',
   timezone: 'Asia/Kolkata',
   emailNotifications: true,
   pushNotifications: false,

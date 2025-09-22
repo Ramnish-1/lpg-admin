@@ -8,7 +8,7 @@ import { AuthProvider } from '@/context/auth-context';
 import { NotificationProvider } from '@/context/notification-context';
 
 export const metadata: Metadata = {
-  title: 'GasTrack Admin',
+  title: 'lpg GasTrack',
   description: 'Admin panel for managing gas booking and delivery.',
 };
 
