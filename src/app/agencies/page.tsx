@@ -6,8 +6,8 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Trash2, Loader2, ChevronDown } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, PlusCircle, Trash2, Loader2, ChevronDown, Filter } from 'lucide-react';
 import type { Agency } from '@/lib/types';
 import { useEffect, useState, useMemo, useContext, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -19,12 +19,14 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { AgencyDetailsDialog } from '@/components/agency-details-dialog';
+import { ProfileContext } from '@/context/profile-context';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function AgenciesPage() {
   const [agencies, setAgencies] = useState<Agency[]>([]);
+  const [activeAgencies, setActiveAgencies] = useState<Agency[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAgency, setSelectedAgency] = useState<Agency | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -35,6 +37,9 @@ export default function AgenciesPage() {
   const { toast } = useToast();
   const { token, handleApiError } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedAgencyFilter, setSelectedAgencyFilter] = useState('all');
+  const { profile } = useContext(ProfileContext);
+  const isAdmin = profile.role === 'admin';
 
   const fetchAgencies = useCallback(async () => {
     if (!token) return;
@@ -61,17 +66,44 @@ export default function AgenciesPage() {
     }
   }, [token, toast, handleApiError]);
 
+  const fetchActiveAgencies = useCallback(async () => {
+    if (!token || !isAdmin) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/agencies/active`, {
+         headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
+      });
+       if (!response.ok) {
+        handleApiError(response);
+        return;
+      }
+      const result = await response.json();
+      if (result.success) {
+        setActiveAgencies(result.data.agencies);
+      }
+    } catch (error) {
+      console.error("Failed to fetch active agencies:", error);
+    }
+  }, [token, isAdmin, handleApiError]);
+
+
   useEffect(() => {
     fetchAgencies();
-  }, [fetchAgencies]);
+    fetchActiveAgencies();
+  }, [fetchAgencies, fetchActiveAgencies]);
   
   const filteredAgencies = useMemo(() => {
-    return agencies.filter(agency =>
+    let agenciesToFilter = agencies;
+
+    if (selectedAgencyFilter !== 'all') {
+      agenciesToFilter = agenciesToFilter.filter(agency => agency.id === selectedAgencyFilter);
+    }
+
+    return agenciesToFilter.filter(agency =>
       agency.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       agency.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       agency.phone.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [agencies, searchTerm]);
+  }, [agencies, searchTerm, selectedAgencyFilter]);
 
   const totalPages = Math.ceil(filteredAgencies.length / ITEMS_PER_PAGE);
 
@@ -103,6 +135,7 @@ export default function AgenciesPage() {
       if (result.success) {
         toast({ title: 'Agency Added', description: `${newAgency.name} has been successfully added.` });
         fetchAgencies();
+        fetchActiveAgencies();
         return true;
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to add agency.' });
@@ -137,6 +170,7 @@ export default function AgenciesPage() {
       if (result.success) {
         toast({ title: 'Agency Updated', description: `${updatedAgency.name} has been successfully updated.` });
         fetchAgencies();
+        fetchActiveAgencies();
         return true;
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update agency.' });
@@ -179,6 +213,7 @@ export default function AgenciesPage() {
           variant: 'destructive'
         });
         fetchAgencies();
+        fetchActiveAgencies();
       } else {
          const result = await response.json();
          toast({ variant: 'destructive', title: 'Error', description: result.error || "Could not delete agency." });
@@ -218,6 +253,7 @@ export default function AgenciesPage() {
             description: `${agency.name}'s status is now ${newStatus}.`,
         });
         fetchAgencies();
+        fetchActiveAgencies();
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
       }
@@ -246,11 +282,32 @@ export default function AgenciesPage() {
         </div>
       </PageHeader>
       <Card>
-        <CardHeader>
-          <CardTitle>Agencies</CardTitle>
-          <CardDescription>
-            Manage your gas distribution agencies.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Agencies</CardTitle>
+            <CardDescription>
+              Manage your gas distribution agencies.
+            </CardDescription>
+          </div>
+          {isAdmin && activeAgencies.length > 0 && (
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="flex items-center gap-2">
+                           <Filter className="h-4 w-4"/>
+                           <span>Filter by Agency</span>
+                           <ChevronDown className="h-4 w-4"/>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuRadioGroup value={selectedAgencyFilter} onValueChange={setSelectedAgencyFilter}>
+                            <DropdownMenuRadioItem value="all">All Agencies</DropdownMenuRadioItem>
+                            {activeAgencies.map(agency => (
+                                <DropdownMenuRadioItem key={agency.id} value={agency.id}>{agency.name}</DropdownMenuRadioItem>
+                            ))}
+                        </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
         </CardHeader>
         <CardContent>
           {isLoading ? (
