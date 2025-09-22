@@ -13,25 +13,20 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Product, Agency } from '@/lib/types';
+import { Product } from '@/lib/types';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
-import { PlusCircle, Trash2, X, ImagePlus, ChevronDown } from 'lucide-react';
+import { PlusCircle, Trash2, X, ImagePlus } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
 import { ImageViewerDialog } from './image-viewer-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
-import { Checkbox } from './ui/checkbox';
-import { Badge } from './ui/badge';
-import { useAuth } from '@/context/auth-context';
 
-type AddProductPayload = Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images'>;
+type AddProductPayload = Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images' | 'agencies'>;
 
 interface AddProductDialogProps {
   isOpen: boolean;
@@ -46,7 +41,6 @@ const variantSchema = z.object({
 });
 
 const productSchema = z.object({
-  agencyIds: z.array(z.string()).optional(),
   productName: z.string().min(1, "Product name is required."),
   description: z.string().min(1, "Description is required."),
   category: z.enum(['lpg', 'accessories']),
@@ -55,43 +49,17 @@ const productSchema = z.object({
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProductDialogProps) {
-  const [allAgencies, setAllAgencies] = useState<Agency[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
-  const { token, handleApiError } = useAuth();
-
-
-  useEffect(() => {
-    const fetchAgencies = async () => {
-      if (!token) return;
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/agencies`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
-        });
-        if (!response.ok) handleApiError(response);
-        const result = await response.json();
-        if (result.success) {
-          setAllAgencies(result.data.agencies);
-        }
-      } catch (e) {
-        console.error("Failed to fetch agencies");
-      }
-    }
-    if (isOpen) {
-      fetchAgencies();
-    }
-  }, [isOpen, token, handleApiError]);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      agencyIds: [],
       productName: '',
       description: '',
       category: 'lpg',
@@ -118,18 +86,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
       return;
     }
 
-    const selectedAgencies = allAgencies
-        .filter(agency => values.agencyIds?.includes(agency.id))
-        .map(({ id, ...rest }) => rest);
-
-    const payload: AddProductPayload = {
-        ...values,
-        agencies: selectedAgencies,
-    };
-    
-    // @ts-ignore
-    delete payload.agencyIds;
-
+    const payload: AddProductPayload = values;
     const success = await onProductAdd(payload, imageFiles);
     
     if (success) {
@@ -185,68 +142,6 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
             <form onSubmit={form.handleSubmit(handleSubmit)} noValidate className="flex flex-col overflow-hidden">
               <ScrollArea className="flex-1 px-6">
                   <div className="space-y-6 py-2">
-                     <FormField
-                        control={form.control}
-                        name="agencyIds"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Agencies</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant="outline"
-                                    role="combobox"
-                                    className="w-full justify-between font-normal"
-                                  >
-                                    <span className="truncate">
-                                      {field.value && field.value.length > 0
-                                        ? `${field.value.length} selected`
-                                        : "Select agencies"}
-                                    </span>
-                                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                <Command>
-                                  <CommandInput placeholder="Search agencies..." />
-                                  <CommandEmpty>No agencies found.</CommandEmpty>
-                                  <CommandGroup>
-                                    <CommandList>
-                                      {allAgencies.map((agency) => (
-                                        <CommandItem
-                                          key={agency.id}
-                                          onSelect={() => {
-                                            const selected = field.value || [];
-                                            const isSelected = selected.includes(agency.id!);
-                                            const newSelection = isSelected
-                                              ? selected.filter((id) => id !== agency.id)
-                                              : [...selected, agency.id!];
-                                            field.onChange(newSelection);
-                                          }}
-                                          className="flex items-center gap-2"
-                                        >
-                                          <Checkbox checked={field.value?.includes(agency.id!)} />
-                                          <span>{agency.name}</span>
-                                        </CommandItem>
-                                      ))}
-                                    </CommandList>
-                                  </CommandGroup>
-                                </Command>
-                              </PopoverContent>
-                            </Popover>
-                             {field.value && field.value.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mt-2">
-                                {allAgencies.filter(a => field.value?.includes(a.id!)).map(agency => (
-                                    <Badge key={agency.id} variant="secondary">{agency.name}</Badge>
-                                ))}
-                                </div>
-                            )}
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
                      <FormField
                         control={form.control}
                         name="productName"
@@ -345,3 +240,5 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     </>
   );
 }
+
+    

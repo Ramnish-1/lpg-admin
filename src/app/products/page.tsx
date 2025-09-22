@@ -18,7 +18,6 @@ import { AddProductDialog } from '@/components/add-product-dialog';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/context/auth-context';
-import { AgencyListDialog } from '@/components/agency-list-dialog';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -31,8 +30,6 @@ export default function ProductsPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [isAgencyListOpen, setIsAgencyListOpen] = useState(false);
-  const [agenciesToShow, setAgenciesToShow] = useState<Agency[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const { token, handleApiError } = useAuth();
@@ -88,11 +85,6 @@ export default function ProductsPage() {
     setIsDeleteOpen(true);
   };
   
-  const handleShowAgencies = (product: Product) => {
-    setSelectedProduct(product);
-    setAgenciesToShow(product.agencies || []);
-    setIsAgencyListOpen(true);
-  }
 
   const confirmDeleteProduct = async () => {
     if (!selectedProduct || !token) return;
@@ -152,9 +144,6 @@ export default function ProductsPage() {
     formData.append('lowStockThreshold', String(updatedProduct.lowStockThreshold));
     formData.append('variants', JSON.stringify(updatedProduct.variants));
     
-    if (updatedProduct.agencies) {
-        formData.append('agencies', JSON.stringify(updatedProduct.agencies));
-    }
     if (imagesToDelete && imagesToDelete.length > 0) {
       formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
     }
@@ -194,9 +183,6 @@ export default function ProductsPage() {
     formData.append('category', newProduct.category);
     formData.append('lowStockThreshold', String(newProduct.lowStockThreshold));
     formData.append('variants', JSON.stringify(newProduct.variants));
-    if (newProduct.agencies) {
-        formData.append('agencies', JSON.stringify(newProduct.agencies));
-    }
     images.forEach(file => formData.append('images', file));
 
     try {
@@ -249,7 +235,6 @@ export default function ProductsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Product Name</TableHead>
-                  <TableHead>Agency</TableHead>
                   <TableHead>Variants</TableHead>
                   <TableHead>Total Stock</TableHead>
                   <TableHead>Status</TableHead>
@@ -269,21 +254,6 @@ export default function ProductsPage() {
                       onClick={() => handleShowDetails(product)}
                     >
                       <TableCell className="font-medium">{product.productName}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="link"
-                          className="p-0 h-auto text-muted-foreground hover:text-primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleShowAgencies(product);
-                          }}
-                        >
-                          {product.agencies && product.agencies.length > 0
-                            ? `${product.agencies.length} ${product.agencies.length === 1 ? 'Agency' : 'Agencies'}`
-                            : <span className="text-muted-foreground">N/A</span>
-                          }
-                        </Button>
-                      </TableCell>
                       <TableCell>
                         {product.variants && product.variants.length > 0 ? `${product.variants.length} variant(s)` : 'No variants'}
                       </TableCell>
@@ -406,12 +376,8 @@ export default function ProductsPage() {
         onOpenChange={setIsAddOpen}
         onProductAdd={handleProductAdd}
       />
-       <AgencyListDialog 
-        agencies={agenciesToShow}
-        isOpen={isAgencyListOpen}
-        onOpenChange={setIsAgencyListOpen}
-        productName={selectedProduct?.productName}
-      />
     </AppShell>
   );
 }
+
+    

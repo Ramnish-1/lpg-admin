@@ -41,7 +41,6 @@ export interface Product {
   lowStockThreshold: number;
   variants: ProductVariant[];
   images: string[]; // URLs to images
-  agencies: Omit<Agency, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'confirmationToken' | 'confirmationExpiresAt'>[];
   createdAt: string;
   updatedAt: string;
 }
@@ -192,4 +191,5 @@ export interface PrivacyPolicy {
     createdAt: string;
     updatedAt: string;
 }
+
     
