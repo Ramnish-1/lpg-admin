@@ -14,7 +14,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent
@@ -283,31 +282,6 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-                {profile.role === 'agency_owner' && (
-                  <>
-                     <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
-                        <div className="flex items-center gap-2">
-                           <span className="mr-2">Agency Status:</span>
-                            <Badge variant={profile.agencyStatus === 'active' ? 'default' : 'destructive'} className="capitalize">
-                              {profile.agencyStatus}
-                            </Badge>
-                        </div>
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent>
-                         <DropdownMenuItem onClick={() => handleToggleAgencyStatus('active')} disabled={profile.agencyStatus === 'active'}>
-                            <Power className="mr-2 h-4 w-4 text-green-500"/>
-                            <span>Set to Active</span>
-                        </DropdownMenuItem>
-                         <DropdownMenuItem onClick={() => handleToggleAgencyStatus('inactive')} disabled={profile.agencyStatus === 'inactive'}>
-                            <PowerOff className="mr-2 h-4 w-4 text-red-500"/>
-                            <span>Set to Inactive</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
                 <DropdownMenuItem asChild>
                   <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
                     <UserIcon className="h-4 w-4" />
