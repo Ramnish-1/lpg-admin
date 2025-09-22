@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, AlertCircle, ChevronDown, Loader2, Trash2 } from 'lucide-react';
-import type { Product, Agency } from '@/lib/types';
+import type { Product } from '@/lib/types';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { ProductDetailsDialog } from '@/components/product-details-dialog';
 import { EditProductDialog } from '@/components/edit-product-dialog';
@@ -379,5 +379,7 @@ export default function ProductsPage() {
     </AppShell>
   );
 }
+
+    
 
     

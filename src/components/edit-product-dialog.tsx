@@ -26,7 +26,7 @@ import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
 import { ImageViewerDialog } from './image-viewer-dialog';
 
-type EditProductPayload = Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images' | 'agencies'> & { id: string };
+type EditProductPayload = Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images'> & { id: string };
 
 interface EditProductDialogProps {
   product: Product;
@@ -244,5 +244,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     </>
   );
 }
+
+    
 
     
