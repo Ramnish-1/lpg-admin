@@ -197,7 +197,7 @@ export default function AgenciesPage() {
     if (!token) return;
     try {
       const response = await fetch(`${API_BASE_URL}/api/agencies/${agency.id}/status`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
