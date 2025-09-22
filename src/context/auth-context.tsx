@@ -140,6 +140,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             description: 'Your session has expired. Please log in again.',
         });
         logout();
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'API Error',
+            description: `An error occurred: ${response.statusText} (${response.status})`,
+        });
     }
   }, [toast]);
   
