@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, AlertCircle, ChevronDown, Loader2, Trash2 } from 'lucide-react';
-import type { Product } from '@/lib/types';
+import type { Product, Agency } from '@/lib/types';
 import { useEffect, useState, useMemo, useCallback, useContext } from 'react';
 import { ProductDetailsDialog } from '@/components/product-details-dialog';
 import { EditProductDialog } from '@/components/edit-product-dialog';
@@ -115,7 +115,7 @@ export default function ProductsPage() {
     }
   }
 
-  const handleToggleStatus = async (productToToggle: Product) => {
+  const handleToggleProductStatus = async (productToToggle: Product) => {
     if (!token) return;
     const newStatus = productToToggle.status.toLowerCase() === 'active' ? 'inactive' : 'active';
     try {
@@ -228,6 +228,39 @@ export default function ProductsPage() {
         return false;
     }
   }
+
+  const handleToggleAgencyStatus = async (agency: Agency, newStatus: 'active' | 'inactive') => {
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/agencies/${agency.id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
+        return;
+      }
+      
+      if (result.success) {
+        toast({
+            title: 'Agency Status Updated',
+            description: `${agency.name}'s status is now ${newStatus}.`,
+        });
+        fetchProducts();
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
+      }
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
+    }
+  };
   
   const isAdmin = profile.role === 'admin';
 
@@ -288,7 +321,34 @@ export default function ProductsPage() {
                                 <div className="text-muted-foreground">{product.Agency.city}</div>
                                 <div className="text-muted-foreground">{product.Agency.email}</div>
                                 <div className="text-muted-foreground">{product.Agency.phone}</div>
-                                <Badge variant={product.Agency.status === 'active' ? 'secondary' : 'destructive'} className="mt-1 capitalize">{product.Agency.status}</Badge>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm" className="w-24 justify-between capitalize mt-2 h-7 rounded-full px-3" onClick={(e) => e.stopPropagation()}>
+                                        <span className={cn({
+                                            'text-green-600': product.Agency.status === 'active',
+                                            'text-gray-500': product.Agency.status === 'inactive'
+                                        })}>
+                                            {product.Agency.status}
+                                        </span>
+                                        <ChevronDown className="h-4 w-4 text-muted-foreground"/>
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+                                    <DropdownMenuItem 
+                                      onClick={() => handleToggleAgencyStatus(product.Agency!, 'active')}
+                                      disabled={product.Agency.status === 'active'}
+                                    >
+                                        Set as Active
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      onClick={() => handleToggleAgencyStatus(product.Agency!, 'inactive')}
+                                      disabled={product.Agency.status === 'inactive'}
+                                      className="text-destructive"
+                                    >
+                                        Set as Inactive
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                           ) : (
                             <span className="text-xs text-muted-foreground">N/A</span>
@@ -322,7 +382,7 @@ export default function ProductsPage() {
                                   </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
-                                  <DropdownMenuItem onClick={() => handleToggleStatus(product)}>
+                                  <DropdownMenuItem onClick={() => handleToggleProductStatus(product)}>
                                       Set as {product.status === 'Active' ? 'Inactive' : 'Active'}
                                   </DropdownMenuItem>
                               </DropdownMenuContent>
