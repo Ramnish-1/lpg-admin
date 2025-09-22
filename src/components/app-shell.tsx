@@ -141,6 +141,7 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
   const appNameToDisplay = () => {
     switch (profile.role) {
       case 'super_admin':
+      case 'admin':
         return 'GasTrack Super Admin';
       case 'agency_owner':
         return 'GasTrack Agency';
