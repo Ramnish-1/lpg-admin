@@ -227,8 +227,8 @@ export default function PrivacyPolicyPage() {
                 {paginatedPolicies.map((policy: PrivacyPolicy) => (
                   <TableRow key={policy.id}>
                     <TableCell className="font-medium max-w-sm truncate">
-                        {policy.content[0]?.title || 'No Title'}
-                        {policy.content.length > 1 && ` (+${policy.content.length - 1} more sections)`}
+                        {policy.content && policy.content.length > 0 ? policy.content[0].title : 'No Title'}
+                        {policy.content && policy.content.length > 1 && ` (+${policy.content.length - 1} more sections)`}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{policy.version}</TableCell>
                     <TableCell>

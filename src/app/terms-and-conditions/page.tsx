@@ -227,8 +227,8 @@ export default function TermsPage() {
                 {paginatedTerms.map((term: TermsAndCondition) => (
                   <TableRow key={term.id}>
                     <TableCell className="font-medium max-w-sm truncate">
-                        {term.content[0]?.title || 'No Title'}
-                        {term.content.length > 1 && ` (+${term.content.length - 1} more sections)`}
+                        {term.content && term.content.length > 0 ? term.content[0].title : 'No Title'}
+                        {term.content && term.content.length > 1 && ` (+${term.content.length - 1} more sections)`}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{term.version}</TableCell>
                     <TableCell>
