@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, AlertCircle, ChevronDown, Loader2, Trash2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, PlusCircle, AlertCircle, ChevronDown, Loader2, Trash2, Filter } from 'lucide-react';
 import type { Product, Agency } from '@/lib/types';
 import { useEffect, useState, useMemo, useCallback, useContext } from 'react';
 import { ProductDetailsDialog } from '@/components/product-details-dialog';
@@ -25,6 +25,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [agencies, setAgencies] = useState<Agency[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -32,9 +33,11 @@ export default function ProductsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedAgency, setSelectedAgency] = useState('all');
   const { toast } = useToast();
   const { token, handleApiError } = useAuth();
   const { profile } = useContext(ProfileContext);
+  const isAdmin = profile.role === 'admin';
 
   const fetchProducts = useCallback(async () => {
     if (!token) return;
@@ -64,17 +67,44 @@ export default function ProductsPage() {
     }
   }, [token, toast, handleApiError]);
 
+  const fetchAgencies = useCallback(async () => {
+    if (!token || !isAdmin) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/agencies/active`, {
+         headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
+      });
+       if (!response.ok) {
+        handleApiError(response);
+        return;
+      }
+      const result = await response.json();
+      if (result.success) {
+        setAgencies(result.data.agencies);
+      }
+    } catch (error) {
+      console.error("Failed to fetch agencies:", error);
+    }
+  }, [token, isAdmin, handleApiError]);
+
   useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
+    fetchAgencies();
+  }, [fetchProducts, fetchAgencies]);
+  
+  const filteredProducts = useMemo(() => {
+    if (selectedAgency === 'all') {
+      return products;
+    }
+    return products.filter(p => p.Agency?.id === selectedAgency);
+  }, [products, selectedAgency]);
 
-  const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
 
   const paginatedProducts = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    return products.slice(startIndex, endIndex);
-  }, [products, currentPage]);
+    return filteredProducts.slice(startIndex, endIndex);
+  }, [filteredProducts, currentPage]);
   
   const handleShowDetails = (product: Product) => {
     setSelectedProduct(product);
@@ -261,8 +291,6 @@ export default function ProductsPage() {
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
     }
   };
-  
-  const isAdmin = profile.role === 'admin';
 
 
   return (
@@ -276,11 +304,32 @@ export default function ProductsPage() {
         </Button>
       </PageHeader>
       <Card>
-        <CardHeader>
-          <CardTitle>Products</CardTitle>
-          <CardDescription>
-            Manage products, stock levels, and pricing.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+                <CardTitle>Products</CardTitle>
+                <CardDescription>
+                    Manage products, stock levels, and pricing.
+                </CardDescription>
+            </div>
+            {isAdmin && agencies.length > 0 && (
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="flex items-center gap-2">
+                           <Filter className="h-4 w-4"/>
+                           <span>Filter by Agency</span>
+                           <ChevronDown className="h-4 w-4"/>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuRadioGroup value={selectedAgency} onValueChange={setSelectedAgency}>
+                            <DropdownMenuRadioItem value="all">All Agencies</DropdownMenuRadioItem>
+                            {agencies.map(agency => (
+                                <DropdownMenuRadioItem key={agency.id} value={agency.id}>{agency.name}</DropdownMenuRadioItem>
+                            ))}
+                        </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -416,7 +465,7 @@ export default function ProductsPage() {
         {totalPages > 1 && (
             <CardFooter className="flex justify-between">
                 <div className="text-sm text-muted-foreground">
-                Showing {paginatedProducts.length} of {products.length} products.
+                Showing {paginatedProducts.length} of {filteredProducts.length} products.
                 </div>
                 <div className="flex items-center gap-2">
                 <Button
