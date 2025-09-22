@@ -326,7 +326,7 @@ export default function ProductsPage() {
                                     <Button variant="outline" size="sm" className="w-24 justify-between capitalize mt-2 h-7 rounded-full px-3" onClick={(e) => e.stopPropagation()}>
                                         <span className={cn({
                                             'text-green-600': product.Agency.status === 'active',
-                                            'text-gray-500': product.Agency.status === 'inactive'
+                                            'text-destructive': product.Agency.status === 'inactive'
                                         })}>
                                             {product.Agency.status}
                                         </span>

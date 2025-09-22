@@ -398,7 +398,7 @@ export default function AgentsPage() {
                                 <Button variant="outline" size="sm" className="w-24 justify-between capitalize mt-2 h-7 rounded-full px-3" onClick={(e) => e.stopPropagation()}>
                                     <span className={cn({
                                         'text-green-600': agent.Agency.status === 'active',
-                                        'text-gray-500': agent.Agency.status === 'inactive'
+                                        'text-destructive': agent.Agency.status === 'inactive'
                                     })}>
                                         {agent.Agency.status}
                                     </span>
