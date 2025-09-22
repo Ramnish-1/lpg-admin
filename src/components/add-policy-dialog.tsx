@@ -52,6 +52,7 @@ export function AddPolicyDialog({ isOpen, onOpenChange, onPolicyAdd }: AddPolicy
   });
 
   const handleSubmit = async (values: PolicyFormValues) => {
+    // The API expects the array of content sections directly
     const success = await onPolicyAdd(values.content);
     if (success) {
       form.reset();
@@ -114,3 +115,5 @@ export function AddPolicyDialog({ isOpen, onOpenChange, onPolicyAdd }: AddPolicy
     </Dialog>
   );
 }
+
+    

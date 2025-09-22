@@ -52,11 +52,14 @@ export function EditTermsDialog({ term, isOpen, onOpenChange, onTermUpdate }: Ed
 
   useEffect(() => {
     if (isOpen) {
-      replace(term.content);
+      // Since the API now returns a single object, we wrap it in an array for the form
+      const contentArray = [{ title: term.title, description: term.description }];
+      replace(contentArray);
     }
   }, [term, isOpen, replace]);
 
   const handleSubmit = async (values: TermFormValues) => {
+    // The API expects the array directly
     const success = await onTermUpdate(term.id, values.content);
     if (success) {
       onOpenChange(false);
@@ -111,3 +114,5 @@ export function EditTermsDialog({ term, isOpen, onOpenChange, onTermUpdate }: Ed
     </Dialog>
   );
 }
+
+    

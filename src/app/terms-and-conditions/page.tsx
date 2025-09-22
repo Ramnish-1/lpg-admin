@@ -214,7 +214,7 @@ export default function TermsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Content</TableHead>
+                  <TableHead>Title</TableHead>
                   <TableHead className="hidden md:table-cell">Version</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Last Updated</TableHead>
@@ -227,8 +227,7 @@ export default function TermsPage() {
                 {paginatedTerms.map((term: TermsAndCondition) => (
                   <TableRow key={term.id}>
                     <TableCell className="font-medium max-w-sm truncate">
-                        {term.content && term.content.length > 0 ? term.content[0].title : 'No Title'}
-                        {term.content && term.content.length > 1 && ` (+${term.content.length - 1} more sections)`}
+                        {term.title || 'No Title'}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{term.version}</TableCell>
                     <TableCell>
@@ -335,3 +334,5 @@ export default function TermsPage() {
     </AppShell>
   );
 }
+
+    

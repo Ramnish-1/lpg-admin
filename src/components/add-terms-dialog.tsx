@@ -52,6 +52,7 @@ export function AddTermsDialog({ isOpen, onOpenChange, onTermAdd }: AddTermsDial
   });
 
   const handleSubmit = async (values: TermFormValues) => {
+    // The API expects the array of content sections directly
     const success = await onTermAdd(values.content);
     if (success) {
       form.reset();
@@ -114,3 +115,5 @@ export function AddTermsDialog({ isOpen, onOpenChange, onTermAdd }: AddTermsDial
     </Dialog>
   );
 }
+
+    

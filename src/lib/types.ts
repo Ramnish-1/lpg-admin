@@ -196,7 +196,8 @@ export interface ContentSection {
 
 export interface TermsAndCondition {
     id: string;
-    content: ContentSection[];
+    title: string;
+    description: string;
     status: 'active' | 'inactive';
     version: string;
     createdAt: string;
@@ -205,9 +206,12 @@ export interface TermsAndCondition {
 
 export interface PrivacyPolicy {
     id: string;
-    content: ContentSection[];
+    title: string;
+    description: string;
     status: 'active' | 'inactive';
     version: string;
     createdAt: string;
     updatedAt: string;
 }
+
+    

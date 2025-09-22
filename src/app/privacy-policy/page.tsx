@@ -214,7 +214,7 @@ export default function PrivacyPolicyPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Content</TableHead>
+                  <TableHead>Title</TableHead>
                   <TableHead className="hidden md:table-cell">Version</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Last Updated</TableHead>
@@ -227,8 +227,7 @@ export default function PrivacyPolicyPage() {
                 {paginatedPolicies.map((policy: PrivacyPolicy) => (
                   <TableRow key={policy.id}>
                     <TableCell className="font-medium max-w-sm truncate">
-                        {policy.content && policy.content.length > 0 ? policy.content[0].title : 'No Title'}
-                        {policy.content && policy.content.length > 1 && ` (+${policy.content.length - 1} more sections)`}
+                        {policy.title || 'No Title'}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{policy.version}</TableCell>
                     <TableCell>
@@ -335,3 +334,5 @@ export default function PrivacyPolicyPage() {
     </AppShell>
   );
 }
+
+    

@@ -52,11 +52,14 @@ export function EditPolicyDialog({ policy, isOpen, onOpenChange, onPolicyUpdate 
 
   useEffect(() => {
     if (isOpen) {
-      replace(policy.content);
+      // Since the API now returns a single object, we wrap it in an array for the form
+      const contentArray = [{ title: policy.title, description: policy.description }];
+      replace(contentArray);
     }
   }, [policy, isOpen, replace]);
 
   const handleSubmit = async (values: PolicyFormValues) => {
+    // The API expects the array directly
     const success = await onPolicyUpdate(policy.id, values.content);
     if (success) {
       onOpenChange(false);
@@ -111,3 +114,5 @@ export function EditPolicyDialog({ policy, isOpen, onOpenChange, onPolicyUpdate 
     </Dialog>
   );
 }
+
+    
