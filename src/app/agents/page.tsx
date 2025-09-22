@@ -28,6 +28,7 @@ import { AgentReportDialog } from '@/components/agent-report-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AuthContext, useAuth } from '@/context/auth-context';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ProfileContext } from '@/context/profile-context';
 
 
 const ITEMS_PER_PAGE = 10;
@@ -59,6 +60,7 @@ export default function AgentsPage() {
   const { toast } = useToast();
   const { token } = useContext(AuthContext);
   const { handleApiError } = useAuth();
+  const { profile } = useContext(ProfileContext);
 
 
   const fetchAgents = async () => {
@@ -266,6 +268,8 @@ export default function AgentsPage() {
     window.open(`https://wa.me/${cleanPhone}`, '_blank');
   };
 
+  const isAdmin = profile.role === 'admin';
+
   return (
     <AppShell>
       <PageHeader title="Delivery Agent Management">
@@ -309,7 +313,7 @@ export default function AgentsPage() {
                   />
                 </TableHead>
                 <TableHead>Agent</TableHead>
-                <TableHead>Agency</TableHead>
+                {isAdmin && <TableHead>Agency</TableHead>}
                 <TableHead className="hidden sm:table-cell">Vehicle</TableHead>
                 <TableHead className="hidden md:table-cell">Status</TableHead>
                 <TableHead className="hidden lg:table-cell">Joined On</TableHead>
@@ -347,19 +351,21 @@ export default function AgentsPage() {
                         </div>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    {agent.Agency ? (
-                      <div className="text-xs">
-                        <div className="font-semibold">{agent.Agency.name}</div>
-                        <div className="text-muted-foreground">{agent.Agency.city}</div>
-                        <div className="text-muted-foreground">{agent.Agency.email}</div>
-                        <div className="text-muted-foreground">{agent.Agency.phone}</div>
-                        <Badge variant={agent.Agency.status === 'active' ? 'secondary' : 'destructive'} className="mt-1 capitalize">{agent.Agency.status}</Badge>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">N/A</span>
-                    )}
-                  </TableCell>
+                  {isAdmin && (
+                    <TableCell>
+                      {agent.Agency ? (
+                        <div className="text-xs">
+                          <div className="font-semibold">{agent.Agency.name}</div>
+                          <div className="text-muted-foreground">{agent.Agency.city}</div>
+                          <div className="text-muted-foreground">{agent.Agency.email}</div>
+                          <div className="text-muted-foreground">{agent.Agency.phone}</div>
+                          <Badge variant={agent.Agency.status === 'active' ? 'secondary' : 'destructive'} className="mt-1 capitalize">{agent.Agency.status}</Badge>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">N/A</span>
+                      )}
+                    </TableCell>
+                  )}
                   <TableCell onClick={() => handleViewReport(agent)} className="hidden sm:table-cell">{agent.vehicleNumber}</TableCell>
                   <TableCell onClick={() => handleViewReport(agent)} className="hidden md:table-cell">
                     <Badge variant={agent.status.toLowerCase() === 'online' ? 'default' : 'outline'} className={agent.status.toLowerCase() === 'online' ? 'bg-green-500 text-white' : ''}>
@@ -458,3 +464,5 @@ export default function AgentsPage() {
     </AppShell>
   );
 }
+
+    
