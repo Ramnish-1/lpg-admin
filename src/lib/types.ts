@@ -43,6 +43,14 @@ export interface Product {
   images: string[]; // URLs to images
   createdAt: string;
   updatedAt: string;
+  Agency?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    city: string;
+    status: 'active' | 'inactive';
+  };
 }
 
 

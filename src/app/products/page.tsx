@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, AlertCircle, ChevronDown, Loader2, Trash2 } from 'lucide-react';
 import type { Product } from '@/lib/types';
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useContext } from 'react';
 import { ProductDetailsDialog } from '@/components/product-details-dialog';
 import { EditProductDialog } from '@/components/edit-product-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,7 @@ import { AddProductDialog } from '@/components/add-product-dialog';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/context/auth-context';
+import { ProfileContext } from '@/context/profile-context';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -33,6 +34,7 @@ export default function ProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const { token, handleApiError } = useAuth();
+  const { profile } = useContext(ProfileContext);
 
   const fetchProducts = useCallback(async () => {
     if (!token) return;
@@ -41,7 +43,10 @@ export default function ProductsPage() {
       const response = await fetch(`${API_BASE_URL}/api/products`, {
         headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
       });
-      if (!response.ok) handleApiError(response);
+      if (!response.ok) {
+        handleApiError(response);
+        return;
+      }
       const result = await response.json();
       if (result.success) {
         setProducts(result.data.products.map((p: any) => ({
@@ -52,7 +57,8 @@ export default function ProductsPage() {
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch products.' });
       }
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'An error occurred while fetching products.' });
+       console.error("Failed to fetch products:", error);
+       toast({ variant: 'destructive', title: 'Error', description: 'An error occurred while fetching products.' });
     } finally {
       setIsLoading(false);
     }
@@ -93,11 +99,15 @@ export default function ProductsPage() {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
       });
-      if (!response.ok) handleApiError(response);
+      if (!response.ok) {
+        handleApiError(response);
+        return;
+      }
       
       toast({ title: 'Product Deleted', description: `${selectedProduct.productName} has been deleted.` });
       fetchProducts(); // Re-fetch
     } catch (error) {
+       console.error("Failed to delete product:", error);
        toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete product.' });
     } finally {
       setIsDeleteOpen(false);
@@ -118,7 +128,10 @@ export default function ProductsPage() {
             },
             body: JSON.stringify({ status: newStatus })
         });
-        if (!response.ok) handleApiError(response);
+        if (!response.ok) {
+          handleApiError(response);
+          return;
+        }
         const result = await response.json();
         if (result.success) {
             toast({
@@ -130,6 +143,7 @@ export default function ProductsPage() {
             toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
         }
     } catch(e) {
+        console.error("Failed to toggle product status:", e);
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
     }
   };
@@ -157,7 +171,10 @@ export default function ProductsPage() {
             headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' },
             body: formData,
         });
-        if (!response.ok) handleApiError(response);
+        if (!response.ok) {
+          handleApiError(response);
+          return false;
+        }
         const result = await response.json();
         if (result.success) {
             toast({ title: 'Product Updated', description: `${updatedProduct.productName} has been successfully updated.` });
@@ -168,6 +185,7 @@ export default function ProductsPage() {
             return false;
         }
     } catch(e) {
+        console.error("Failed to update product:", e);
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to update product.' });
         return false;
     }
@@ -191,7 +209,10 @@ export default function ProductsPage() {
             headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' },
             body: formData,
         });
-        if (!response.ok) handleApiError(response);
+        if (!response.ok) {
+          handleApiError(response);
+          return false;
+        }
         const result = await response.json();
         if (result.success) {
             toast({ title: 'Product Added', description: `${newProduct.productName} has been successfully added.` });
@@ -202,10 +223,13 @@ export default function ProductsPage() {
             return false;
         }
     } catch(e) {
+        console.error("Failed to add product:", e);
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to add product.' });
         return false;
     }
   }
+  
+  const isAdmin = profile.role === 'admin';
 
 
   return (
@@ -235,6 +259,7 @@ export default function ProductsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Product Name</TableHead>
+                  {isAdmin && <TableHead>Agency</TableHead>}
                   <TableHead>Variants</TableHead>
                   <TableHead>Total Stock</TableHead>
                   <TableHead>Status</TableHead>
@@ -255,6 +280,21 @@ export default function ProductsPage() {
                       onClick={() => handleShowDetails(product)}
                     >
                       <TableCell className="font-medium">{product.productName}</TableCell>
+                       {isAdmin && (
+                        <TableCell>
+                          {product.Agency ? (
+                             <div className="text-xs">
+                                <div className="font-semibold">{product.Agency.name}</div>
+                                <div className="text-muted-foreground">{product.Agency.city}</div>
+                                <div className="text-muted-foreground">{product.Agency.email}</div>
+                                <div className="text-muted-foreground">{product.Agency.phone}</div>
+                                <Badge variant={product.Agency.status === 'active' ? 'secondary' : 'destructive'} className="mt-1 capitalize">{product.Agency.status}</Badge>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">N/A</span>
+                          )}
+                        </TableCell>
+                      )}
                       <TableCell>
                         {safeVariants.length > 0 ? `${safeVariants.length} variant(s)` : 'No variants'}
                       </TableCell>
