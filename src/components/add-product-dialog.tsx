@@ -35,7 +35,8 @@ interface AddProductDialogProps {
 }
 
 const variantSchema = z.object({
-  label: z.string().min(1, "Label is required."),
+  unitValue: z.coerce.number().min(0, "Unit value must be positive."),
+  unitType: z.enum(['kg', 'meter']),
   price: z.coerce.number().min(0, "Price must be positive."),
   stock: z.coerce.number().int().min(0, "Stock must be a whole number."),
 });
@@ -64,7 +65,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
       description: '',
       category: 'lpg',
       lowStockThreshold: 10,
-      variants: [{ label: '', price: '' as any, stock: '' as any }],
+      variants: [{ unitValue: '' as any, unitType: 'kg', price: '' as any, stock: '' as any }],
     }
   });
 
@@ -86,7 +87,14 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
       return;
     }
 
-    const payload: AddProductPayload = values;
+    const payload: AddProductPayload = {
+      ...values,
+      variants: values.variants.map(v => ({
+        label: `${v.unitValue}${v.unitType}`,
+        price: v.price,
+        stock: v.stock,
+      })),
+    };
     const success = await onProductAdd(payload, imageFiles);
     
     if (success) {
@@ -164,7 +172,10 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                               {fields.map((field, index) => (
                                   <div key={field.id} className="flex items-start gap-2 p-3 border rounded-md relative">
                                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
-                                          <FormField control={form.control} name={`variants.${index}.label`} render={({ field }) => (<FormItem><FormLabel>Unit</FormLabel><FormControl><Input placeholder="e.g. 10kg, 5meter" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                          <div className="grid grid-cols-2 gap-1">
+                                              <FormField control={form.control} name={`variants.${index}.unitValue`} render={({ field }) => (<FormItem><FormLabel>Unit</FormLabel><FormControl><Input type="number" placeholder="e.g. 5" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                              <FormField control={form.control} name={`variants.${index}.unitType`} render={({ field }) => (<FormItem className="self-end"><FormControl><Select onValueChange={field.onChange} defaultValue={field.value}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="kg">kg</SelectItem><SelectItem value="meter">meter</SelectItem></SelectContent></Select></FormControl><FormMessage /></FormItem>)} />
+                                          </div>
                                           <FormField control={form.control} name={`variants.${index}.price`} render={({ field }) => (<FormItem><FormLabel>Price (₹)</FormLabel><FormControl><Input type="number" placeholder="1100" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                           <FormField control={form.control} name={`variants.${index}.stock`} render={({ field }) => (<FormItem><FormLabel>Stock</FormLabel><FormControl><Input type="number" placeholder="150" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                       </div>
@@ -172,7 +183,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                                   </div>
                               ))}
                           </div>
-                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ label: '', price: '' as any, stock: '' as any })}><PlusCircle className="mr-2 h-4 w-4"/>Add Variant</Button>
+                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ unitValue: '' as any, unitType: 'kg', price: '' as any, stock: '' as any })}><PlusCircle className="mr-2 h-4 w-4"/>Add Variant</Button>
                           <FormMessage>{form.formState.errors.variants?.message || form.formState.errors.variants?.root?.message}</FormMessage>
                       </div>
 
@@ -240,7 +251,3 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     </>
   );
 }
-
-    
-
-    

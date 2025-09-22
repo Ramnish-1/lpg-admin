@@ -36,7 +36,8 @@ interface EditProductDialogProps {
 }
 
 const variantSchema = z.object({
-  label: z.string().min(1, "Label is required."),
+  unitValue: z.coerce.number().min(0, "Unit value must be positive."),
+  unitType: z.enum(['kg', 'meter']),
   price: z.coerce.number().min(0, "Price must be positive."),
   stock: z.coerce.number().int().min(0, "Stock must be a whole number."),
 });
@@ -63,7 +64,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      variants: [{ label: '', price: '' as any, stock: '' as any }],
+      variants: [{ unitValue: '' as any, unitType: 'kg', price: '' as any, stock: '' as any }],
     }
   });
 
@@ -82,9 +83,29 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
 
   useEffect(() => {
     if (isOpen && product) {
+      const parsedVariants = product.variants.map(v => {
+        const match = v.label.match(/(\d+\.?\d*)\s*(kg|meter)/);
+        if (match) {
+          return {
+            unitValue: parseFloat(match[1]),
+            unitType: match[2] as 'kg' | 'meter',
+            price: v.price,
+            stock: v.stock,
+          };
+        }
+        // Fallback for labels that don't match
+        return {
+          unitValue: 0,
+          unitType: 'kg' as const,
+          price: v.price,
+          stock: v.stock,
+        };
+      });
+
       form.reset({
         ...product,
         category: product.category || 'lpg',
+        variants: parsedVariants,
       });
       setImagePreviews(product.images || []);
       setImagesToDelete([]);
@@ -101,8 +122,13 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
 
   const handleSubmit = async (values: ProductFormValues) => {
     const payload: EditProductPayload = {
-        ...values,
-        id: product.id,
+      ...values,
+      id: product.id,
+      variants: values.variants.map(v => ({
+        label: `${v.unitValue}${v.unitType}`,
+        price: v.price,
+        stock: v.stock,
+      })),
     };
     
     const success = await onProductUpdate(payload, imagesToDelete, newImageFiles);
@@ -166,8 +192,11 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                           <div className="space-y-4 mt-2">
                               {fields.map((field, index) => (
                                   <div key={field.id} className="flex items-start gap-2 p-3 border rounded-md relative">
-                                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
-                                          <FormField control={form.control} name={`variants.${index}.label`} render={({ field }) => (<FormItem><FormLabel>Unit</FormLabel><FormControl><Input placeholder="e.g. 10kg, 5meter" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
+                                          <div className="grid grid-cols-2 gap-1">
+                                              <FormField control={form.control} name={`variants.${index}.unitValue`} render={({ field }) => (<FormItem><FormLabel>Unit</FormLabel><FormControl><Input type="number" placeholder="e.g. 5" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                              <FormField control={form.control} name={`variants.${index}.unitType`} render={({ field }) => (<FormItem className="self-end"><FormControl><Select onValueChange={field.onChange} defaultValue={field.value}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="kg">kg</SelectItem><SelectItem value="meter">meter</SelectItem></SelectContent></Select></FormControl><FormMessage /></FormItem>)} />
+                                          </div>
                                           <FormField control={form.control} name={`variants.${index}.price`} render={({ field }) => (<FormItem><FormLabel>Price (₹)</FormLabel><FormControl><Input type="number" placeholder="1100" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                           <FormField control={form.control} name={`variants.${index}.stock`} render={({ field }) => (<FormItem><FormLabel>Stock</FormLabel><FormControl><Input type="number" placeholder="150" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                       </div>
@@ -175,7 +204,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                                   </div>
                               ))}
                           </div>
-                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ label: '', price: '' as any, stock: '' as any })}><PlusCircle className="mr-2 h-4 w-4"/>Add Variant</Button>
+                           <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ unitValue: '' as any, unitType: 'kg', price: '' as any, stock: '' as any })}><PlusCircle className="mr-2 h-4 w-4"/>Add Variant</Button>
                           <FormMessage>{form.formState.errors.variants?.message || form.formState.errors.variants?.root?.message}</FormMessage>
                       </div>
 
@@ -244,7 +273,3 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
     </>
   );
 }
-
-    
-
-    
