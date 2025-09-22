@@ -14,9 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -38,8 +36,6 @@ import {
   Loader2,
   FileText,
   ShieldCheck,
-  Power,
-  PowerOff,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -91,7 +87,7 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const { profile, setProfile } = React.useContext(ProfileContext);
+  const { profile } = React.useContext(ProfileContext);
   const { settings } = React.useContext(SettingsContext);
   const { isAuthenticated, logout } = useAuth();
   const { notifications } = useNotifications();
@@ -142,24 +138,6 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
       }
       setConfirmingOrderId(null);
   }
-  
-  const handleToggleAgencyStatus = async (newStatus: 'active' | 'inactive') => {
-    if (profile.role === 'agency_owner' && profile.agencyId) {
-      const success = await setProfile({ agencyStatus: newStatus });
-      if (success) {
-        toast({
-          title: 'Agency Status Updated',
-          description: `Your agency is now ${newStatus}.`,
-        });
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Update Failed',
-          description: 'Could not update agency status.',
-        });
-      }
-    }
-  };
 
   const appNameToDisplay = profile.role === 'agency_owner' ? 'GasTrack Agency' : settings.appName;
 
@@ -225,8 +203,8 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
           </Sheet>
           <div className="w-full flex-1" />
            {profile.role === 'agency_owner' && profile.agencyStatus && (
-                <div className="flex items-center gap-2">
-                     <Badge 
+               <div className="flex items-center gap-2">
+                    <Badge 
                         variant={profile.agencyStatus === 'active' ? 'default' : 'destructive'}
                         className="capitalize flex items-center gap-1.5"
                     >
