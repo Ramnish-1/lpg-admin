@@ -243,7 +243,8 @@ export default function ProductsPage() {
               </TableHeader>
               <TableBody>
                 {paginatedProducts.map((product: Product) => {
-                  const totalStock = Array.isArray(product.variants) ? product.variants.reduce((sum, v) => sum + v.stock, 0) : 0;
+                  const safeVariants = Array.isArray(product.variants) ? product.variants : [];
+                  const totalStock = safeVariants.reduce((sum, v) => sum + v.stock, 0);
                   const isLowStock = totalStock < product.lowStockThreshold;
                   return (
                     <TableRow 
@@ -255,7 +256,7 @@ export default function ProductsPage() {
                     >
                       <TableCell className="font-medium">{product.productName}</TableCell>
                       <TableCell>
-                        {product.variants && product.variants.length > 0 ? `${product.variants.length} variant(s)` : 'No variants'}
+                        {safeVariants.length > 0 ? `${safeVariants.length} variant(s)` : 'No variants'}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -379,7 +380,3 @@ export default function ProductsPage() {
     </AppShell>
   );
 }
-
-    
-
-    

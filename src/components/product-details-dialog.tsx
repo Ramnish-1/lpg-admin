@@ -27,8 +27,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 export function ProductDetailsDialog({ product, isOpen, onOpenChange }: ProductDetailsDialogProps) {
   if (!product) return null;
-
-  const totalStock = product.variants.reduce((acc, v) => acc + v.stock, 0);
+  
+  const safeVariants = Array.isArray(product.variants) ? product.variants : [];
+  const totalStock = safeVariants.reduce((acc, v) => acc + v.stock, 0);
   const isLowStock = totalStock < product.lowStockThreshold;
   
   return (
@@ -75,7 +76,7 @@ export function ProductDetailsDialog({ product, isOpen, onOpenChange }: ProductD
               <CardContent className="pt-6 space-y-4">
                   <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2"><Beaker className="h-4 w-4"/> Variants</h3>
                    <div className="space-y-2">
-                      {product.variants.map((variant, index) => (
+                      {safeVariants.map((variant, index) => (
                         <div key={index} className="flex justify-between items-center p-2 rounded-md bg-muted/40 text-sm">
                           <span className="font-semibold">{variant.label}</span>
                           <div className="flex items-center gap-4">
@@ -108,5 +109,3 @@ export function ProductDetailsDialog({ product, isOpen, onOpenChange }: ProductD
     </Dialog>
   );
 }
-
-    
