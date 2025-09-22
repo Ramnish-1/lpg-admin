@@ -395,7 +395,7 @@ export default function AgentsPage() {
                           <div className="text-muted-foreground">{agent.Agency.phone}</div>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="w-28 justify-between capitalize mt-1" onClick={(e) => e.stopPropagation()}>
+                                <Button variant="outline" size="sm" className="w-24 justify-between capitalize mt-2 h-7 rounded-full px-3" onClick={(e) => e.stopPropagation()}>
                                     <span className={cn({
                                         'text-green-600': agent.Agency.status === 'active',
                                         'text-gray-500': agent.Agency.status === 'inactive'
