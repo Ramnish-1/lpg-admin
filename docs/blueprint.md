@@ -1,4 +1,4 @@
-# **App Name**: GasTrack Admin
+# **App Name**: Lpg GasTrack
 
 ## Core Features:
 

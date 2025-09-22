@@ -5,11 +5,16 @@ import { createContext, useState, useEffect, ReactNode, useContext, useCallback 
 import type { User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
+interface LoginResult {
+  success: boolean;
+  error?: string;
+}
+
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<LoginResult>;
   logout: () => Promise<void>;
   signup: (name: string, email: string, password: string, phone: string) => Promise<boolean>;
   handleApiError: (response: Response) => void;
@@ -22,7 +27,7 @@ export const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   user: null,
   token: null,
-  login: async () => false,
+  login: async () => ({ success: false }),
   logout: async () => {},
   signup: async () => false,
   handleApiError: () => {},
@@ -57,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [isClient]);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<LoginResult> => {
     try {
         const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
             method: 'POST',
@@ -74,12 +79,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setToken(result.data.token);
             setIsAuthenticated(true);
             window.localStorage.setItem(TOKEN_STORAGE_KEY, result.data.token);
-            return true;
+            return { success: true };
         }
-        return false;
+        return { success: false, error: result.error || 'Invalid email or password.' };
     } catch (error) {
         console.error("Login API call failed", error);
-        return false;
+        return { success: false, error: 'Could not connect to the server.' };
     }
   }
 
