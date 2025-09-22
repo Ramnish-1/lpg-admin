@@ -24,6 +24,8 @@ export interface User {
   location: { lat: number; lng: number };
   role?: string;
   profileImage?: string | null;
+  agencyId?: string;
+  agencyStatus?: 'active' | 'inactive';
 }
 
 export interface ProductVariant {

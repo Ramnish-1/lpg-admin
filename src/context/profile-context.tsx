@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { createContext, useState, useEffect, ReactNode, useContext, useCallback } from 'react';
@@ -11,6 +12,8 @@ interface Profile {
   phone: string;
   role?: string;
   photoUrl: string;
+  agencyId?: string;
+  agencyStatus?: 'active' | 'inactive';
 }
 
 interface ProfileUpdatePayload extends Partial<Omit<Profile, 'photoUrl' | 'email'>> {
@@ -68,6 +71,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
             phone: userData.phone || '',
             role: userData.role || 'User',
             photoUrl: userData.profileImage || '',
+            agencyId: userData.agencyId,
+            agencyStatus: userData.agencyStatus,
           });
         } else {
             // If API call is successful but backend says no, use default but mark as not fetching
@@ -92,6 +97,36 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const setProfile = async (newProfileData: ProfileUpdatePayload): Promise<boolean> => {
     if (!token) return false;
     
+    // Handle agency status update separately
+    if (newProfileData.agencyStatus && profile.agencyId) {
+       try {
+         const response = await fetch(`${API_BASE_URL}/api/agencies/${profile.agencyId}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'ngrok-skip-browser-warning': 'true'
+            },
+            body: JSON.stringify({ status: newProfileData.agencyStatus })
+        });
+         if (!response.ok) {
+            handleApiError(response);
+            return false;
+        }
+        const result = await response.json();
+        if (result.success) {
+            // Refetch profile to get the latest state including the updated status
+            await fetchProfile();
+            return true;
+        }
+        return false;
+      } catch (error) {
+        console.error("Failed to update agency status", error);
+        return false;
+      }
+    }
+
+
     const formData = new FormData();
     if(newProfileData.name) formData.append('name', newProfileData.name);
     if(newProfileData.phone) formData.append('phone', newProfileData.phone);
@@ -114,14 +149,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         const result = await response.json();
         
         if (result.success) {
-            const userData = result.data.user;
-            setProfileState({
-                name: userData.name || '',
-                email: userData.email,
-                phone: userData.phone || '',
-                role: userData.role || 'User',
-                photoUrl: userData.profileImage || '',
-            });
+            await fetchProfile(); // Refetch to ensure all data is up-to-date
             return true;
         }
         return false;
