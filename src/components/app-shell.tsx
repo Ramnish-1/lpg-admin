@@ -146,7 +146,7 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
       case 'agency_owner':
         return 'GasTrack Agency';
       default:
-        return settings.appName;
+        return 'lpg GasTrack';
     }
   };
 
@@ -215,7 +215,7 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
                <div className="flex items-center gap-2">
                     <Badge 
                         variant={profile.agencyStatus === 'active' ? 'default' : 'destructive'}
-                        className="capitalize flex items-center gap-2"
+                        className="capitalize flex items-center gap-1"
                     >
                          <span className={cn("h-2 w-2 rounded-full", {
                             'bg-green-400': profile.agencyStatus === 'active',
