@@ -67,12 +67,12 @@ const allNavItems = [
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/agents', label: 'Delivery Agents', icon: Truck },
   { href: '/products', label: 'Products', icon: Package },
-  { href: '/agencies', label: 'Agencies', icon: Building2, roles: ['admin'] },
+  { href: '/agencies', label: 'Agencies', icon: Building2, roles: ['admin', 'super_admin'] },
   { href: '/payments', label: 'Payments', icon: CreditCard },
   { href: '/settings', label: 'Settings', icon: Settings },
-  { href: '/add-user', label: 'Manage Users', icon: UserPlus, roles: ['admin'] },
-  { href: '/terms-and-conditions', label: 'Terms & Conditions', icon: FileText, roles: ['admin'] },
-  { href: '/privacy-policy', label: 'Privacy Policy', icon: ShieldCheck, roles: ['admin'] },
+  { href: '/add-user', label: 'Manage Users', icon: UserPlus, roles: ['admin', 'super_admin'] },
+  { href: '/terms-and-conditions', label: 'Terms & Conditions', icon: FileText, roles: ['admin', 'super_admin'] },
+  { href: '/privacy-policy', label: 'Privacy Policy', icon: ShieldCheck, roles: ['admin', 'super_admin'] },
 ];
 
 interface AppShellProps {
@@ -96,10 +96,8 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
 
   const navItems = allNavItems.filter(item => {
     if (item.roles) {
-      // The API response shows the role as "agency_owner", while our frontend expects "admin".
-      // Let's treat "admin" and "super_admin" as having admin privileges for the UI.
       const userRole = profile.role?.toLowerCase() || '';
-      return userRole === 'admin' || userRole === 'super_admin';
+      return item.roles.includes(userRole);
     }
     return true;
   });
@@ -140,6 +138,8 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
       setConfirmingOrderId(null);
   }
 
+  const appNameToDisplay = profile.role === 'agency_owner' ? 'GasTrack Agency' : settings.appName;
+
   const sidebarNav = (
     <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
       {navItems.map(({ href, label, icon: Icon }) => (
@@ -173,7 +173,7 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold">
               <GasPump className="h-6 w-6 text-primary" />
-              <span className="">{settings.appName}</span>
+              <span className="">{appNameToDisplay}</span>
             </Link>
           </div>
           <div className="flex-1">
@@ -194,7 +194,7 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
               <div className="flex h-14 items-center border-b mb-4">
                   <Link href="/" className="flex items-center gap-2 font-semibold">
                     <GasPump className="h-6 w-6 text-primary" />
-                    <span className="">{settings.appName}</span>
+                    <span className="">{appNameToDisplay}</span>
                   </Link>
               </div>
               {sidebarNav}
