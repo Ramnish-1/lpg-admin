@@ -309,6 +309,7 @@ export default function AgentsPage() {
                   />
                 </TableHead>
                 <TableHead>Agent</TableHead>
+                <TableHead>Agency</TableHead>
                 <TableHead className="hidden sm:table-cell">Vehicle</TableHead>
                 <TableHead className="hidden md:table-cell">Status</TableHead>
                 <TableHead className="hidden lg:table-cell">Joined On</TableHead>
@@ -345,6 +346,19 @@ export default function AgentsPage() {
                           </div>
                         </div>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {agent.Agency ? (
+                      <div className="text-xs">
+                        <div className="font-semibold">{agent.Agency.name}</div>
+                        <div className="text-muted-foreground">{agent.Agency.city}</div>
+                        <div className="text-muted-foreground">{agent.Agency.email}</div>
+                        <div className="text-muted-foreground">{agent.Agency.phone}</div>
+                        <Badge variant={agent.Agency.status === 'active' ? 'secondary' : 'destructive'} className="mt-1 capitalize">{agent.Agency.status}</Badge>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">N/A</span>
+                    )}
                   </TableCell>
                   <TableCell onClick={() => handleViewReport(agent)} className="hidden sm:table-cell">{agent.vehicleNumber}</TableCell>
                   <TableCell onClick={() => handleViewReport(agent)} className="hidden md:table-cell">

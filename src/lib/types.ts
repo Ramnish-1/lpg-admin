@@ -78,6 +78,14 @@ export interface Agent {
   profileImage?: string;
   report?: AgentReport; 
   currentLocation?: { lat: number; lng: number };
+  Agency?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    city: string;
+    status: 'active' | 'inactive';
+  };
 }
 
 
