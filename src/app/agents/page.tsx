@@ -400,7 +400,7 @@ export default function AgentsPage() {
                 <TableHead>Agent</TableHead>
                 {isAdmin && <TableHead>Agency</TableHead>}
                 <TableHead className="hidden sm:table-cell">Vehicle</TableHead>
-                <TableHead className="hidden md:table-cell">Status</TableHead>
+                <TableHead className="hidden md:table-cell">Agent Status</TableHead>
                 <TableHead className="hidden lg:table-cell">Joined On</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
@@ -581,3 +581,6 @@ export default function AgentsPage() {
 
     
 
+
+
+    
