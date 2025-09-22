@@ -61,18 +61,18 @@ const GasPump = (props: React.SVGProps<SVGSVGElement>) => (
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-const navItems = [
+const allNavItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/agents', label: 'Delivery Agents', icon: Truck },
   { href: '/products', label: 'Products', icon: Package },
-  { href: '/agencies', label: 'Agencies', icon: Building2 },
+  { href: '/agencies', label: 'Agencies', icon: Building2, roles: ['admin'] },
   { href: '/payments', label: 'Payments', icon: CreditCard },
   { href: '/settings', label: 'Settings', icon: Settings },
-  { href: '/add-user', label: 'Manage Users', icon: UserPlus },
-  { href: '/terms-and-conditions', label: 'Terms & Conditions', icon: FileText },
-  { href: '/privacy-policy', label: 'Privacy Policy', icon: ShieldCheck },
+  { href: '/add-user', label: 'Manage Users', icon: UserPlus, roles: ['admin'] },
+  { href: '/terms-and-conditions', label: 'Terms & Conditions', icon: FileText, roles: ['admin'] },
+  { href: '/privacy-policy', label: 'Privacy Policy', icon: ShieldCheck, roles: ['admin'] },
 ];
 
 interface AppShellProps {
@@ -93,6 +93,16 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
   const [confirmingOrderId, setConfirmingOrderId] = React.useState<string | null>(null);
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  const navItems = allNavItems.filter(item => {
+    if (item.roles) {
+      // The API response shows the role as "agency_owner", while our frontend expects "admin".
+      // Let's treat "admin" and "super_admin" as having admin privileges for the UI.
+      const userRole = profile.role?.toLowerCase() || '';
+      return userRole === 'admin' || userRole === 'super_admin';
+    }
+    return true;
+  });
 
   React.useEffect(() => {
     if (!isAuthenticated) {
@@ -152,7 +162,7 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
     return null; // or a loading spinner
   }
 
-  const displayPhotoUrl = profile.photoUrl.startsWith('https://') 
+  const displayPhotoUrl = profile.photoUrl?.startsWith('https://') 
     ? profile.photoUrl 
     : profile.photoUrl ? `${API_BASE_URL}/${profile.photoUrl}` : '';
 
@@ -231,7 +241,7 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
               <Button variant="ghost" className="relative h-10 flex items-center gap-2 px-2 rounded-md hover:bg-muted hover:text-foreground border border-transparent hover:border-border">
                  <Avatar className="h-8 w-8">
                   <AvatarImage src={displayPhotoUrl} alt="@admin" data-ai-hint="manager portrait" />
-                  <AvatarFallback>{profile.name.charAt(0).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback>{profile.name?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col items-start">
                     <span className="text-sm font-medium">{profile.name}</span>
@@ -276,5 +286,3 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
     </div>
   );
 }
-
-    

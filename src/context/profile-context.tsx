@@ -28,7 +28,7 @@ const defaultProfile: Profile = {
   photoUrl: '',
   email: 'admin@gastrack.com',
   phone: '+91 99999 88888',
-  role: 'Administrator'
+  role: 'admin' // Default to admin for initial state
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -66,9 +66,13 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
             role: userData.role || 'User',
             photoUrl: userData.profileImage || '',
           });
+        } else {
+            // If API call is successful but backend says no, use default but mark as not fetching
+            setProfileState(defaultProfile);
         }
       } catch (error) {
         console.error("Failed to fetch profile", error);
+        setProfileState(defaultProfile);
       } finally {
         setIsFetchingProfile(false);
       }
