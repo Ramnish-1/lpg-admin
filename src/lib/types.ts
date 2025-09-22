@@ -190,10 +190,17 @@ export interface Agency {
   confirmationExpiresAt: Date | null;
 }
 
+export interface TermsContent {
+    title: string;
+    description: string;
+    content: string;
+}
+
 export interface TermsAndCondition {
     id: string;
     title: string;
     description: string;
+    content?: TermsContent[]; // Make content optional and an array
     status: 'active' | 'inactive';
     version: string;
     createdAt: string;
