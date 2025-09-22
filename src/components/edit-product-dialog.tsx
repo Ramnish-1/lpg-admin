@@ -270,7 +270,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                               {fields.map((field, index) => (
                                   <div key={field.id} className="flex items-start gap-2 p-3 border rounded-md relative">
                                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
-                                          <FormField control={form.control} name={`variants.${index}.label`} render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input placeholder="Unit" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                          <FormField control={form.control} name={`variants.${index}.label`} render={({ field }) => (<FormItem><FormLabel>Unit</FormLabel><FormControl><Input placeholder="e.g. 10kg, 5meter" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                           <FormField control={form.control} name={`variants.${index}.price`} render={({ field }) => (<FormItem><FormLabel>Price (₹)</FormLabel><FormControl><Input type="number" placeholder="1100" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                           <FormField control={form.control} name={`variants.${index}.stock`} render={({ field }) => (<FormItem><FormLabel>Stock</FormLabel><FormControl><Input type="number" placeholder="150" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                       </div>
