@@ -34,10 +34,10 @@ interface EditAgentDialogProps {
 const agentSchema = z.object({
   name: z.string().min(1, { message: "Name is required." }),
   email: z.string().email({ message: "Invalid email address." }).min(1, { message: "Email is required." }),
-  phone: z.string().min(10, { message: "Phone number must be at least 10 digits." }),
+  phone: z.string().length(10, { message: "Phone number must be exactly 10 digits." }),
   vehicleNumber: z.string().min(1, { message: "Vehicle details are required." }),
-  panCardNumber: z.string().length(10, { message: "PAN card must be 10 characters long." }),
-  aadharCardNumber: z.string().min(1, { message: "Aadhar card is required." }),
+  panCardNumber: z.string().length(10, { message: "PAN card must be 10 characters." }),
+  aadharCardNumber: z.string().length(12, { message: "Aadhar card must be 12 digits." }),
   drivingLicence: z.string().min(1, { message: "Driving license is required." }),
   bankDetails: z.string().min(1, { message: "Account details are required." }),
   status: z.enum(['online', 'offline']),
@@ -130,7 +130,7 @@ export function EditAgentDialog({ agent, isOpen, onOpenChange, onAgentUpdate }: 
                       <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                       <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                       <FormField control={form.control} name="panCardNumber" render={({ field }) => (<FormItem><FormLabel>PAN Card</FormLabel><FormControl><Input {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} maxLength={10} /></FormControl><FormMessage /></FormItem>)}/>
-                      <FormField control={form.control} name="aadharCardNumber" render={({ field }) => (<FormItem><FormLabel>Aadhar Card Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="aadharCardNumber" render={({ field }) => (<FormItem><FormLabel>Aadhar Card Number</FormLabel><FormControl><Input {...field} maxLength={12} /></FormControl><FormMessage /></FormItem>)}/>
                       <FormField control={form.control} name="drivingLicence" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Driving License</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                       <FormField control={form.control} name="bankDetails" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Bank Account Details</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   </div>

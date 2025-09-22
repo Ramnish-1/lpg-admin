@@ -35,10 +35,10 @@ interface AddAgentDialogProps {
 const agentSchema = z.object({
   name: z.string().min(1, { message: "Name is required." }),
   email: z.string().email({ message: "Invalid email address." }).min(1, { message: "Email is required." }),
-  phone: z.string().min(10, { message: "Phone number must be at least 10 digits." }),
+  phone: z.string().length(10, { message: "Phone number must be exactly 10 digits." }),
   vehicleNumber: z.string().min(1, { message: "Vehicle details are required." }),
   panCardNumber: z.string().length(10, { message: "PAN card must be 10 characters." }),
-  aadharCardNumber: z.string().min(1, { message: "Aadhar card is required." }),
+  aadharCardNumber: z.string().length(12, { message: "Aadhar card must be 12 digits." }),
   drivingLicence: z.string().min(1, { message: "Driving license is required." }),
   bankDetails: z.string().min(1, { message: "Account details are required." }),
 });
@@ -133,7 +133,7 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
                       <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input placeholder="e.g. 9876543210" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                       <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="e.g. john.doe@example.com" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                       <FormField control={form.control} name="panCardNumber" render={({ field }) => (<FormItem><FormLabel>PAN Card</FormLabel><FormControl><Input placeholder="e.g. ABCDE1234F" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} maxLength={10} /></FormControl><FormMessage /></FormItem>)}/>
-                      <FormField control={form.control} name="aadharCardNumber" render={({ field }) => (<FormItem><FormLabel>Aadhar Card Number</FormLabel><FormControl><Input placeholder="e.g. 1234 5678 9012" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="aadharCardNumber" render={({ field }) => (<FormItem><FormLabel>Aadhar Card Number</FormLabel><FormControl><Input placeholder="e.g. 1234 5678 9012" {...field} maxLength={12} /></FormControl><FormMessage /></FormItem>)}/>
                       <FormField control={form.control} name="drivingLicence" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Driving License</FormLabel><FormControl><Input placeholder="e.g. DL1420110012345" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                       <FormField control={form.control} name="bankDetails" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Bank Account Details</FormLabel><FormControl><Textarea placeholder="e.g. State Bank of India, Account: 1234567890, IFSC: SBIN0001234" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   </div>
