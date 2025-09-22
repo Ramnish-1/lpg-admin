@@ -262,7 +262,7 @@ export default function ProductsPage() {
                   {isAdmin && <TableHead>Agency</TableHead>}
                   <TableHead>Variants</TableHead>
                   <TableHead>Total Stock</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Product Status</TableHead>
                   <TableHead>Action</TableHead>
                 </TableRow>
               </TableHeader>
