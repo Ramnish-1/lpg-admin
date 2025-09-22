@@ -43,7 +43,10 @@ export default function AgenciesPage() {
       const response = await fetch(`${API_BASE_URL}/api/agencies`, {
         headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
       });
-      if (!response.ok) handleApiError(response);
+      if (!response.ok) {
+        handleApiError(response);
+        return;
+      }
       const result = await response.json();
       if (result.success) {
         setAgencies(result.data.agencies.map((a: any) => ({ ...a, createdAt: new Date(a.createdAt)})));
@@ -51,7 +54,8 @@ export default function AgenciesPage() {
         toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch agencies.' });
       }
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch agencies.' });
+      console.error("Failed to fetch agencies:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred while fetching agencies.' });
     } finally {
       setIsLoading(false);
     }
@@ -89,7 +93,10 @@ export default function AgenciesPage() {
         },
         body: JSON.stringify(newAgency),
       });
-      if (!response.ok) handleApiError(response);
+      if (!response.ok) {
+        handleApiError(response);
+        return false;
+      }
       const result = await response.json();
       if (result.success) {
         toast({ title: 'Agency Added', description: `${newAgency.name} has been successfully added.` });
@@ -100,7 +107,8 @@ export default function AgenciesPage() {
         return false;
       }
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to add agency.' });
+      console.error("Failed to add agency:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred while adding the agency.' });
       return false;
     }
   };
@@ -118,7 +126,10 @@ export default function AgenciesPage() {
         },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) handleApiError(response);
+      if (!response.ok) {
+        handleApiError(response);
+        return false;
+      }
       const result = await response.json();
       if (result.success) {
         toast({ title: 'Agency Updated', description: `${updatedAgency.name} has been successfully updated.` });
@@ -129,7 +140,8 @@ export default function AgenciesPage() {
         return false;
       }
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update agency.' });
+      console.error("Failed to update agency:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred while updating the agency.' });
       return false;
     }
   };
@@ -156,8 +168,7 @@ export default function AgenciesPage() {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' },
       });
-      if (!response.ok) handleApiError(response);
-
+      
       if (response.ok) {
         toast({
           title: 'Agency Deleted',
@@ -166,11 +177,12 @@ export default function AgenciesPage() {
         });
         fetchAgencies();
       } else {
-         toast({ variant: 'destructive', title: 'Error', description: "Could not delete agency." });
+         handleApiError(response);
       }
 
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'An error occurred during deletion.' });
+      console.error("Failed to delete agency:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred during deletion.' });
     } finally {
       setIsDeleteDialogOpen(false);
       setSelectedAgency(null);

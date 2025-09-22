@@ -43,7 +43,10 @@ export default function CustomersPage() {
         const response = await fetch(`${API_BASE_URL}/api/auth/customers`, {
             headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
         });
-        if (!response.ok) handleApiError(response);
+        if (!response.ok) {
+          handleApiError(response);
+          return;
+        }
         const result = await response.json();
         if (result.success) {
             const fetchedUsers = result.data.customers.map((u: any) => ({
@@ -66,7 +69,8 @@ export default function CustomersPage() {
              toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch customers.' });
         }
       } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch customers.' });
+        console.error("Failed to fetch customers:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred while fetching customers.' });
       } finally {
         setIsLoading(false);
       }
@@ -122,7 +126,7 @@ export default function CustomersPage() {
 
       if (!response.ok) {
         handleApiError(response);
-        throw new Error('Failed to update status');
+        return;
       }
       
       toast({
@@ -135,6 +139,7 @@ export default function CustomersPage() {
       fetchUsers();
 
     } catch (error) {
+       console.error(`Failed to ${action} customer:`, error);
        toast({
         variant: 'destructive',
         title: 'Update Failed',

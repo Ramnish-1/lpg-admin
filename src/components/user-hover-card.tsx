@@ -22,13 +22,16 @@ export function UserHoverCard({ children }: { children: React.ReactNode }) {
          const response = await fetch(`${API_BASE_URL}/api/users?limit=10`, { // Fetch last 10 users
              headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
         });
-        if (!response.ok) handleApiError(response);
+        if (!response.ok) {
+            handleApiError(response);
+            return;
+        }
         const result = await response.json();
         if (result.success) {
           setUsers(result.data.users);
         }
       } catch (error) {
-        console.error("Failed to load users for hover card", error);
+        console.error("Failed to load users for hover card:", error);
       }
     };
     fetchUsers();

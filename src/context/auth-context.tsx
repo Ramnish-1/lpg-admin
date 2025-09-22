@@ -147,6 +147,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             description: `An error occurred: ${response.statusText} (${response.status})`,
         });
     }
+    // Throw an error to be caught by the calling function's try...catch block
+    throw new Error(`API Error: ${response.status} ${response.statusText}`);
   }, [toast]);
   
   if (isLoading) {

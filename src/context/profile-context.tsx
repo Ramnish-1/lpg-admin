@@ -55,7 +55,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
             'ngrok-skip-browser-warning': 'true'
           }
         });
-        if (!response.ok) handleApiError(response);
+        if (!response.ok) {
+            handleApiError(response);
+            return;
+        }
         const result = await response.json();
         if (result.success) {
           const userData = result.data.user;
@@ -76,7 +79,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       } finally {
         setIsFetchingProfile(false);
       }
-    } else {
+    } else if (!isAuthenticated) {
       setProfileState(defaultProfile);
       setIsFetchingProfile(false);
     }
@@ -104,7 +107,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
             },
             body: formData
         });
-        if (!response.ok) handleApiError(response);
+        if (!response.ok) {
+            handleApiError(response);
+            return false;
+        }
         const result = await response.json();
         
         if (result.success) {

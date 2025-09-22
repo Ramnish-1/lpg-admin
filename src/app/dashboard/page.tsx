@@ -52,24 +52,29 @@ export default function DashboardPage() {
           })
         ]);
 
-        if (!dashboardResponse.ok) handleApiError(dashboardResponse);
-        if (!agentsResponse.ok) handleApiError(agentsResponse);
-
-
-        const dashboardResult = await dashboardResponse.json();
-        const agentsResult = await agentsResponse.json();
-
-        let totalAgents = 0;
-        let activeAgents = 0;
-
-        if (agentsResult.success) {
-          const agents: Agent[] = agentsResult.data.agents;
-          totalAgents = agents.length;
-          activeAgents = agents.filter(a => a.status.toLowerCase() === 'online').length;
-        } else {
-           toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch agent data.' });
+        if (!dashboardResponse.ok) {
+            handleApiError(dashboardResponse);
+            return; // Stop execution if dashboard data fails
         }
         
+        let totalAgents = 0;
+        let activeAgents = 0;
+        
+        // Agents data is secondary, so we can proceed even if it fails
+        if (agentsResponse.ok) {
+            const agentsResult = await agentsResponse.json();
+            if (agentsResult.success) {
+              const agents: Agent[] = agentsResult.data.agents;
+              totalAgents = agents.length;
+              activeAgents = agents.filter(a => a.status.toLowerCase() === 'online').length;
+            } else {
+               toast({ variant: 'destructive', title: 'Warning', description: 'Could not fetch agent data.' });
+            }
+        } else {
+            handleApiError(agentsResponse);
+        }
+        
+        const dashboardResult = await dashboardResponse.json();
         if (dashboardResult.success) {
           const { stats: dashboardStats, salesByDay, recentOrders } = dashboardResult.data;
           setStats({
@@ -82,10 +87,11 @@ export default function DashboardPage() {
           setSalesByDay(salesByDay);
           setRecentOrders(recentOrders);
         } else {
-          toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch dashboard data.' });
+          toast({ variant: 'destructive', title: 'Error', description: 'Failed to process dashboard data.' });
         }
       } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch dashboard data.' });
+        console.error("Failed to fetch dashboard data:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred while fetching dashboard data.' });
       } finally {
         setIsLoading(false);
       }

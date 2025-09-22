@@ -23,13 +23,16 @@ export function AgentHoverCard({ children }: { children: React.ReactNode }) {
         const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
             headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
         });
-        if (!response.ok) handleApiError(response);
+        if (!response.ok) {
+            handleApiError(response);
+            return;
+        }
         const result = await response.json();
         if (result.success) {
             setAgents(result.data.agents);
         }
       } catch (error) {
-        console.error("Failed to load agents for hover card", error);
+        console.error("Failed to load agents for hover card:", error);
       }
     };
     fetchAgents();

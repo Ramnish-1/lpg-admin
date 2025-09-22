@@ -6,7 +6,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Order } from "@/lib/types";
 import { Badge } from './ui/badge';
-import { AuthContext } from '@/context/auth-context';
+import { AuthContext, useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -22,6 +22,7 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
 export function OrderHoverCard({ children }: { children: React.ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const { token } = useContext(AuthContext);
+  const { handleApiError } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -31,18 +32,22 @@ export function OrderHoverCard({ children }: { children: React.ReactNode }) {
         const response = await fetch(`${API_BASE_URL}/api/orders?limit=10`, { // Fetch last 10 orders
              headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
         });
+        if (!response.ok) {
+            handleApiError(response);
+            return;
+        }
         const result = await response.json();
         if (result.success) {
           setOrders(result.data.orders);
         } else {
-           toast({ variant: 'destructive', title: 'Error', description: 'Could not load recent orders for hover card.' });
+           toast({ variant: 'destructive', title: 'Warning', description: 'Could not load recent orders for hover card.' });
         }
       } catch (error) {
-        console.error("Failed to load orders for hover card", error);
+        console.error("Failed to load orders for hover card:", error);
       }
     };
     fetchOrders();
-  }, [token, toast]);
+  }, [token, toast, handleApiError]);
 
   return (
     <HoverCard>

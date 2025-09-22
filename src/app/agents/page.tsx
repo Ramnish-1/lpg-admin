@@ -68,7 +68,10 @@ export default function AgentsPage() {
         const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
             headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
         });
-        if (!response.ok) handleApiError(response);
+        if (!response.ok) {
+            handleApiError(response);
+            return;
+        }
         const result = await response.json();
         if (result.success) {
             setAgents(result.data.agents.map((a: any) => ({ ...a, joinedAt: new Date(a.joinedAt)})));
@@ -76,7 +79,8 @@ export default function AgentsPage() {
             toast({ variant: 'destructive', title: 'Error', description: result.message });
         }
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch agents.' });
+        console.error("Failed to fetch agents:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred while fetching agents.' });
     } finally {
         setIsLoading(false);
     }
@@ -134,7 +138,10 @@ export default function AgentsPage() {
         headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' },
         body: formData,
       });
-      if (!response.ok) handleApiError(response);
+      if (!response.ok) {
+        handleApiError(response);
+        return false;
+      }
       const result = await response.json();
       if (result.success) {
         toast({ title: 'Agent Updated', description: `${updatedAgent.name}'s details have been successfully updated.` });
@@ -147,7 +154,8 @@ export default function AgentsPage() {
         return false;
       }
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update agent.' });
+      console.error("Failed to update agent:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred while updating agent.' });
       return false;
     }
   }
@@ -173,7 +181,10 @@ export default function AgentsPage() {
             headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' },
             body: formData,
         });
-        if (!response.ok) handleApiError(response);
+        if (!response.ok) {
+            handleApiError(response);
+            return false;
+        }
         const result = await response.json();
         if (result.success) {
             toast({ title: 'Agent Added', description: `${newAgent.name} has been successfully added.` });
@@ -184,7 +195,8 @@ export default function AgentsPage() {
             return false;
         }
      } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to add agent.' });
+        console.error("Failed to add agent:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred while adding agent.' });
         return false;
      }
   }
@@ -203,9 +215,15 @@ export default function AgentsPage() {
       );
       
       const responses = await Promise.all(deletePromises);
-      responses.forEach(res => { if(!res.ok) handleApiError(res)});
-
-      const successfulDeletes = responses.filter(res => res.ok).length;
+      
+      let successfulDeletes = 0;
+      responses.forEach(res => { 
+        if(res.ok) {
+          successfulDeletes++;
+        } else {
+          handleApiError(res);
+        }
+      });
 
       if (successfulDeletes > 0) {
         toast({
@@ -215,12 +233,11 @@ export default function AgentsPage() {
         });
         fetchAgents();
         setSelectedAgentIds([]);
-      } else {
-         toast({ variant: 'destructive', title: 'Error', description: "Could not delete agent(s)." });
       }
 
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'An error occurred during deletion.' });
+        console.error("Failed to delete agents:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred during deletion.' });
     } finally {
         setIsDeleteDialogOpen(false);
         setSelectedAgent(null);
