@@ -209,8 +209,8 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
                         className="capitalize flex items-center gap-1.5"
                     >
                          <span className={cn("h-2 w-2 rounded-full", {
-                            'bg-white': profile.agencyStatus === 'active',
-                            'bg-white': profile.agencyStatus === 'inactive'
+                            'bg-green-400': profile.agencyStatus === 'active',
+                            'bg-red-400': profile.agencyStatus === 'inactive'
                         })} />
                         {profile.agencyStatus}
                     </Badge>
