@@ -91,7 +91,7 @@ function OrdersTable({
                 <TableHead>Customer</TableHead>
                 {tableStatus !== 'pending' && <TableHead className="hidden sm:table-cell">Agent</TableHead>}
                 <TableHead className="hidden md:table-cell">Amount</TableHead>
-                <TableHead className="hidden lg:table-cell">Status</TableHead>
+                <TableHead className="hidden lg:table-cell">Order Status</TableHead>
                 <TableHead className="hidden sm:table-cell">Date</TableHead>
                 <TableHead>Action</TableHead>
               </TableRow>
