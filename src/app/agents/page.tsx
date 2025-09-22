@@ -8,8 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Trash2, Mail, Loader2 } from 'lucide-react';
-import type { Agent } from '@/lib/types';
+import { MoreHorizontal, PlusCircle, Trash2, Mail, Loader2, ChevronDown } from 'lucide-react';
+import type { Agent, Agency } from '@/lib/types';
 import { useEffect, useState, useMemo, useContext } from 'react';
 import { EditAgentDialog } from '@/components/edit-agent-dialog';
 import { AddAgentDialog } from '@/components/add-agent-dialog';
@@ -29,6 +29,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AuthContext, useAuth } from '@/context/auth-context';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ProfileContext } from '@/context/profile-context';
+import { cn } from '@/lib/utils';
 
 
 const ITEMS_PER_PAGE = 10;
@@ -270,6 +271,39 @@ export default function AgentsPage() {
 
   const isAdmin = profile.role === 'admin';
 
+  const handleToggleAgencyStatus = async (agency: Agency, newStatus: 'active' | 'inactive') => {
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/agencies/${agency.id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
+        return;
+      }
+      
+      if (result.success) {
+        toast({
+            title: 'Agency Status Updated',
+            description: `${agency.name}'s status is now ${newStatus}.`,
+        });
+        fetchAgents();
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
+      }
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
+    }
+  };
+
   return (
     <AppShell>
       <PageHeader title="Delivery Agent Management">
@@ -359,7 +393,34 @@ export default function AgentsPage() {
                           <div className="text-muted-foreground">{agent.Agency.city}</div>
                           <div className="text-muted-foreground">{agent.Agency.email}</div>
                           <div className="text-muted-foreground">{agent.Agency.phone}</div>
-                          <Badge variant={agent.Agency.status === 'active' ? 'secondary' : 'destructive'} className="mt-1 capitalize">{agent.Agency.status}</Badge>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="w-28 justify-between capitalize mt-1" onClick={(e) => e.stopPropagation()}>
+                                    <span className={cn({
+                                        'text-green-600': agent.Agency.status === 'active',
+                                        'text-gray-500': agent.Agency.status === 'inactive'
+                                    })}>
+                                        {agent.Agency.status}
+                                    </span>
+                                    <ChevronDown className="h-4 w-4 text-muted-foreground"/>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+                                <DropdownMenuItem 
+                                  onClick={() => handleToggleAgencyStatus(agent.Agency!, 'active')}
+                                  disabled={agent.Agency.status === 'active'}
+                                >
+                                    Set as Active
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleToggleAgencyStatus(agent.Agency!, 'inactive')}
+                                  disabled={agent.Agency.status === 'inactive'}
+                                  className="text-destructive"
+                                >
+                                    Set as Inactive
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       ) : (
                         <span className="text-xs text-muted-foreground">N/A</span>
@@ -464,5 +525,7 @@ export default function AgentsPage() {
     </AppShell>
   );
 }
+
+    
 
     
