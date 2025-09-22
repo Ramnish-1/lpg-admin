@@ -28,7 +28,6 @@ const contentSchema = z.object({
 });
 
 const termSchema = z.object({
-  title: z.string().min(1, "Main title is required."),
   content: z.array(contentSchema).min(1, "At least one content section is required."),
 });
 
@@ -53,12 +52,9 @@ export function EditTermsDialog({ term, isOpen, onOpenChange, onTermUpdate }: Ed
 
   useEffect(() => {
     if (isOpen) {
-      form.reset({
-        title: term.title,
-      });
       replace(term.content);
     }
-  }, [term, isOpen, form, replace]);
+  }, [term, isOpen, replace]);
 
   const handleSubmit = async (values: TermFormValues) => {
     const success = await onTermUpdate({ id: term.id, ...values });
@@ -71,17 +67,15 @@ export function EditTermsDialog({ term, isOpen, onOpenChange, onTermUpdate }: Ed
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh] p-0">
         <DialogHeader className="p-6 pb-4">
-          <DialogTitle>Edit Term: {term.title}</DialogTitle>
+          <DialogTitle>Edit Terms: Version {term.version}</DialogTitle>
           <DialogDescription>
-            Update the details for this term.
+            Update the sections for this version of the terms.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} noValidate className="flex flex-col overflow-hidden">
             <ScrollArea className="flex-1 px-6">
               <div className="grid gap-4 py-4">
-                <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Main Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-
                 <div className="space-y-4">
                   <FormLabel>Content Sections</FormLabel>
                    {fields.map((field, index) => (

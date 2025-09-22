@@ -35,7 +35,6 @@ const contentSchema = z.object({
 });
 
 const policySchema = z.object({
-  title: z.string().min(1, "Main title is required."),
   content: z.array(contentSchema).min(1, "At least one content section is required."),
 });
 
@@ -53,12 +52,9 @@ export function EditPolicyDialog({ policy, isOpen, onOpenChange, onPolicyUpdate 
 
   useEffect(() => {
     if (isOpen) {
-      form.reset({
-        title: policy.title,
-      });
       replace(policy.content);
     }
-  }, [policy, isOpen, form, replace]);
+  }, [policy, isOpen, replace]);
 
   const handleSubmit = async (values: PolicyFormValues) => {
     const success = await onPolicyUpdate({ id: policy.id, ...values });
@@ -71,17 +67,15 @@ export function EditPolicyDialog({ policy, isOpen, onOpenChange, onPolicyUpdate 
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh] p-0">
         <DialogHeader className="p-6 pb-4">
-          <DialogTitle>Edit Policy: {policy.title}</DialogTitle>
+          <DialogTitle>Edit Policy: Version {policy.version}</DialogTitle>
           <DialogDescription>
-            Update the details for this privacy policy.
+            Update the sections for this privacy policy.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} noValidate className="flex flex-col overflow-hidden">
             <ScrollArea className="flex-1 px-6">
               <div className="grid gap-4 py-4">
-                 <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Main Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                 
                  <div className="space-y-4">
                   <FormLabel>Content Sections</FormLabel>
                    {fields.map((field, index) => (

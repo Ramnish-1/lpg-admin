@@ -85,7 +85,7 @@ export default function TermsPage() {
           return false;
       }
       
-      toast({ title: 'Term Added', description: `Term "${newTerm.title}" has been successfully added.` });
+      toast({ title: 'Term Added', description: `A new version of terms has been successfully added.` });
       fetchTerms();
       return true;
     } catch (error) {
@@ -113,7 +113,7 @@ export default function TermsPage() {
         return false;
       }
       
-      toast({ title: 'Term Updated', description: `Term "${updatedTerm.title}" has been successfully updated.` });
+      toast({ title: 'Term Updated', description: `Term version "${updatedTerm.version}" has been successfully updated.` });
       fetchTerms();
       return true;
     } catch (error) {
@@ -144,7 +144,7 @@ export default function TermsPage() {
       if (response.ok) {
         toast({
           title: 'Term Deleted',
-          description: `Term "${selectedTerm.title}" has been deleted.`,
+          description: `Term version "${selectedTerm.version}" has been deleted.`,
           variant: 'destructive'
         });
         fetchTerms();
@@ -215,7 +215,7 @@ export default function TermsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
+                  <TableHead>Content</TableHead>
                   <TableHead className="hidden md:table-cell">Version</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Last Updated</TableHead>
@@ -227,7 +227,10 @@ export default function TermsPage() {
               <TableBody>
                 {paginatedTerms.map((term: TermsAndCondition) => (
                   <TableRow key={term.id}>
-                    <TableCell className="font-medium max-w-sm truncate">{term.title}</TableCell>
+                    <TableCell className="font-medium max-w-sm truncate">
+                        {term.content[0]?.title || 'No Title'}
+                        {term.content.length > 1 && ` (+${term.content.length - 1} more sections)`}
+                    </TableCell>
                     <TableCell className="hidden md:table-cell">{term.version}</TableCell>
                     <TableCell>
                       <DropdownMenu>

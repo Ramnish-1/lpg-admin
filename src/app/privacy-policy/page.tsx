@@ -85,7 +85,7 @@ export default function PrivacyPolicyPage() {
         return false;
       }
       
-      toast({ title: 'Policy Added', description: `Policy "${newPolicy.title}" has been successfully added.` });
+      toast({ title: 'Policy Added', description: `A new privacy policy has been successfully added.` });
       fetchPolicies();
       return true;
     } catch (error) {
@@ -113,7 +113,7 @@ export default function PrivacyPolicyPage() {
         return false;
       }
       
-      toast({ title: 'Policy Updated', description: `Policy "${updatedPolicy.title}" has been successfully updated.` });
+      toast({ title: 'Policy Updated', description: `Policy version "${updatedPolicy.version}" has been successfully updated.` });
       fetchPolicies();
       return true;
     } catch (error) {
@@ -144,7 +144,7 @@ export default function PrivacyPolicyPage() {
       if (response.ok) {
         toast({
           title: 'Policy Deleted',
-          description: `Policy "${selectedPolicy.title}" has been deleted.`,
+          description: `Policy version "${selectedPolicy.version}" has been deleted.`,
           variant: 'destructive'
         });
         fetchPolicies();
@@ -215,7 +215,7 @@ export default function PrivacyPolicyPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
+                  <TableHead>Content</TableHead>
                   <TableHead className="hidden md:table-cell">Version</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Last Updated</TableHead>
@@ -227,7 +227,10 @@ export default function PrivacyPolicyPage() {
               <TableBody>
                 {paginatedPolicies.map((policy: PrivacyPolicy) => (
                   <TableRow key={policy.id}>
-                    <TableCell className="font-medium max-w-sm truncate">{policy.title}</TableCell>
+                    <TableCell className="font-medium max-w-sm truncate">
+                        {policy.content[0]?.title || 'No Title'}
+                        {policy.content.length > 1 && ` (+${policy.content.length - 1} more sections)`}
+                    </TableCell>
                     <TableCell className="hidden md:table-cell">{policy.version}</TableCell>
                     <TableCell>
                       <DropdownMenu>

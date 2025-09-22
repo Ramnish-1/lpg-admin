@@ -1,5 +1,4 @@
 
-
 export interface UserAddress {
   id: string;
   city: string;
@@ -190,14 +189,13 @@ export interface Agency {
   confirmationExpiresAt: Date | null;
 }
 
-interface ContentSection {
+export interface ContentSection {
     title: string;
     description: string;
 }
 
 export interface TermsAndCondition {
     id: string;
-    title: string;
     content: ContentSection[];
     status: 'active' | 'inactive';
     version: string;
@@ -207,7 +205,6 @@ export interface TermsAndCondition {
 
 export interface PrivacyPolicy {
     id: string;
-    title: string;
     content: ContentSection[];
     status: 'active' | 'inactive';
     version: string;
