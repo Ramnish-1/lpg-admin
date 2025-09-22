@@ -186,7 +186,7 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
     return null; // or a loading spinner
   }
 
-  const displayPhotoUrl = profile.photoUrl?.startsWith('https://') 
+  const displayPhotoUrl = profile.photoUrl?.startsWith('https://') || profile.photoUrl?.startsWith('blob:')
     ? profile.photoUrl 
     : profile.photoUrl ? `${API_BASE_URL}/${profile.photoUrl}` : '';
 

@@ -60,6 +60,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         });
         if (!response.ok) {
             handleApiError(response);
+            setProfileState(defaultProfile);
+            setIsFetchingProfile(false);
             return;
         }
         const result = await response.json();
