@@ -345,12 +345,14 @@ export default function AgentsPage() {
             </span>
           </Button>
         ) : (
-          <Button size="sm" className="h-8 gap-1" onClick={() => setIsAddDialogOpen(true)}>
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-              Add Agent
-            </span>
-          </Button>
+          !isAdmin && (
+            <Button size="sm" className="h-8 gap-1" onClick={() => setIsAddDialogOpen(true)}>
+              <PlusCircle className="h-3.5 w-3.5" />
+              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                Add Agent
+              </span>
+            </Button>
+          )
         )}
       </PageHeader>
       <Card>
@@ -582,5 +584,7 @@ export default function AgentsPage() {
     
 
 
+
+    
 
     
