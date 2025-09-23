@@ -397,7 +397,10 @@ export default function ProductsPage() {
                            {isAdmin ? (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <Button variant="outline" size="sm" className={cn("w-28 justify-between capitalize", { 'bg-destructive text-destructive-foreground hover:bg-destructive/90': product.status === 'inactive' })}>
+                                      <Button variant="outline" size="sm" className={cn("w-28 justify-between capitalize", { 
+                                          'bg-destructive text-destructive-foreground hover:bg-destructive/90': product.status === 'inactive',
+                                          'bg-green-600 text-white hover:bg-green-600/90': product.status === 'active'
+                                        })}>
                                             <span>
                                                 {product.status}
                                             </span>
