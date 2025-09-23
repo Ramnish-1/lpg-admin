@@ -64,10 +64,10 @@ export default function AgentsPage() {
   const { token } = useContext(AuthContext);
   const { handleApiError } = useAuth();
   const { profile } = useContext(ProfileContext);
-  const isAdmin = profile.role === 'admin';
+  const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
 
 
-  const fetchAgents = async () => {
+  const fetchAgents = useCallback(async () => {
     if (!token) return;
     setIsLoading(true);
     try {
@@ -90,7 +90,7 @@ export default function AgentsPage() {
     } finally {
         setIsLoading(false);
     }
-  };
+  }, [token, toast, handleApiError]);
 
   const fetchAgencies = useCallback(async () => {
     if (!token || !isAdmin) return;
@@ -115,7 +115,7 @@ export default function AgentsPage() {
   useEffect(() => {
     fetchAgents();
     fetchAgencies();
-  }, [token, fetchAgencies]);
+  }, [fetchAgents, fetchAgencies]);
   
   const filteredAgents = useMemo(() => {
     if (selectedAgency === 'all') {
@@ -578,13 +578,3 @@ export default function AgentsPage() {
     </AppShell>
   );
 }
-
-    
-
-    
-
-
-
-    
-
-    
