@@ -9,8 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, AlertCircle, Loader2, Trash2, Building, PackagePlus, Settings, ChevronDown } from 'lucide-react';
-import type { Product, Agency, AgencyInventory } from '@/lib/types';
+import { MoreHorizontal, PlusCircle, AlertCircle, Loader2, Trash2, Settings, PackagePlus, ChevronDown } from 'lucide-react';
+import type { Product, AgencyInventory } from '@/lib/types';
 import { useEffect, useState, useMemo, useCallback, useContext } from 'react';
 import { ProductDetailsDialog } from '@/components/product-details-dialog';
 import { EditProductDialog } from '@/components/edit-product-dialog';
@@ -20,7 +20,6 @@ import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/context/auth-context';
 import { ProfileContext } from '@/context/profile-context';
-import { useRouter } from 'next/navigation';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -38,7 +37,6 @@ export default function ProductsPage() {
   const { token, handleApiError } = useAuth();
   const { profile } = useContext(ProfileContext);
   const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
-  const router = useRouter();
 
   const fetchData = useCallback(async () => {
     if (!token) return;

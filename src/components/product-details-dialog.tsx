@@ -11,8 +11,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import type { Product, AgencyInventory, ProductVariant } from '@/lib/types';
-import { IndianRupee, Package, PackageCheck, AlertCircle, Info, Beaker, Image as ImageIcon } from 'lucide-react';
+import type { Product, ProductVariant } from '@/lib/types';
+import { Package, PackageCheck, AlertCircle, Beaker } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
 import Image from 'next/image';
@@ -45,7 +45,7 @@ export function ProductDetailsDialog({ item: product, isOpen, onOpenChange, isAd
 
   const totalStock = agencyInventory 
     ? agencyInventory.agencyVariants.reduce((sum, v) => sum + v.stock, 0)
-    : product.AgencyInventory?.reduce((sum, inv) => inv.stock, 0) ?? 0;
+    : product.AgencyInventory?.reduce((sum, inv) => sum + inv.stock, 0) ?? 0;
     
   const lowStockThreshold = agencyInventory?.lowStockThreshold ?? product.lowStockThreshold;
   const isLowStock = totalStock < lowStockThreshold;

@@ -37,7 +37,7 @@ interface AddProductDialogProps {
 const variantSchema = z.object({
   label: z.string().min(1, "Label is required"),
   price: z.coerce.number().min(0, "Price must be positive."),
-  stock: z.coerce.number().int().min(0, "Stock must be a whole number."),
+  stock: z.coerce.number().int().min(0, "Stock must be a whole number.").optional(),
 });
 
 const productSchema = z.object({
@@ -64,7 +64,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
       description: '',
       category: 'lpg',
       lowStockThreshold: 10,
-      variants: [{ label: '', price: '' as any, stock: '' as any }],
+      variants: [{ label: '', price: '' as any, stock: 0 }],
     }
   });
 
@@ -91,7 +91,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
       variants: values.variants.map(v => ({
         label: v.label,
         price: v.price,
-        stock: v.stock,
+        stock: v.stock || 0,
       })),
     };
     const success = await onProductAdd(payload, imageFiles);
@@ -170,16 +170,15 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                           <div className="space-y-4 mt-2">
                               {fields.map((field, index) => (
                                   <div key={field.id} className="flex items-start gap-2 p-3 border rounded-md relative">
-                                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
                                           <FormField control={form.control} name={`variants.${index}.label`} render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input placeholder="e.g. 14.2kg" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                           <FormField control={form.control} name={`variants.${index}.price`} render={({ field }) => (<FormItem><FormLabel>Base Price (₹)</FormLabel><FormControl><Input type="number" placeholder="1100" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                          <FormField control={form.control} name={`variants.${index}.stock`} render={({ field }) => (<FormItem><FormLabel>Initial Stock (Optional)</FormLabel><FormControl><Input type="number" placeholder="0" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                       </div>
                                       <Button type="button" variant="ghost" size="icon" className="shrink-0 -mt-1 -mr-1" onClick={() => remove(index)} disabled={fields.length <= 1}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                   </div>
                               ))}
                           </div>
-                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ label: '', price: '' as any, stock: '' as any })}><PlusCircle className="mr-2 h-4 w-4"/>Add Variant</Button>
+                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ label: '', price: '' as any, stock: 0 })}><PlusCircle className="mr-2 h-4 w-4"/>Add Variant</Button>
                           <FormMessage>{form.formState.errors.variants?.message || form.formState.errors.variants?.root?.message}</FormMessage>
                       </div>
 

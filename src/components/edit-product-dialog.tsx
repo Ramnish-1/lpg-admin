@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Product, AgencyInventory, ProductVariant } from '@/lib/types';
+import { Product, ProductVariant } from '@/lib/types';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -227,11 +227,11 @@ export function EditProductDialog({ item: product, isOpen, onOpenChange, onProdu
                                       <CarouselItem key={src} className="pl-2 basis-1/3 sm:basis-1/4 md:basis-1/5">
                                           <div className="relative aspect-square group">
                                               <Image 
-                                                  src={src.startsWith('http') || src.startsWith('blob:') ? src : `${API_BASE_URL}${src}`} 
+                                                  src={src.startsWith('http') || src.startsWith('blob:') ? src : `${API_BASE_URL}/${src}`} 
                                                   alt={`Preview ${index + 1}`} 
                                                   fill
                                                   className="rounded-md object-cover cursor-pointer"
-                                                  onClick={() => openImageViewer(src.startsWith('http') || src.startsWith('blob:') ? src : `${API_BASE_URL}${src}`)}
+                                                  onClick={() => openImageViewer(src.startsWith('http') || src.startsWith('blob:') ? src : `${API_BASE_URL}/${src}`)}
                                               />
                                               <Button 
                                                   type="button" 
