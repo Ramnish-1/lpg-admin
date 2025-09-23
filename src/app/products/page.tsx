@@ -461,7 +461,7 @@ export default function ProductsPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleShowDetails(product)}>View Details</DropdownMenuItem>
-                            {isAdmin && (
+                            {isAdmin ? (
                               <>
                                 <DropdownMenuItem onClick={() => handleEdit(product)}>Edit Product</DropdownMenuItem>
                                 <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(product)}>
@@ -469,8 +469,7 @@ export default function ProductsPage() {
                                   Delete
                                 </DropdownMenuItem>
                               </>
-                            )}
-                            {!isAdmin && (
+                            ) : (
                                <DropdownMenuItem onClick={() => handleManageInventory(product)}>
                                 {!!agencyInventory ? <Settings className="mr-2 h-4 w-4" /> : <PackagePlus className="mr-2 h-4 w-4" />}
                                 {!!agencyInventory ? 'Manage Inventory' : 'Add to My Inventory'}
