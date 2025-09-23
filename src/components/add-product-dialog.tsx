@@ -64,7 +64,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
       description: '',
       category: 'lpg',
       lowStockThreshold: 10,
-      variants: [{ label: '', price: '' as any, stock: 0 }],
+      variants: [{ label: '', price: '' as any }],
     }
   });
 
@@ -178,7 +178,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                                   </div>
                               ))}
                           </div>
-                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ label: '', price: '' as any, stock: 0 })}><PlusCircle className="mr-2 h-4 w-4"/>Add Variant</Button>
+                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ label: '', price: '' as any })}><PlusCircle className="mr-2 h-4 w-4"/>Add Variant</Button>
                           <FormMessage>{form.formState.errors.variants?.message || form.formState.errors.variants?.root?.message}</FormMessage>
                       </div>
 
