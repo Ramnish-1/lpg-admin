@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useContext } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,12 +10,13 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import type { Product, AgencyInventory } from '@/lib/types';
+import type { Product, AgencyInventory, ProductVariant } from '@/lib/types';
 import { IndianRupee, Package, PackageCheck, AlertCircle, Info, Beaker, Image as ImageIcon } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
 import Image from 'next/image';
 import { Card, CardContent } from './ui/card';
+import { ProfileContext } from '@/context/profile-context';
 
 interface ProductDetailsDialogProps {
   item: Product | AgencyInventory | null;
@@ -27,20 +29,26 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 
 export function ProductDetailsDialog({ item, isOpen, onOpenChange, isAdmin }: ProductDetailsDialogProps) {
+  const { profile } = useContext(ProfileContext);
+
   if (!item) return null;
 
   const product = 'productName' in item ? item : item.Product;
-  const inventory = 'agencyId' in item ? item : null;
   
-  const safeVariants = Array.isArray(inventory?.agencyVariants) && inventory.agencyVariants.length > 0 
-    ? inventory.agencyVariants 
-    : Array.isArray(product.variants) ? product.variants : [];
+  const agencyInventory = !isAdmin 
+      ? product.AgencyInventory?.find(inv => inv.agencyId === profile.agencyId)
+      : null;
+
+  const variantsToDisplay: ProductVariant[] = 
+    (agencyInventory && agencyInventory.agencyVariants?.length > 0)
+      ? agencyInventory.agencyVariants 
+      : product.variants;
+
+  const totalStock = agencyInventory 
+    ? agencyInventory.agencyVariants.reduce((sum, v) => sum + v.stock, 0)
+    : product.AgencyInventory?.reduce((sum, inv) => sum + inv.stock, 0) ?? 0;
     
-  const totalStock = inventory 
-    ? inventory.stock
-    : product.AgencyInventory?.reduce((acc, inv) => acc + inv.stock, 0) ?? 0;
-    
-  const lowStockThreshold = inventory ? inventory.lowStockThreshold : product.lowStockThreshold;
+  const lowStockThreshold = agencyInventory?.lowStockThreshold ?? product.lowStockThreshold;
   const isLowStock = totalStock < lowStockThreshold;
   
   return (
@@ -85,9 +93,9 @@ export function ProductDetailsDialog({ item, isOpen, onOpenChange, isAdmin }: Pr
 
             <Card>
               <CardContent className="pt-6 space-y-4">
-                  <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2"><Beaker className="h-4 w-4"/> {inventory ? "Agency Variants & Pricing" : "Default Variants"}</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2"><Beaker className="h-4 w-4"/> {agencyInventory ? "Agency Variants & Pricing" : "Default Variants"}</h3>
                    <div className="space-y-2">
-                      {safeVariants.map((variant, index) => (
+                      {variantsToDisplay.map((variant, index) => (
                         <div key={index} className="flex justify-between items-center p-2 rounded-md bg-muted/40 text-sm">
                           <span className="font-semibold">{variant.label}</span>
                           <div className="flex items-center gap-4">

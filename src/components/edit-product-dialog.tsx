@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useContext } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Product, AgencyInventory } from '@/lib/types';
+import { Product, AgencyInventory, ProductVariant } from '@/lib/types';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,6 +25,7 @@ import { ScrollArea } from './ui/scroll-area';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
 import { ImageViewerDialog } from './image-viewer-dialog';
+import { ProfileContext } from '@/context/profile-context';
 
 type EditProductPayload = Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images' | 'AgencyInventory'> & { id: string };
 
@@ -61,6 +62,7 @@ export function EditProductDialog({ item, isOpen, onOpenChange, onProductUpdate,
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { profile } = useContext(ProfileContext);
 
   const product = 'productName' in item ? item : item.Product;
 
@@ -86,15 +88,28 @@ export function EditProductDialog({ item, isOpen, onOpenChange, onProductUpdate,
 
   useEffect(() => {
     if (isOpen && product) {
-      form.reset({
-        ...product,
-        category: product.category || 'lpg',
-      });
-      setImagePreviews(product.images || []);
-      setImagesToDelete([]);
-      setNewImageFiles([]);
+        let variantsToShow: ProductVariant[] = product.variants;
+        let thresholdToShow = product.lowStockThreshold;
+
+        if (!isAdmin) {
+            const agencyInventory = product.AgencyInventory?.find(inv => inv.agencyId === profile.agencyId);
+            if (agencyInventory && agencyInventory.agencyVariants.length > 0) {
+                variantsToShow = agencyInventory.agencyVariants;
+                thresholdToShow = agencyInventory.lowStockThreshold;
+            }
+        }
+        
+        form.reset({
+            ...product,
+            category: product.category || 'lpg',
+            variants: variantsToShow,
+            lowStockThreshold: thresholdToShow
+        });
+        setImagePreviews(product.images || []);
+        setImagesToDelete([]);
+        setNewImageFiles([]);
     }
-  }, [product, isOpen, form]);
+  }, [product, isOpen, form, isAdmin, profile.agencyId]);
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -114,7 +129,6 @@ export function EditProductDialog({ item, isOpen, onOpenChange, onProductUpdate,
             handleOpenChange(false);
         }
     } else {
-        // For agency owners, only send inventory-related data.
         const inventoryData = {
           lowStockThreshold: values.lowStockThreshold,
           variants: values.variants,
