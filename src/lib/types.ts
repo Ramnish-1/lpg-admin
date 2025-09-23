@@ -1,4 +1,5 @@
 
+
 export interface UserAddress {
   id: string;
   city: string;
@@ -39,12 +40,13 @@ export interface AgencyInventory {
   agencyId: string;
   stock: number;
   lowStockThreshold: number;
-  agencyPrice: number;
+  agencyPrice: number; // This might be deprecated if agencyVariants is used
   agencyVariants: ProductVariant[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  Product: Product; // Include the full product details
+  Product?: Product; 
+  Agency?: Agency;
 }
 
 
@@ -53,14 +55,13 @@ export interface Product {
   productName: string;
   description: string;
   category: 'lpg' | 'accessories';
-  status: 'Active' | 'Inactive';
+  status: 'active' | 'inactive';
   lowStockThreshold: number; // This might be a global default
   variants: ProductVariant[]; // Global default variants
   images: string[]; // URLs to images
   createdAt: string;
   updatedAt: string;
-  // agencyId is removed to make the product global
-  AgencyInventory: AgencyInventory[]; // An array of inventory records for different agencies
+  AgencyInventory?: AgencyInventory[]; // An array of inventory records for different agencies
 }
 
 
@@ -206,6 +207,8 @@ export interface ContentSection {
 export interface TermsAndCondition {
     id: string;
     version: string;
+    title: string;
+    description: string;
     status: 'active' | 'inactive';
     content: ContentSection[];
     createdAt: string;
@@ -215,6 +218,8 @@ export interface TermsAndCondition {
 export interface PrivacyPolicy {
     id: string;
     version: string;
+    title: string;
+    description: string;
     status: 'active' | 'inactive';
     content: ContentSection[];
     createdAt: string;

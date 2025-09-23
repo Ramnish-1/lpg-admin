@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { AppShell } from '@/components/app-shell';
@@ -261,7 +262,7 @@ export default function ProductsPage() {
   }
   
   const handleToggleStatus = async (product: Product, newStatus: 'active' | 'inactive') => {
-    if (!token) return;
+    if (!token || !isAdmin) return;
     try {
       const response = await fetch(`${API_BASE_URL}/api/products/${product.id}/status`, {
         method: 'PATCH',

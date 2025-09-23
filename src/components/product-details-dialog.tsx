@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useContext } from 'react';
@@ -19,7 +20,7 @@ import { Card, CardContent } from './ui/card';
 import { ProfileContext } from '@/context/profile-context';
 
 interface ProductDetailsDialogProps {
-  item: Product | AgencyInventory | null;
+  item: Product | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   isAdmin: boolean;
@@ -28,12 +29,10 @@ interface ProductDetailsDialogProps {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 
-export function ProductDetailsDialog({ item, isOpen, onOpenChange, isAdmin }: ProductDetailsDialogProps) {
+export function ProductDetailsDialog({ item: product, isOpen, onOpenChange, isAdmin }: ProductDetailsDialogProps) {
   const { profile } = useContext(ProfileContext);
 
-  if (!item) return null;
-
-  const product = 'productName' in item ? item : item.Product;
+  if (!product) return null;
   
   const agencyInventory = !isAdmin 
       ? product.AgencyInventory?.find(inv => inv.agencyId === profile.agencyId)
@@ -46,7 +45,7 @@ export function ProductDetailsDialog({ item, isOpen, onOpenChange, isAdmin }: Pr
 
   const totalStock = agencyInventory 
     ? agencyInventory.agencyVariants.reduce((sum, v) => sum + v.stock, 0)
-    : product.AgencyInventory?.reduce((sum, inv) => sum + inv.stock, 0) ?? 0;
+    : product.AgencyInventory?.reduce((sum, inv) => inv.stock, 0) ?? 0;
     
   const lowStockThreshold = agencyInventory?.lowStockThreshold ?? product.lowStockThreshold;
   const isLowStock = totalStock < lowStockThreshold;

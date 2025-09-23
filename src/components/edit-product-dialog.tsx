@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState, useRef, useContext } from 'react';
@@ -30,7 +31,7 @@ import { ProfileContext } from '@/context/profile-context';
 type EditProductPayload = Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images' | 'AgencyInventory'> & { id: string };
 
 interface EditProductDialogProps {
-  item: Product | AgencyInventory;
+  item: Product;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onProductUpdate: (product: EditProductPayload, imagesToDelete?: string[], newImages?: File[]) => Promise<boolean>;
@@ -55,7 +56,7 @@ const productSchema = z.object({
 type ProductFormValues = z.infer<typeof productSchema>;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-export function EditProductDialog({ item, isOpen, onOpenChange, onProductUpdate, onInventoryUpdate, isAdmin }: EditProductDialogProps) {
+export function EditProductDialog({ item: product, isOpen, onOpenChange, onProductUpdate, onInventoryUpdate, isAdmin }: EditProductDialogProps) {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
@@ -63,8 +64,6 @@ export function EditProductDialog({ item, isOpen, onOpenChange, onProductUpdate,
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { profile } = useContext(ProfileContext);
-
-  const product = 'productName' in item ? item : item.Product;
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
