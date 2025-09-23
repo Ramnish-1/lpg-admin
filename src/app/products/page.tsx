@@ -176,7 +176,7 @@ export default function ProductsPage() {
   const handleInventoryUpdate = async (inventoryData: any): Promise<boolean> => {
     if (!token || isAdmin || !selectedItem) return false;
 
-    const { lowStockThreshold, variants } = inventoryData;
+    const { variants, lowStockThreshold } = inventoryData;
     const stock = variants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0);
     const agencyId = profile.agencyId;
 
@@ -346,13 +346,11 @@ export default function ProductsPage() {
 
                   const isLowStock = totalStock < lowStockThreshold;
 
-                  const isInMyInventory = !!agencyInventory;
-
                   return (
                     <TableRow 
                       key={product.id} 
                       className={cn("cursor-pointer", {
-                        "bg-red-100 hover:bg-red-100/80 dark:bg-red-900/20 dark:hover:bg-red-900/30": isLowStock && (isAdmin || isInMyInventory)
+                        "bg-red-100 hover:bg-red-100/80 dark:bg-red-900/20 dark:hover:bg-red-900/30": isLowStock && (isAdmin || !!agencyInventory)
                       })}
                       onClick={() => handleShowDetails(product)}
                     >
@@ -361,7 +359,7 @@ export default function ProductsPage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <span>{totalStock}</span>
-                          {isLowStock && (isAdmin || isInMyInventory) && (
+                          {isLowStock && (isAdmin || !!agencyInventory) && (
                             <Badge variant="destructive" className="flex items-center gap-1">
                               <AlertCircle className="h-3 w-3" /> Low
                             </Badge>
@@ -393,7 +391,15 @@ export default function ProductsPage() {
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                            ) : (
-                                <Badge variant={isInMyInventory ? 'secondary' : 'outline'}>{isInMyInventory ? 'In My Inventory' : 'Not In Inventory'}</Badge>
+                                <>
+                                  {agencyInventory ? (
+                                    <Badge variant={agencyInventory.isActive ? 'secondary' : 'destructive'}>
+                                      {agencyInventory.isActive ? 'Active' : 'Inactive'}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant='outline'>Not In Inventory</Badge>
+                                  )}
+                                </>
                            )}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
@@ -409,6 +415,10 @@ export default function ProductsPage() {
                             {isAdmin && (
                               <>
                                 <DropdownMenuItem onClick={() => handleEdit(product)}>Edit Product</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => router.push(`/products/${product.id}/agencies`)}>
+                                  <Building className="mr-2 h-4 w-4" />
+                                  View in Agencies
+                                </DropdownMenuItem>
                                 <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(product)}>
                                   <Trash2 className="mr-2 h-4 w-4" />
                                   Delete
@@ -417,8 +427,8 @@ export default function ProductsPage() {
                             )}
                             {!isAdmin && (
                                <DropdownMenuItem onClick={() => handleManageInventory(product)}>
-                                {isInMyInventory ? <Settings className="mr-2 h-4 w-4" /> : <PackagePlus className="mr-2 h-4 w-4" />}
-                                {isInMyInventory ? 'Manage Inventory' : 'Add to My Inventory'}
+                                {!!agencyInventory ? <Settings className="mr-2 h-4 w-4" /> : <PackagePlus className="mr-2 h-4 w-4" />}
+                                {!!agencyInventory ? 'Manage Inventory' : 'Add to My Inventory'}
                               </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>
@@ -500,3 +510,5 @@ export default function ProductsPage() {
     </AppShell>
   );
 }
+
+    
