@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { AppShell } from '@/components/app-shell';
@@ -9,10 +9,10 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Building2, Mail, Phone, MapPin } from 'lucide-react';
+import { Loader2, Building2, Mail, Phone, MapPin, Search } from 'lucide-react';
 import type { Product, AgencyInventory } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
-import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -21,6 +21,7 @@ export default function ProductAgenciesPage() {
   const productId = params.productId as string;
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const { token, handleApiError } = useAuth();
 
   const fetchProductData = useCallback(async () => {
@@ -49,6 +50,14 @@ export default function ProductAgenciesPage() {
   useEffect(() => {
     fetchProductData();
   }, [fetchProductData]);
+  
+  const filteredInventories = useMemo(() => {
+    if (!product?.AgencyInventory) return [];
+    return product.AgencyInventory.filter(inventory =>
+      inventory.Agency.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [product, searchTerm]);
+
 
   if (isLoading) {
     return (
@@ -90,10 +99,23 @@ export default function ProductAgenciesPage() {
       </PageHeader>
 
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold tracking-tight">Agency Inventory</h2>
+        <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold tracking-tight">Agency Inventory</h2>
+            <div className="relative w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder="Search for an agency..."
+                    className="pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+        </div>
+
         <div className="grid gap-6 md:grid-cols-2">
-            {product.AgencyInventory && product.AgencyInventory.length > 0 ? (
-                product.AgencyInventory.map((inventory: AgencyInventory) => (
+            {filteredInventories.length > 0 ? (
+                filteredInventories.map((inventory: AgencyInventory) => (
                    <Card key={inventory.id}>
                         <CardHeader>
                             <div className="flex items-center justify-between">
@@ -139,7 +161,9 @@ export default function ProductAgenciesPage() {
                 <div className="md:col-span-2">
                     <Card>
                         <CardContent className="h-24 flex items-center justify-center">
-                            <p className="text-muted-foreground">This product has not been assigned to any agencies yet.</p>
+                            <p className="text-muted-foreground">
+                                {searchTerm ? `No agencies found matching "${searchTerm}".` : 'This product has not been assigned to any agencies yet.'}
+                            </p>
                         </CardContent>
                     </Card>
                 </div>
