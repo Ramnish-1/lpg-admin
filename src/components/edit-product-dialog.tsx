@@ -114,9 +114,13 @@ export function EditProductDialog({ item, isOpen, onOpenChange, onProductUpdate,
             handleOpenChange(false);
         }
     } else {
-        // Handle inventory update for agency owner
-        // const success = await onInventoryUpdate(values);
-        // if(success) handleOpenChange(false);
+        // For agency owners, only send inventory-related data.
+        const inventoryData = {
+          lowStockThreshold: values.lowStockThreshold,
+          variants: values.variants,
+        };
+        const success = await onInventoryUpdate(inventoryData);
+        if(success) handleOpenChange(false);
     }
   };
   
