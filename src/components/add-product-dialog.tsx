@@ -37,6 +37,7 @@ interface AddProductDialogProps {
 const variantSchema = z.object({
   label: z.string().min(1, "Label is required"),
   price: z.coerce.number().min(0, "Price must be positive."),
+  // Stock is optional for global products
   stock: z.coerce.number().int().min(0, "Stock must be a whole number.").optional(),
 });
 
@@ -87,6 +88,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     }
     form.clearErrors("root");
     
+    // Per your guide, global variants don't have stock.
     const payload: AddProductPayload = {
       ...values,
       variants: values.variants.map(v => ({
