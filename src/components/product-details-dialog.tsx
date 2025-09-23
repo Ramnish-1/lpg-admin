@@ -38,14 +38,14 @@ export function ProductDetailsDialog({ item: product, isOpen, onOpenChange, isAd
       ? product.AgencyInventory?.find(inv => inv.agencyId === profile.agencyId)
       : null;
 
-  const variantsToDisplay: ProductVariant[] = 
+  const variantsToDisplay: Partial<ProductVariant>[] = 
     (agencyInventory && agencyInventory.agencyVariants?.length > 0)
       ? agencyInventory.agencyVariants 
       : product.variants;
 
   const totalStock = isAdmin
-    ? product.AgencyInventory?.reduce((sum, inv) => sum + (inv.agencyVariants?.reduce((vSum, v) => vSum + v.stock, 0) || 0), 0) ?? 0
-    : agencyInventory?.agencyVariants.reduce((sum, v) => sum + v.stock, 0) ?? 0;
+    ? product.AgencyInventory?.reduce((sum, inv) => sum + (inv.agencyVariants?.reduce((vSum, v) => vSum + (v.stock || 0), 0) || 0), 0) ?? 0
+    : agencyInventory?.agencyVariants.reduce((sum, v) => sum + (v.stock || 0), 0) ?? 0;
     
   const lowStockThreshold = agencyInventory?.lowStockThreshold ?? product.lowStockThreshold;
   const isLowStock = totalStock < lowStockThreshold;
@@ -98,8 +98,8 @@ export function ProductDetailsDialog({ item: product, isOpen, onOpenChange, isAd
                         <div key={index} className="flex justify-between items-center p-2 rounded-md bg-muted/40 text-sm">
                           <span className="font-semibold">{variant.label}</span>
                           <div className="flex items-center gap-4">
-                            {!isAdmin && <span className="text-muted-foreground">Stock: {variant.stock}</span>}
-                            <span className="font-medium">₹{variant.price.toLocaleString()}</span>
+                            <span className="text-muted-foreground">Stock: {variant.stock ?? 0}</span>
+                            <span className="font-medium">₹{variant.price?.toLocaleString()}</span>
                           </div>
                         </div>
                       ))}
@@ -127,4 +127,5 @@ export function ProductDetailsDialog({ item: product, isOpen, onOpenChange, isAd
     </Dialog>
   );
 }
+
 
