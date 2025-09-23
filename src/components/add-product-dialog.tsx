@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Button } from '@/components/ui/button';
@@ -35,10 +36,9 @@ interface AddProductDialogProps {
 }
 
 const variantSchema = z.object({
-  label: z.string().min(1, "Label is required"),
+  value: z.coerce.number().min(0, "Value must be a positive number."),
+  unit: z.enum(['kg', 'meter']),
   price: z.coerce.number().min(0, "Price must be positive."),
-  // Stock is optional for global products
-  stock: z.coerce.number().int().min(0, "Stock must be a whole number.").optional(),
 });
 
 const productSchema = z.object({
@@ -57,6 +57,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -65,7 +66,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
       description: '',
       category: 'lpg',
       lowStockThreshold: 10,
-      variants: [{ label: '', price: '' as any }],
+      variants: [{ value: '' as any, unit: 'kg', price: '' as any }],
     }
   });
 
@@ -79,6 +80,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     setImageFiles([]);
     setImagePreviews([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    setIsSubmitting(false);
   }
 
   const handleSubmit = async (values: ProductFormValues) => {
@@ -88,20 +90,25 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     }
     form.clearErrors("root");
     
-    // Per your guide, global variants don't have stock.
+    setIsSubmitting(true);
+    
     const payload: AddProductPayload = {
       ...values,
       variants: values.variants.map(v => ({
-        label: v.label,
-        price: v.price,
+        ...v,
+        label: `${v.value}${v.unit}`,
+        stock: 0, // Stock is managed at agency level
       })),
     };
 
-    const success = await onProductAdd(payload, imageFiles);
-    
-    if (success) {
-      resetDialog();
-      onOpenChange(false);
+    try {
+        const success = await onProductAdd(payload, imageFiles);
+        if (success) {
+          resetDialog();
+          onOpenChange(false);
+        }
+    } finally {
+        setIsSubmitting(false);
     }
   };
   
@@ -173,15 +180,16 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                           <div className="space-y-4 mt-2">
                               {fields.map((field, index) => (
                                   <div key={field.id} className="flex items-start gap-2 p-3 border rounded-md relative">
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
-                                          <FormField control={form.control} name={`variants.${index}.label`} render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input placeholder="e.g. 14.2kg" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
+                                          <FormField control={form.control} name={`variants.${index}.value`} render={({ field }) => (<FormItem><FormLabel>Value</FormLabel><FormControl><Input type="number" placeholder="e.g. 14.2" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                          <FormField control={form.control} name={`variants.${index}.unit`} render={({ field }) => (<FormItem><FormLabel>Unit</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="kg">kg</SelectItem><SelectItem value="meter">meter</SelectItem></SelectContent></Select><FormMessage/></FormItem>)} />
                                           <FormField control={form.control} name={`variants.${index}.price`} render={({ field }) => (<FormItem><FormLabel>Base Price (₹)</FormLabel><FormControl><Input type="number" placeholder="1100" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                       </div>
-                                      <Button type="button" variant="ghost" size="icon" className="shrink-0 -mt-1 -mr-1" onClick={() => remove(index)} disabled={fields.length <= 1}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                      <Button type="button" variant="ghost" size="icon" className="shrink-0 mt-8 -mr-1" onClick={() => remove(index)} disabled={fields.length <= 1}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                   </div>
                               ))}
                           </div>
-                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ label: '', price: '' as any })}><PlusCircle className="mr-2 h-4 w-4"/>Add Variant</Button>
+                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ value: '' as any, unit: 'kg', price: '' as any })}><PlusCircle className="mr-2 h-4 w-4"/>Add Variant</Button>
                           <FormMessage>{form.formState.errors.variants?.message || form.formState.errors.variants?.root?.message}</FormMessage>
                       </div>
 
@@ -235,7 +243,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
               </ScrollArea>
               <DialogFooter className="p-6 pt-4 mt-4 border-t bg-muted/40">
                 <DialogClose asChild><Button variant="outline" type="button">Cancel</Button></DialogClose>
-                <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? 'Adding...' : 'Add Product'}</Button>
+                <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Adding...' : 'Add Product'}</Button>
               </DialogFooter>
             </form>
           </Form>
