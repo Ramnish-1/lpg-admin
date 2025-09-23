@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/context/auth-context';
 import { ProfileContext } from '@/context/profile-context';
+import Link from 'next/link';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -458,11 +459,16 @@ export default function ProductsPage() {
                               <span className="sr-only">Toggle menu</span>
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleShowDetails(product)}>View Details</DropdownMenuItem>
                             {isAdmin ? (
                               <>
                                 <DropdownMenuItem onClick={() => handleEdit(product)}>Edit Product</DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <Link href={`/products/${product.id}/agencies`} className="w-full">
+                                    View in Agencies
+                                  </Link>
+                                </DropdownMenuItem>
                                 <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(product)}>
                                   <Trash2 className="mr-2 h-4 w-4" />
                                   Delete
@@ -553,3 +559,5 @@ export default function ProductsPage() {
     </AppShell>
   );
 }
+
+    
