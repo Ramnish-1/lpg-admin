@@ -356,7 +356,7 @@ export default function ProductsPage() {
                   <TableHead>Product Name</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>{isAdmin ? 'Global Stock' : 'My Stock'}</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Product Status</TableHead>
                   <TableHead>Action</TableHead>
                 </TableRow>
               </TableHeader>
