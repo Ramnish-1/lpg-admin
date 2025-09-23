@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/context/auth-context';
 import { ProfileContext } from '@/context/profile-context';
-import { AgencyListDialog } from '@/components/agency-list-dialog';
+import { useRouter } from 'next/navigation';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -32,12 +32,12 @@ export default function ProductsPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [isAgencyListOpen, setIsAgencyListOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const { token, handleApiError } = useAuth();
   const { profile } = useContext(ProfileContext);
   const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
+  const router = useRouter();
 
   const fetchData = useCallback(async () => {
     if (!token) return;
@@ -96,8 +96,7 @@ export default function ProductsPage() {
   };
 
   const handleShowAgencies = (product: Product) => {
-    setSelectedItem(product);
-    setIsAgencyListOpen(true);
+    router.push(`/products/${product.id}/agencies`);
   };
   
   const handleManageInventory = (product: Product) => {
@@ -451,14 +450,6 @@ export default function ProductsPage() {
         onOpenChange={setIsAddOpen}
         onProductAdd={handleProductAdd}
       />
-      <AgencyListDialog
-        agencies={(selectedItem as Product)?.AgencyInventory?.map(inv => inv.Agency!)}
-        productName={(selectedItem as Product)?.productName}
-        isOpen={isAgencyListOpen}
-        onOpenChange={setIsAgencyListOpen}
-      />
     </AppShell>
   );
 }
-
-    
