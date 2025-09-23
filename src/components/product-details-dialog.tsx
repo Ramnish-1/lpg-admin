@@ -43,9 +43,9 @@ export function ProductDetailsDialog({ item: product, isOpen, onOpenChange, isAd
       ? agencyInventory.agencyVariants 
       : product.variants;
 
-  const totalStock = agencyInventory 
-    ? agencyInventory.agencyVariants.reduce((sum, v) => sum + v.stock, 0)
-    : product.AgencyInventory?.reduce((sum, inv) => sum + inv.stock, 0) ?? 0;
+  const totalStock = isAdmin
+    ? product.AgencyInventory?.reduce((sum, inv) => sum + (inv.agencyVariants?.reduce((vSum, v) => vSum + v.stock, 0) || 0), 0) ?? 0
+    : agencyInventory?.agencyVariants.reduce((sum, v) => sum + v.stock, 0) ?? 0;
     
   const lowStockThreshold = agencyInventory?.lowStockThreshold ?? product.lowStockThreshold;
   const isLowStock = totalStock < lowStockThreshold;
@@ -71,7 +71,7 @@ export function ProductDetailsDialog({ item: product, isOpen, onOpenChange, isAd
                     <CarouselItem key={index} className="pl-2 basis-1/3 sm:basis-1/4 md:basis-1/5">
                       <div className="relative aspect-square group">
                             <Image 
-                              src={img.startsWith('http') ? img : `${API_BASE_URL}${img}`} 
+                              src={img.startsWith('http') ? img : `${API_BASE_URL}/${img}`} 
                               alt={`${product.productName} image ${index + 1}`}
                               fill
                               className="rounded-md object-cover"
@@ -98,7 +98,7 @@ export function ProductDetailsDialog({ item: product, isOpen, onOpenChange, isAd
                         <div key={index} className="flex justify-between items-center p-2 rounded-md bg-muted/40 text-sm">
                           <span className="font-semibold">{variant.label}</span>
                           <div className="flex items-center gap-4">
-                            <span className="text-muted-foreground">Stock: {variant.stock}</span>
+                            {!isAdmin && <span className="text-muted-foreground">Stock: {variant.stock}</span>}
                             <span className="font-medium">₹{variant.price.toLocaleString()}</span>
                           </div>
                         </div>
@@ -127,3 +127,4 @@ export function ProductDetailsDialog({ item: product, isOpen, onOpenChange, isAd
     </Dialog>
   );
 }
+
