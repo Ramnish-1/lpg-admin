@@ -3,15 +3,17 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
+import Image from 'next/image';
 import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Building2, Package, MapPin } from 'lucide-react';
+import { Loader2, Building2, Package, MapPin, Mail, Phone } from 'lucide-react';
 import type { Product, AgencyInventory } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -72,76 +74,81 @@ export default function ProductAgenciesPage() {
       </AppShell>
     );
   }
+  
+  const productImageUrl = product.images?.[0]?.startsWith('http') 
+        ? product.images[0]
+        : `${API_BASE_URL}/${product.images?.[0]}`;
 
   return (
     <AppShell>
       <PageHeader title={product.productName}>
-        <div className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">{product.description}</span>
+        <div className="flex items-center gap-4">
+            {product.images && product.images.length > 0 && (
+                <div className="relative h-12 w-12 rounded-md overflow-hidden">
+                    <Image src={productImageUrl} alt={product.productName} fill className="object-cover"/>
+                </div>
+            )}
+            <div className="text-sm text-muted-foreground">{product.description}</div>
         </div>
       </PageHeader>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-6 w-6 text-primary"/>
-            Agency Inventory
-          </CardTitle>
-          <CardDescription>
-            Stock levels and pricing for &quot;{product.productName}&quot; across all agencies.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Agency</TableHead>
-                <TableHead>Variant</TableHead>
-                <TableHead className="text-right">Price</TableHead>
-                <TableHead className="text-right">Stock</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {product.AgencyInventory && product.AgencyInventory.length > 0 ? (
+
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold tracking-tight">Agency Inventory</h2>
+        <div className="grid gap-6 md:grid-cols-2">
+            {product.AgencyInventory && product.AgencyInventory.length > 0 ? (
                 product.AgencyInventory.map((inventory: AgencyInventory) => (
-                    inventory.agencyVariants.map((variant, vIndex) => (
-                        <TableRow key={`${inventory.id}-${vIndex}`}>
-                            {vIndex === 0 && (
-                                <TableCell rowSpan={inventory.agencyVariants.length} className="align-top font-medium">
-                                    <div className="flex flex-col">
-                                        <span>{inventory.Agency.name}</span>
-                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                            <MapPin className="h-3 w-3"/>
-                                            {inventory.Agency.city}
-                                        </span>
-                                    </div>
-                                </TableCell>
-                            )}
-                            <TableCell>{variant.label}</TableCell>
-                            <TableCell className="text-right">₹{variant.price.toLocaleString()}</TableCell>
-                            <TableCell className="text-right">{variant.stock}</TableCell>
-                            {vIndex === 0 && (
-                                <TableCell rowSpan={inventory.agencyVariants.length} className="align-top">
-                                    <Badge variant={inventory.isActive ? 'secondary' : 'destructive'}>
-                                        {inventory.isActive ? 'Active' : 'Inactive'}
-                                    </Badge>
-                                </TableCell>
-                            )}
-                        </TableRow>
-                    ))
+                   <Card key={inventory.id}>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="flex items-center gap-2">
+                                    <Building2 className="h-5 w-5 text-primary"/>
+                                    {inventory.Agency.name}
+                                </CardTitle>
+                                 <Badge variant={inventory.Agency.status === 'active' ? 'secondary' : 'destructive'} className="capitalize">
+                                    {inventory.Agency.status}
+                                 </Badge>
+                            </div>
+                            <CardDescription>
+                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs mt-2">
+                                    <div className="flex items-center gap-1.5"><Mail className="h-3 w-3"/>{inventory.Agency.email}</div>
+                                    <div className="flex items-center gap-1.5"><Phone className="h-3 w-3"/>{inventory.Agency.phone}</div>
+                                    <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3"/>{inventory.Agency.city}</div>
+                                </div>
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Variant</TableHead>
+                                        <TableHead className="text-right">Price</TableHead>
+                                        <TableHead className="text-right">Stock</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                   {inventory.agencyVariants.map((variant, vIndex) => (
+                                       <TableRow key={vIndex}>
+                                           <TableCell>{variant.label}</TableCell>
+                                           <TableCell className="text-right">₹{variant.price.toLocaleString()}</TableCell>
+                                           <TableCell className="text-right">{variant.stock}</TableCell>
+                                       </TableRow>
+                                   ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                   </Card>
                 ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center h-24">
-                    This product has not been assigned to any agencies yet.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            ) : (
+                <div className="md:col-span-2">
+                    <Card>
+                        <CardContent className="h-24 flex items-center justify-center">
+                            <p className="text-muted-foreground">This product has not been assigned to any agencies yet.</p>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+        </div>
+      </div>
     </AppShell>
   );
 }
