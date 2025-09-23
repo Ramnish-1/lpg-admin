@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, AlertCircle, Loader2, Trash2, Building, PackagePlus, Settings } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, PlusCircle, AlertCircle, Loader2, Trash2, Building, PackagePlus, Settings, ChevronDown } from 'lucide-react';
 import type { Product, Agency, AgencyInventory } from '@/lib/types';
 import { useEffect, useState, useMemo, useCallback, useContext } from 'react';
 import { ProductDetailsDialog } from '@/components/product-details-dialog';
@@ -95,10 +95,6 @@ export default function ProductsPage() {
     setIsDeleteOpen(true);
   };
 
-  const handleShowAgencies = (product: Product) => {
-    router.push(`/products/${product.id}/agencies`);
-  };
-  
   const handleManageInventory = (product: Product) => {
     // For agency owner, this opens the edit dialog focused on inventory
     setSelectedItem(product);
@@ -263,6 +259,40 @@ export default function ProductsPage() {
         return false;
     }
   }
+  
+  const handleToggleStatus = async (product: Product, newStatus: 'active' | 'inactive') => {
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/products/${product.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (!response.ok) {
+        handleApiError(response);
+        return;
+      }
+      
+      const result = await response.json();
+      if (result.success) {
+        toast({
+            title: 'Status Updated',
+            description: `${product.productName}'s status is now ${newStatus}.`,
+        });
+        fetchData();
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
+      }
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
+    }
+  };
+
 
   return (
     <AppShell>
@@ -338,9 +368,30 @@ export default function ProductsPage() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                            {isAdmin ? (
-                               <Badge variant={product.status === 'Active' ? 'secondary' : 'outline'}>{product.status}</Badge>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="sm" className="w-28 justify-between capitalize">
+                                            <span className={cn({
+                                                'text-green-600': product.status === 'active',
+                                                'text-gray-500': product.status === 'inactive'
+                                            })}>
+                                                {product.status}
+                                            </span>
+                                            <ChevronDown className="h-4 w-4 text-muted-foreground"/>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="start">
+                                        <DropdownMenuRadioGroup 
+                                            value={product.status} 
+                                            onValueChange={(newStatus) => handleToggleStatus(product, newStatus as 'active' | 'inactive')}
+                                        >
+                                            <DropdownMenuRadioItem value="active">Active</DropdownMenuRadioItem>
+                                            <DropdownMenuRadioItem value="inactive" className="text-destructive">Inactive</DropdownMenuRadioItem>
+                                        </DropdownMenuRadioGroup>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                            ) : (
                                 <Badge variant={isInMyInventory ? 'secondary' : 'outline'}>{isInMyInventory ? 'In My Inventory' : 'Not In Inventory'}</Badge>
                            )}
