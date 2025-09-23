@@ -358,10 +358,6 @@ export default function ProductsPage() {
                             {isAdmin && (
                               <>
                                 <DropdownMenuItem onClick={() => handleEdit(product)}>Edit Product</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleShowAgencies(product)}>
-                                  <Building className="mr-2 h-4 w-4" />
-                                  View in Agencies
-                                </DropdownMenuItem>
                                 <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(product)}>
                                   <Trash2 className="mr-2 h-4 w-4" />
                                   Delete
