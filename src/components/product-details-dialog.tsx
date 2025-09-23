@@ -38,7 +38,7 @@ export function ProductDetailsDialog({ item: product, isOpen, onOpenChange, isAd
       ? product.AgencyInventory?.find(inv => inv.agencyId === profile.agencyId)
       : null;
 
-  const variantsToDisplay: Partial<ProductVariant>[] = 
+  const variantsToDisplay = 
     (agencyInventory && agencyInventory.agencyVariants?.length > 0)
       ? agencyInventory.agencyVariants 
       : product.variants;
@@ -98,7 +98,7 @@ export function ProductDetailsDialog({ item: product, isOpen, onOpenChange, isAd
                         <div key={index} className="flex justify-between items-center p-2 rounded-md bg-muted/40 text-sm">
                           <span className="font-semibold">{variant.label}</span>
                           <div className="flex items-center gap-4">
-                            <span className="text-muted-foreground">Stock: {variant.stock ?? 0}</span>
+                            {typeof variant.stock !== 'undefined' && <span className="text-muted-foreground">Stock: {variant.stock}</span>}
                             <span className="font-medium">₹{variant.price?.toLocaleString()}</span>
                           </div>
                         </div>
@@ -127,6 +127,7 @@ export function ProductDetailsDialog({ item: product, isOpen, onOpenChange, isAd
     </Dialog>
   );
 }
+
 
 
 
