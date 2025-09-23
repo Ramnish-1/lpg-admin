@@ -75,15 +75,13 @@ export default function ProductAgenciesPage() {
     );
   }
   
-  const productImageUrl = product.images?.[0]?.startsWith('http') 
-        ? product.images[0]
-        : `${API_BASE_URL}/${product.images?.[0]}`;
+  const productImageUrl = product.images?.[0] || '';
 
   return (
     <AppShell>
       <PageHeader title={product.productName}>
         <div className="flex items-center gap-4">
-            {product.images && product.images.length > 0 && (
+            {productImageUrl && (
                 <div className="relative h-12 w-12 rounded-md overflow-hidden">
                     <Image src={productImageUrl} alt={product.productName} fill className="object-cover"/>
                 </div>
