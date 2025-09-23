@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Product } from '@/lib/types';
+import { Product, AgencyInventory } from '@/lib/types';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,18 +26,19 @@ import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
 import { ImageViewerDialog } from './image-viewer-dialog';
 
-type EditProductPayload = Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images'> & { id: string };
+type EditProductPayload = Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images' | 'AgencyInventory'> & { id: string };
 
 interface EditProductDialogProps {
-  product: Product;
+  item: Product | AgencyInventory;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onProductUpdate: (product: EditProductPayload, imagesToDelete?: string[], newImages?: File[]) => Promise<boolean>;
+  onInventoryUpdate: (inventoryData: any) => Promise<boolean>;
+  isAdmin: boolean;
 }
 
 const variantSchema = z.object({
-  unitValue: z.coerce.number().min(0, "Unit value must be positive."),
-  unitType: z.enum(['kg', 'meter']),
+  label: z.string().min(1, "Label is required"),
   price: z.coerce.number().min(0, "Price must be positive."),
   stock: z.coerce.number().int().min(0, "Stock must be a whole number."),
 });
@@ -53,7 +54,7 @@ const productSchema = z.object({
 type ProductFormValues = z.infer<typeof productSchema>;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpdate }: EditProductDialogProps) {
+export function EditProductDialog({ item, isOpen, onOpenChange, onProductUpdate, onInventoryUpdate, isAdmin }: EditProductDialogProps) {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
@@ -61,10 +62,12 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const product = 'productName' in item ? item : item.Product;
+
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      variants: [{ unitValue: '' as any, unitType: 'kg', price: '' as any, stock: '' as any }],
+      variants: [{ label: '', price: '' as any, stock: '' as any }],
     }
   });
 
@@ -83,29 +86,9 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
 
   useEffect(() => {
     if (isOpen && product) {
-      const parsedVariants = product.variants.map(v => {
-        const match = v.label.match(/(\d+\.?\d*)\s*(kg|meter)/);
-        if (match) {
-          return {
-            unitValue: parseFloat(match[1]),
-            unitType: match[2] as 'kg' | 'meter',
-            price: v.price,
-            stock: v.stock,
-          };
-        }
-        // Fallback for labels that don't match
-        return {
-          unitValue: 0,
-          unitType: 'kg' as const,
-          price: v.price,
-          stock: v.stock,
-        };
-      });
-
       form.reset({
         ...product,
         category: product.category || 'lpg',
-        variants: parsedVariants,
       });
       setImagePreviews(product.images || []);
       setImagesToDelete([]);
@@ -121,19 +104,19 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
   }
 
   const handleSubmit = async (values: ProductFormValues) => {
-    const payload: EditProductPayload = {
-      ...values,
-      id: product.id,
-      variants: values.variants.map(v => ({
-        label: `${v.unitValue}${v.unitType}`,
-        price: v.price,
-        stock: v.stock,
-      })),
-    };
-    
-    const success = await onProductUpdate(payload, imagesToDelete, newImageFiles);
-    if(success) {
-      handleOpenChange(false);
+     if (isAdmin) {
+        const payload: EditProductPayload = {
+            ...values,
+            id: product.id,
+        };
+        const success = await onProductUpdate(payload, imagesToDelete, newImageFiles);
+        if(success) {
+            handleOpenChange(false);
+        }
+    } else {
+        // Handle inventory update for agency owner
+        // const success = await onInventoryUpdate(values);
+        // if(success) handleOpenChange(false);
     }
   };
   
@@ -156,7 +139,7 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
   const removeImage = (indexToRemove: number) => {
     const imageToRemove = imagePreviews[indexToRemove];
     
-    if (imageToRemove.startsWith('http')) {
+    if (imageToRemove.startsWith('http') || imageToRemove.startsWith('/uploads')) {
         setImagesToDelete(prev => [...prev, imageToRemove]);
     } else { 
         const blobUrlIndex = imagePreviews.filter(p => p.startsWith("blob:")).findIndex(p => p === imageToRemove);
@@ -173,30 +156,27 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-2xl grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh] p-0">
           <DialogHeader className="p-6 pb-4">
-            <DialogTitle>Edit Product</DialogTitle>
+            <DialogTitle>Edit {isAdmin ? 'Global Product' : 'Agency Inventory'}</DialogTitle>
             <DialogDescription>Update the details for {product.productName}.</DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} noValidate className="flex flex-col overflow-hidden">
               <ScrollArea className="flex-1 px-6">
                   <div className="space-y-6 py-2">
-                      <FormField control={form.control} name="productName" render={({ field }) => (<FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                      <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="productName" render={({ field }) => (<FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} disabled={!isAdmin} /></FormControl><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} disabled={!isAdmin} /></FormControl><FormMessage /></FormItem>)} />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="lpg">LPG</SelectItem><SelectItem value="accessories">Accessories</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={!isAdmin}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="lpg">LPG</SelectItem><SelectItem value="accessories">Accessories</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                           <FormField control={form.control} name="lowStockThreshold" render={({ field }) => (<FormItem><FormLabel>Low Stock Threshold</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
 
                       <div>
-                          <FormLabel>Product Variants</FormLabel>
+                          <FormLabel>{isAdmin ? 'Default Variants' : 'Agency Variants'}</FormLabel>
                           <div className="space-y-4 mt-2">
                               {fields.map((field, index) => (
                                   <div key={field.id} className="flex items-start gap-2 p-3 border rounded-md relative">
                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
-                                          <div className="grid grid-cols-2 gap-1">
-                                              <FormField control={form.control} name={`variants.${index}.unitValue`} render={({ field }) => (<FormItem><FormLabel>Unit</FormLabel><FormControl><Input type="number" placeholder="e.g. 5" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                              <FormField control={form.control} name={`variants.${index}.unitType`} render={({ field }) => (<FormItem className="self-end"><FormControl><Select onValueChange={field.onChange} defaultValue={field.value}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="kg">kg</SelectItem><SelectItem value="meter">meter</SelectItem></SelectContent></Select></FormControl><FormMessage /></FormItem>)} />
-                                          </div>
+                                          <FormField control={form.control} name={`variants.${index}.label`} render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input placeholder="e.g. 14.2kg" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                           <FormField control={form.control} name={`variants.${index}.price`} render={({ field }) => (<FormItem><FormLabel>Price (₹)</FormLabel><FormControl><Input type="number" placeholder="1100" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                           <FormField control={form.control} name={`variants.${index}.stock`} render={({ field }) => (<FormItem><FormLabel>Stock</FormLabel><FormControl><Input type="number" placeholder="150" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                       </div>
@@ -204,56 +184,58 @@ export function EditProductDialog({ product, isOpen, onOpenChange, onProductUpda
                                   </div>
                               ))}
                           </div>
-                           <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ unitValue: '' as any, unitType: 'kg', price: '' as any, stock: '' as any })}><PlusCircle className="mr-2 h-4 w-4"/>Add Variant</Button>
+                           <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ label: '', price: '' as any, stock: '' as any })}><PlusCircle className="mr-2 h-4 w-4"/>Add Variant</Button>
                           <FormMessage>{form.formState.errors.variants?.message || form.formState.errors.variants?.root?.message}</FormMessage>
                       </div>
 
-                      <div>
-                        <FormLabel>Product Images</FormLabel>
-                          <FormControl>
-                            <div>
-                                <input ref={fileInputRef} id="image-upload-edit" type="file" multiple onChange={handleImageChange} className="hidden" accept="image/*"/>
-                                <div
-                                    className="mt-2 flex justify-center items-center flex-col w-full h-32 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted/50"
-                                    onClick={() => fileInputRef.current?.click()}
-                                >
-                                    <ImagePlus className="h-8 w-8 text-muted-foreground"/>
-                                    <p className="text-sm text-muted-foreground mt-2">Click or drag to add images</p>
-                                </div>
-                            </div>
-                          </FormControl>
-                         {imagePreviews.length > 0 && (
-                            <Carousel className="w-full mt-4">
-                                <CarouselContent className="-ml-2">
-                                    {imagePreviews.map((src, index) => (
-                                    <CarouselItem key={src} className="pl-2 basis-1/3 sm:basis-1/4 md:basis-1/5">
-                                        <div className="relative aspect-square group">
-                                            <Image 
-                                                src={src.startsWith('http') || src.startsWith('blob:') ? src : `${API_BASE_URL}${src}`} 
-                                                alt={`Preview ${index + 1}`} 
-                                                fill
-                                                className="rounded-md object-cover cursor-pointer"
-                                                onClick={() => openImageViewer(src.startsWith('http') || src.startsWith('blob:') ? src : `${API_BASE_URL}${src}`)}
-                                            />
-                                            <Button 
-                                                type="button" 
-                                                variant="destructive" 
-                                                size="icon" 
-                                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                                                onClick={(e) => { e.stopPropagation(); removeImage(index);}}
-                                            >
-                                                <X className="h-4 w-4"/>
-                                            </Button>
-                                        </div>
-                                    </CarouselItem>
-                                    ))}
-                                </CarouselContent>
-                                <CarouselPrevious />
-                                <CarouselNext />
-                            </Carousel>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-2">Add new images or remove existing ones.</p>
-                      </div>
+                      {isAdmin && (
+                        <div>
+                          <FormLabel>Product Images</FormLabel>
+                            <FormControl>
+                              <div>
+                                  <input ref={fileInputRef} id="image-upload-edit" type="file" multiple onChange={handleImageChange} className="hidden" accept="image/*"/>
+                                  <div
+                                      className="mt-2 flex justify-center items-center flex-col w-full h-32 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted/50"
+                                      onClick={() => fileInputRef.current?.click()}
+                                  >
+                                      <ImagePlus className="h-8 w-8 text-muted-foreground"/>
+                                      <p className="text-sm text-muted-foreground mt-2">Click or drag to add images</p>
+                                  </div>
+                              </div>
+                            </FormControl>
+                          {imagePreviews.length > 0 && (
+                              <Carousel className="w-full mt-4">
+                                  <CarouselContent className="-ml-2">
+                                      {imagePreviews.map((src, index) => (
+                                      <CarouselItem key={src} className="pl-2 basis-1/3 sm:basis-1/4 md:basis-1/5">
+                                          <div className="relative aspect-square group">
+                                              <Image 
+                                                  src={src.startsWith('http') || src.startsWith('blob:') ? src : `${API_BASE_URL}${src}`} 
+                                                  alt={`Preview ${index + 1}`} 
+                                                  fill
+                                                  className="rounded-md object-cover cursor-pointer"
+                                                  onClick={() => openImageViewer(src.startsWith('http') || src.startsWith('blob:') ? src : `${API_BASE_URL}${src}`)}
+                                              />
+                                              <Button 
+                                                  type="button" 
+                                                  variant="destructive" 
+                                                  size="icon" 
+                                                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                                  onClick={(e) => { e.stopPropagation(); removeImage(index);}}
+                                              >
+                                                  <X className="h-4 w-4"/>
+                                              </Button>
+                                          </div>
+                                      </CarouselItem>
+                                      ))}
+                                  </CarouselContent>
+                                  <CarouselPrevious />
+                                  <CarouselNext />
+                              </Carousel>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-2">Add new images or remove existing ones.</p>
+                        </div>
+                      )}
 
                   </div>
               </ScrollArea>

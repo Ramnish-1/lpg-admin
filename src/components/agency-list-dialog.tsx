@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -20,7 +21,6 @@ interface AgencyListDialogProps {
 }
 
 export function AgencyListDialog({ agencies, isOpen, onOpenChange, productName }: AgencyListDialogProps) {
-  if (!agencies) return null;
   
   const handleAddressClick = (e: React.MouseEvent, address: string) => {
     e.stopPropagation();
@@ -40,7 +40,7 @@ export function AgencyListDialog({ agencies, isOpen, onOpenChange, productName }
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="pr-4 -mr-6">
-          {agencies.length > 0 ? (
+          {agencies && agencies.length > 0 ? (
             <div className="space-y-3">
               {agencies.map((agency) => (
                 <Card key={agency.id || agency.name}>

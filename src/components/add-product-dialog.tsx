@@ -26,7 +26,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { ImageViewerDialog } from './image-viewer-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
-type AddProductPayload = Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images'>;
+type AddProductPayload = Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images' | 'AgencyInventory'>;
 
 interface AddProductDialogProps {
   isOpen: boolean;
@@ -35,8 +35,7 @@ interface AddProductDialogProps {
 }
 
 const variantSchema = z.object({
-  unitValue: z.coerce.number().min(0, "Unit value must be positive."),
-  unitType: z.enum(['kg', 'meter']),
+  label: z.string().min(1, "Label is required"),
   price: z.coerce.number().min(0, "Price must be positive."),
   stock: z.coerce.number().int().min(0, "Stock must be a whole number."),
 });
@@ -65,7 +64,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
       description: '',
       category: 'lpg',
       lowStockThreshold: 10,
-      variants: [{ unitValue: '' as any, unitType: 'kg', price: '' as any, stock: '' as any }],
+      variants: [{ label: '', price: '' as any, stock: '' as any }],
     }
   });
 
@@ -90,7 +89,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     const payload: AddProductPayload = {
       ...values,
       variants: values.variants.map(v => ({
-        label: `${v.unitValue}${v.unitType}`,
+        label: v.label,
         price: v.price,
         stock: v.stock,
       })),
@@ -141,9 +140,9 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-2xl grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh] p-0">
           <DialogHeader className="p-6 pb-4">
-            <DialogTitle>Add New Product</DialogTitle>
+            <DialogTitle>Add New Global Product</DialogTitle>
             <DialogDescription>
-              Enter the details for the new product, including its variants and images.
+              Enter details for a new product to be added to the catalog.
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -162,28 +161,25 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                         )} />
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                            <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl><SelectContent><SelectItem value="lpg">LPG</SelectItem><SelectItem value="accessories">Accessories</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="lowStockThreshold" render={({ field }) => (<FormItem><FormLabel>Low Stock Threshold</FormLabel><FormControl><Input type="number" placeholder="e.g. 10" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="lowStockThreshold" render={({ field }) => (<FormItem><FormLabel>Global Low Stock Threshold</FormLabel><FormControl><Input type="number" placeholder="e.g. 10" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
                       <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="e.g. Standard household cooking gas cylinder" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       
                       <div>
-                          <FormLabel>Product Variants</FormLabel>
+                          <FormLabel>Default Product Variants</FormLabel>
                           <div className="space-y-4 mt-2">
                               {fields.map((field, index) => (
                                   <div key={field.id} className="flex items-start gap-2 p-3 border rounded-md relative">
                                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
-                                          <div className="grid grid-cols-2 gap-1">
-                                              <FormField control={form.control} name={`variants.${index}.unitValue`} render={({ field }) => (<FormItem><FormLabel>Unit</FormLabel><FormControl><Input type="number" placeholder="e.g. 5" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                              <FormField control={form.control} name={`variants.${index}.unitType`} render={({ field }) => (<FormItem className="self-end"><FormControl><Select onValueChange={field.onChange} defaultValue={field.value}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="kg">kg</SelectItem><SelectItem value="meter">meter</SelectItem></SelectContent></Select></FormControl><FormMessage /></FormItem>)} />
-                                          </div>
-                                          <FormField control={form.control} name={`variants.${index}.price`} render={({ field }) => (<FormItem><FormLabel>Price (₹)</FormLabel><FormControl><Input type="number" placeholder="1100" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                          <FormField control={form.control} name={`variants.${index}.stock`} render={({ field }) => (<FormItem><FormLabel>Stock</FormLabel><FormControl><Input type="number" placeholder="150" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                          <FormField control={form.control} name={`variants.${index}.label`} render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input placeholder="e.g. 14.2kg" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                          <FormField control={form.control} name={`variants.${index}.price`} render={({ field }) => (<FormItem><FormLabel>Base Price (₹)</FormLabel><FormControl><Input type="number" placeholder="1100" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                          <FormField control={form.control} name={`variants.${index}.stock`} render={({ field }) => (<FormItem><FormLabel>Initial Stock (Optional)</FormLabel><FormControl><Input type="number" placeholder="0" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                       </div>
                                       <Button type="button" variant="ghost" size="icon" className="shrink-0 -mt-1 -mr-1" onClick={() => remove(index)} disabled={fields.length <= 1}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                   </div>
                               ))}
                           </div>
-                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ unitValue: '' as any, unitType: 'kg', price: '' as any, stock: '' as any })}><PlusCircle className="mr-2 h-4 w-4"/>Add Variant</Button>
+                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ label: '', price: '' as any, stock: '' as any })}><PlusCircle className="mr-2 h-4 w-4"/>Add Variant</Button>
                           <FormMessage>{form.formState.errors.variants?.message || form.formState.errors.variants?.root?.message}</FormMessage>
                       </div>
 

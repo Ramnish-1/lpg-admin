@@ -33,25 +33,34 @@ export interface ProductVariant {
   stock: number;
 }
 
+export interface AgencyInventory {
+  id: string;
+  productId: string;
+  agencyId: string;
+  stock: number;
+  lowStockThreshold: number;
+  agencyPrice: number;
+  agencyVariants: ProductVariant[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  Product: Product; // Include the full product details
+}
+
+
 export interface Product {
   id: string;
   productName: string;
   description: string;
   category: 'lpg' | 'accessories';
   status: 'Active' | 'Inactive';
-  lowStockThreshold: number;
-  variants: ProductVariant[];
+  lowStockThreshold: number; // This might be a global default
+  variants: ProductVariant[]; // Global default variants
   images: string[]; // URLs to images
   createdAt: string;
   updatedAt: string;
-  Agency?: {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    city: string;
-    status: 'active' | 'inactive';
-  };
+  // agencyId is removed to make the product global
+  AgencyInventory: AgencyInventory[]; // An array of inventory records for different agencies
 }
 
 
@@ -190,28 +199,24 @@ export interface Agency {
 }
 
 export interface ContentSection {
-    title: string;
-    description: string;
+  title: string;
+  description: string;
 }
 
 export interface TermsAndCondition {
     id: string;
-    title: string;
-    description: string;
-    status: 'active' | 'inactive';
     version: string;
+    status: 'active' | 'inactive';
+    content: ContentSection[];
     createdAt: string;
     updatedAt: string;
 }
 
 export interface PrivacyPolicy {
     id: string;
-    title: string;
-    description: string;
-    status: 'active' | 'inactive';
     version: string;
+    status: 'active' | 'inactive';
+    content: ContentSection[];
     createdAt: string;
     updatedAt: string;
 }
-
-    

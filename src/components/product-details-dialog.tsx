@@ -9,7 +9,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import type { Product } from '@/lib/types';
+import type { Product, AgencyInventory } from '@/lib/types';
 import { IndianRupee, Package, PackageCheck, AlertCircle, Info, Beaker, Image as ImageIcon } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
@@ -17,20 +17,31 @@ import Image from 'next/image';
 import { Card, CardContent } from './ui/card';
 
 interface ProductDetailsDialogProps {
-  product: Product | null;
+  item: Product | AgencyInventory | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  isAdmin: boolean;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 
-export function ProductDetailsDialog({ product, isOpen, onOpenChange }: ProductDetailsDialogProps) {
-  if (!product) return null;
+export function ProductDetailsDialog({ item, isOpen, onOpenChange, isAdmin }: ProductDetailsDialogProps) {
+  if (!item) return null;
+
+  const product = 'productName' in item ? item : item.Product;
+  const inventory = 'agencyId' in item ? item : null;
   
-  const safeVariants = Array.isArray(product.variants) ? product.variants : [];
-  const totalStock = safeVariants.reduce((acc, v) => acc + v.stock, 0);
-  const isLowStock = totalStock < product.lowStockThreshold;
+  const safeVariants = Array.isArray(inventory?.agencyVariants) && inventory.agencyVariants.length > 0 
+    ? inventory.agencyVariants 
+    : Array.isArray(product.variants) ? product.variants : [];
+    
+  const totalStock = inventory 
+    ? inventory.stock
+    : product.AgencyInventory?.reduce((acc, inv) => acc + inv.stock, 0) ?? 0;
+    
+  const lowStockThreshold = inventory ? inventory.lowStockThreshold : product.lowStockThreshold;
+  const isLowStock = totalStock < lowStockThreshold;
   
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -74,7 +85,7 @@ export function ProductDetailsDialog({ product, isOpen, onOpenChange }: ProductD
 
             <Card>
               <CardContent className="pt-6 space-y-4">
-                  <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2"><Beaker className="h-4 w-4"/> Variants</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2"><Beaker className="h-4 w-4"/> {inventory ? "Agency Variants & Pricing" : "Default Variants"}</h3>
                    <div className="space-y-2">
                       {safeVariants.map((variant, index) => (
                         <div key={index} className="flex justify-between items-center p-2 rounded-md bg-muted/40 text-sm">
@@ -100,7 +111,7 @@ export function ProductDetailsDialog({ product, isOpen, onOpenChange }: ProductD
                       </div>
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-muted-foreground flex items-center gap-2"><AlertCircle className="h-4 w-4"/>Low Stock Alert</span>
-                        <span className="font-medium">{product.lowStockThreshold} units</span>
+                        <span className="font-medium">{lowStockThreshold} units</span>
                       </div>
               </CardContent>
             </Card>
