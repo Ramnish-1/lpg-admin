@@ -397,11 +397,8 @@ export default function ProductsPage() {
                            {isAdmin ? (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" size="sm" className="w-28 justify-between capitalize">
-                                            <span className={cn({
-                                                'text-green-600': product.status === 'active',
-                                                'text-gray-500': product.status === 'inactive'
-                                            })}>
+                                      <Button variant="outline" size="sm" className={cn("w-28 justify-between capitalize", { 'bg-destructive text-destructive-foreground hover:bg-destructive/90': product.status === 'inactive' })}>
+                                            <span>
                                                 {product.status}
                                             </span>
                                             <ChevronDown className="h-4 w-4 text-muted-foreground"/>
