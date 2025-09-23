@@ -27,6 +27,7 @@ import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
 import { ImageViewerDialog } from './image-viewer-dialog';
 import { ProfileContext } from '@/context/profile-context';
+import { cn } from '@/lib/utils';
 
 type EditProductPayload = Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images' | 'AgencyInventory'> & { id: string };
 
@@ -42,7 +43,7 @@ interface EditProductDialogProps {
 const variantSchema = z.object({
   label: z.string().min(1, "Label is required"),
   price: z.coerce.number().min(0, "Price must be positive."),
-  stock: z.coerce.number().int().min(0, "Stock must be a whole number."),
+  stock: z.coerce.number().int().min(0, "Stock must be a whole number.").optional(),
 });
 
 const productSchema = z.object({
@@ -87,7 +88,7 @@ export function EditProductDialog({ item: product, isOpen, onOpenChange, onProdu
 
   useEffect(() => {
     if (isOpen && product) {
-        let variantsToShow: ProductVariant[] = product.variants;
+        let variantsToShow: Partial<ProductVariant>[] = product.variants;
         let thresholdToShow = product.lowStockThreshold;
 
         if (!isAdmin) {
@@ -121,6 +122,7 @@ export function EditProductDialog({ item: product, isOpen, onOpenChange, onProdu
      if (isAdmin) {
         const payload: EditProductPayload = {
             ...values,
+            variants: values.variants.map(({ label, price }) => ({ label, price })),
             id: product.id,
         };
         const success = await onProductUpdate(payload, imagesToDelete, newImageFiles);
@@ -192,10 +194,12 @@ export function EditProductDialog({ item: product, isOpen, onOpenChange, onProdu
                           <div className="space-y-4 mt-2">
                               {fields.map((field, index) => (
                                   <div key={field.id} className="flex items-start gap-2 p-3 border rounded-md relative">
-                                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
+                                       <div className={cn("grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1", { "sm:grid-cols-2": isAdmin })}>
                                           <FormField control={form.control} name={`variants.${index}.label`} render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input placeholder="e.g. 14.2kg" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                           <FormField control={form.control} name={`variants.${index}.price`} render={({ field }) => (<FormItem><FormLabel>Price (₹)</FormLabel><FormControl><Input type="number" placeholder="1100" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                          <FormField control={form.control} name={`variants.${index}.stock`} render={({ field }) => (<FormItem><FormLabel>Stock</FormLabel><FormControl><Input type="number" placeholder="150" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                          {!isAdmin && (
+                                            <FormField control={form.control} name={`variants.${index}.stock`} render={({ field }) => (<FormItem><FormLabel>Stock</FormLabel><FormControl><Input type="number" placeholder="150" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                          )}
                                       </div>
                                       <Button type="button" variant="ghost" size="icon" className="shrink-0 -mt-1 -mr-1" onClick={() => remove(index)} disabled={fields.length <= 1}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                   </div>
