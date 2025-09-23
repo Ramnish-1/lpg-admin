@@ -92,7 +92,6 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
       variants: values.variants.map(v => ({
         label: v.label,
         price: v.price,
-        stock: v.stock || 0,
       })),
     };
 
