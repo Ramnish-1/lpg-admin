@@ -293,6 +293,37 @@ export default function ProductsPage() {
     }
   };
 
+  const handleToggleInventoryStatus = async (product: Product, inventory: AgencyInventory) => {
+    if (!token || !inventory || isAdmin) return;
+
+    const newStatus = !inventory.isActive;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/products/${product.id}/inventory/agency/${inventory.agencyId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'ngrok-skip-browser-warning': 'true'
+            },
+            body: JSON.stringify({ isActive: newStatus })
+        });
+        if (!response.ok) {
+            handleApiError(response);
+            return;
+        }
+        const result = await response.json();
+        if (result.success) {
+            toast({ title: 'Inventory Status Updated', description: `${product.productName} is now ${newStatus ? 'active' : 'inactive'} in your inventory.` });
+            fetchData();
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update inventory status.' });
+        }
+    } catch (e) {
+        console.error("Failed to update inventory status:", e);
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update inventory status.' });
+    }
+  }
 
   return (
     <AppShell>
@@ -393,9 +424,24 @@ export default function ProductsPage() {
                            ) : (
                                 <>
                                   {agencyInventory ? (
-                                    <Badge variant={agencyInventory.isActive ? 'secondary' : 'destructive'}>
-                                      {agencyInventory.isActive ? 'Active' : 'Inactive'}
-                                    </Badge>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="sm" className="w-28 justify-between capitalize">
+                                            <span className={cn({
+                                                'text-green-600': agencyInventory.isActive,
+                                                'text-gray-500': !agencyInventory.isActive
+                                            })}>
+                                                {agencyInventory.isActive ? 'Active' : 'Inactive'}
+                                            </span>
+                                            <ChevronDown className="h-4 w-4 text-muted-foreground"/>
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="start">
+                                        <DropdownMenuItem onClick={() => handleToggleInventoryStatus(product, agencyInventory)}>
+                                          Set as {agencyInventory.isActive ? 'Inactive' : 'Active'}
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
                                   ) : (
                                     <Badge variant='outline'>Not In Inventory</Badge>
                                   )}
@@ -415,10 +461,6 @@ export default function ProductsPage() {
                             {isAdmin && (
                               <>
                                 <DropdownMenuItem onClick={() => handleEdit(product)}>Edit Product</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => router.push(`/products/${product.id}/agencies`)}>
-                                  <Building className="mr-2 h-4 w-4" />
-                                  View in Agencies
-                                </DropdownMenuItem>
                                 <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(product)}>
                                   <Trash2 className="mr-2 h-4 w-4" />
                                   Delete
