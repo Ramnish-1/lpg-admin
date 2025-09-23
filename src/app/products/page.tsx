@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, AlertCircle, Loader2, Trash2, Building } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, AlertCircle, Loader2, Trash2, Building, PackagePlus, Settings } from 'lucide-react';
 import type { Product, Agency, AgencyInventory } from '@/lib/types';
 import { useEffect, useState, useMemo, useCallback, useContext } from 'react';
 import { ProductDetailsDialog } from '@/components/product-details-dialog';
@@ -26,9 +26,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [agencyInventories, setAgencyInventories] = useState<AgencyInventory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedItem, setSelectedItem] = useState<Product | AgencyInventory | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Product | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -43,9 +42,9 @@ export default function ProductsPage() {
   const fetchData = useCallback(async () => {
     if (!token) return;
     setIsLoading(true);
-    const url = isAdmin 
-      ? `${API_BASE_URL}/api/products` 
-      : `${API_BASE_URL}/api/products/inventory/agency/${profile.agencyId}`;
+    // All roles now fetch from the global products endpoint.
+    // We can include inventory data to know which products are in the agency's inventory.
+    const url = `${API_BASE_URL}/api/products?includeInventory=true`;
       
     try {
       const response = await fetch(url, {
@@ -57,11 +56,7 @@ export default function ProductsPage() {
       }
       const result = await response.json();
       if (result.success) {
-        if (isAdmin) {
-          setProducts(result.data.products || []);
-        } else {
-          setAgencyInventories(result.data.inventories || []);
-        }
+        setProducts(result.data.products || []);
       } else {
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch data.' });
       }
@@ -71,32 +66,31 @@ export default function ProductsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [token, isAdmin, profile.agencyId, toast, handleApiError]);
+  }, [token, toast, handleApiError]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
   
-  const items = isAdmin ? products : agencyInventories;
-  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
 
   const paginatedItems = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    return items.slice(startIndex, endIndex);
-  }, [items, currentPage]);
+    return products.slice(startIndex, endIndex);
+  }, [products, currentPage]);
   
-  const handleShowDetails = (item: Product | AgencyInventory) => {
+  const handleShowDetails = (item: Product) => {
     setSelectedItem(item);
     setIsDetailsOpen(true);
   };
   
-  const handleEdit = (item: Product | AgencyInventory) => {
+  const handleEdit = (item: Product) => {
     setSelectedItem(item);
     setIsEditOpen(true);
   };
   
-  const handleDelete = (item: Product | AgencyInventory) => {
+  const handleDelete = (item: Product) => {
     setSelectedItem(item);
     setIsDeleteOpen(true);
   };
@@ -105,14 +99,20 @@ export default function ProductsPage() {
     setSelectedItem(product);
     setIsAgencyListOpen(true);
   };
+  
+  const handleManageInventory = (product: Product) => {
+    // For agency owner, this opens the edit dialog focused on inventory
+    setSelectedItem(product);
+    setIsEditOpen(true);
+  }
 
   const confirmDelete = async () => {
     if (!selectedItem || !token) return;
     
-    const isGlobalProduct = 'productName' in selectedItem;
-    const url = isGlobalProduct
-      ? `${API_BASE_URL}/api/products/${selectedItem.id}`
-      : `${API_BASE_URL}/api/products/${(selectedItem as AgencyInventory).productId}/inventory/agency/${profile.agencyId}`;
+    // Only admins can delete global products
+    if (!isAdmin) return;
+
+    const url = `${API_BASE_URL}/api/products/${selectedItem.id}`;
 
     try {
       const response = await fetch(url, {
@@ -124,11 +124,11 @@ export default function ProductsPage() {
         return;
       }
       
-      toast({ title: 'Item Deleted', description: `The item has been deleted.` });
+      toast({ title: 'Product Deleted', description: `The product has been deleted.` });
       fetchData();
     } catch (error) {
        console.error("Failed to delete item:", error);
-       toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete item.' });
+       toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete product.' });
     } finally {
       setIsDeleteOpen(false);
       setSelectedItem(null);
@@ -136,7 +136,7 @@ export default function ProductsPage() {
   }
 
  const handleProductUpdate = async (updatedProduct: Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images' | 'AgencyInventory'> & { id: string }, imagesToDelete?: string[], newImages?: File[]): Promise<boolean> => {
-    if(!token) return false;
+    if(!token || !isAdmin) return false;
 
     const formData = new FormData();
     formData.append('productName', updatedProduct.productName);
@@ -178,9 +178,58 @@ export default function ProductsPage() {
     }
   }
 
+  const handleInventoryUpdate = async (inventoryData: any): Promise<boolean> => {
+    if (!token || isAdmin || !selectedItem) return false;
+
+    const { lowStockThreshold, variants } = inventoryData;
+    const stock = variants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0);
+    const agencyId = profile.agencyId;
+
+    const payload = {
+      stock,
+      lowStockThreshold,
+      agencyVariants: variants.map((v: any) => ({ label: v.label, price: v.price, stock: v.stock })),
+      isActive: true,
+    };
+    
+    // Check if inventory exists to decide between POST (add) and PUT (update)
+    const inventoryExists = selectedItem.AgencyInventory?.some(inv => inv.agencyId === agencyId);
+    const url = `${API_BASE_URL}/api/products/${selectedItem.id}/inventory/agency/${agencyId}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: inventoryExists ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        handleApiError(response);
+        return false;
+      }
+      
+      const result = await response.json();
+      if (result.success) {
+        toast({ title: 'Inventory Updated', description: `Inventory for ${selectedItem.productName} has been updated.` });
+        fetchData();
+        return true;
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update inventory.' });
+        return false;
+      }
+    } catch (e) {
+      console.error("Failed to update inventory:", e);
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update inventory.' });
+      return false;
+    }
+  }
 
   const handleProductAdd = async (newProduct: Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images' | 'AgencyInventory'>, images: File[]): Promise<boolean> => {
-    if (!token) return false;
+    if (!token || !isAdmin) return false;
     
     const formData = new FormData();
     formData.append('productName', newProduct.productName);
@@ -216,40 +265,6 @@ export default function ProductsPage() {
     }
   }
 
-  const handleToggleProductStatus = async (productToToggle: Product) => {
-    if (!token || !isAdmin) return;
-    const newStatus = productToToggle.status.toLowerCase() === 'active' ? 'inactive' : 'active';
-    try {
-       const response = await fetch(`${API_BASE_URL}/api/products/${productToToggle.id}`, {
-            method: 'PUT',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-                'ngrok-skip-browser-warning': 'true'
-            },
-            body: JSON.stringify({ status: newStatus })
-        });
-        if (!response.ok) {
-          handleApiError(response);
-          return;
-        }
-        const result = await response.json();
-        if (result.success) {
-            toast({
-                title: 'Product Status Updated',
-                description: `${productToToggle.productName} is now ${newStatus}.`,
-            });
-            fetchData();
-        } else {
-            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
-        }
-    } catch(e) {
-        console.error("Failed to toggle product status:", e);
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
-    }
-  };
-
-
   return (
     <AppShell>
       <PageHeader title="Product & Inventory">
@@ -264,9 +279,9 @@ export default function ProductsPage() {
       </PageHeader>
       <Card>
         <CardHeader>
-            <CardTitle>{isAdmin ? 'Global Product Catalog' : 'My Agency Inventory'}</CardTitle>
+            <CardTitle>{isAdmin ? 'Global Product Catalog' : 'Available Products'}</CardTitle>
             <CardDescription>
-                {isAdmin ? 'Manage all products available in the system.' : 'Manage stock and pricing for products in your agency.'}
+                {isAdmin ? 'Manage all products available in the system.' : 'View all available products and manage your agency inventory.'}
             </CardDescription>
         </CardHeader>
         <CardContent>
@@ -280,38 +295,44 @@ export default function ProductsPage() {
                 <TableRow>
                   <TableHead>Product Name</TableHead>
                   <TableHead>Category</TableHead>
-                  <TableHead>Total Stock</TableHead>
+                  <TableHead>{isAdmin ? 'Global Stock' : 'My Stock'}</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedItems.map((item) => {
-                  const product = 'productName' in item ? item : item.Product;
-                  const inventory = 'agencyId' in item ? item : null;
+                {paginatedItems.map((product) => {
                   
-                  const totalStock = inventory 
-                    ? inventory.stock
-                    : product.AgencyInventory?.reduce((sum, inv) => sum + inv.stock, 0) ?? 0;
+                  const agencyInventory = !isAdmin 
+                    ? product.AgencyInventory?.find(inv => inv.agencyId === profile.agencyId)
+                    : null;
                   
-                  const isLowStock = inventory 
-                    ? inventory.stock < inventory.lowStockThreshold
-                    : totalStock < product.lowStockThreshold;
+                  const totalStock = isAdmin
+                    ? product.AgencyInventory?.reduce((sum, inv) => sum + inv.stock, 0) ?? 0
+                    : agencyInventory?.stock ?? 0;
+                  
+                  const lowStockThreshold = isAdmin
+                    ? product.lowStockThreshold
+                    : agencyInventory?.lowStockThreshold ?? product.lowStockThreshold;
+
+                  const isLowStock = totalStock < lowStockThreshold;
+
+                  const isInMyInventory = !!agencyInventory;
 
                   return (
                     <TableRow 
-                      key={product.id + (inventory?.agencyId || '')} 
+                      key={product.id} 
                       className={cn("cursor-pointer", {
-                        "bg-red-100 hover:bg-red-100/80 dark:bg-red-900/20 dark:hover:bg-red-900/30": isLowStock
+                        "bg-red-100 hover:bg-red-100/80 dark:bg-red-900/20 dark:hover:bg-red-900/30": isLowStock && (isAdmin || isInMyInventory)
                       })}
-                      onClick={() => handleShowDetails(item)}
+                      onClick={() => handleShowDetails(product)}
                     >
                       <TableCell className="font-medium">{product.productName}</TableCell>
                       <TableCell className="capitalize">{product.category}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <span>{totalStock}</span>
-                          {isLowStock && (
+                          {isLowStock && (isAdmin || isInMyInventory) && (
                             <Badge variant="destructive" className="flex items-center gap-1">
                               <AlertCircle className="h-3 w-3" /> Low
                             </Badge>
@@ -319,9 +340,11 @@ export default function ProductsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                          <Badge variant={product.status === 'Active' ? 'secondary' : 'outline'}>
-                            {product.status}
-                          </Badge>
+                           {isAdmin ? (
+                               <Badge variant={product.status === 'Active' ? 'secondary' : 'outline'}>{product.status}</Badge>
+                           ) : (
+                                <Badge variant={isInMyInventory ? 'secondary' : 'outline'}>{isInMyInventory ? 'In My Inventory' : 'Not In Inventory'}</Badge>
+                           )}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
@@ -332,18 +355,26 @@ export default function ProductsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleShowDetails(item)}>View Details</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleEdit(item)}>Edit {isAdmin ? 'Product' : 'Inventory'}</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleShowDetails(product)}>View Details</DropdownMenuItem>
                             {isAdmin && (
-                               <DropdownMenuItem onClick={() => handleShowAgencies(product)}>
-                                <Building className="mr-2 h-4 w-4" />
-                                View in Agencies
+                              <>
+                                <DropdownMenuItem onClick={() => handleEdit(product)}>Edit Product</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleShowAgencies(product)}>
+                                  <Building className="mr-2 h-4 w-4" />
+                                  View in Agencies
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(product)}>
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            {!isAdmin && (
+                               <DropdownMenuItem onClick={() => handleManageInventory(product)}>
+                                {isInMyInventory ? <Settings className="mr-2 h-4 w-4" /> : <PackagePlus className="mr-2 h-4 w-4" />}
+                                {isInMyInventory ? 'Manage Inventory' : 'Add to My Inventory'}
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(item)}>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -357,7 +388,7 @@ export default function ProductsPage() {
         {totalPages > 1 && (
             <CardFooter className="flex justify-between">
                 <div className="text-sm text-muted-foreground">
-                Showing {paginatedItems.length} of {items.length} items.
+                Showing {paginatedItems.length} of {products.length} items.
                 </div>
                 <div className="flex items-center gap-2">
                 <Button
@@ -389,7 +420,7 @@ export default function ProductsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this item.
+              This action cannot be undone. This will permanently delete this product from the global catalog.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -411,7 +442,7 @@ export default function ProductsPage() {
           isOpen={isEditOpen}
           onOpenChange={setIsEditOpen}
           onProductUpdate={handleProductUpdate}
-          onInventoryUpdate={() => {}} // Placeholder
+          onInventoryUpdate={handleInventoryUpdate}
           isAdmin={isAdmin}
         />
       )}
@@ -429,3 +460,5 @@ export default function ProductsPage() {
     </AppShell>
   );
 }
+
+    
