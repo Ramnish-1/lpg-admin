@@ -85,26 +85,22 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
       form.setError("root", { message: "At least one image is required." });
       return;
     }
-
     form.clearErrors("root");
     
-    try {
-        const payload: AddProductPayload = {
-            ...values,
-            variants: values.variants.map(v => ({
-                label: v.label,
-                price: v.price,
-                stock: v.stock || 0,
-            })),
-        };
-        const success = await onProductAdd(payload, imageFiles);
-        
-        if (success) {
-            resetDialog();
-            onOpenChange(false);
-        }
-    } catch(e) {
-      // Error is already handled by the onProductAdd function's toast.
+    const payload: AddProductPayload = {
+      ...values,
+      variants: values.variants.map(v => ({
+        label: v.label,
+        price: v.price,
+        stock: v.stock || 0,
+      })),
+    };
+
+    const success = await onProductAdd(payload, imageFiles);
+    
+    if (success) {
+      resetDialog();
+      onOpenChange(false);
     }
   };
   
@@ -252,4 +248,3 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     </>
   );
 }
-
