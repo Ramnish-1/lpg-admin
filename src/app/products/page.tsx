@@ -422,7 +422,7 @@ export default function ProductsPage() {
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                            ) : (
-                                <>
+                                <div>
                                   {agencyInventory ? (
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
@@ -445,7 +445,10 @@ export default function ProductsPage() {
                                   ) : (
                                     <Badge variant='outline'>Not In Inventory</Badge>
                                   )}
-                                </>
+                                   <p className={cn('text-xs mt-1', agencyInventory ? 'text-green-600' : 'text-red-600')}>
+                                        {agencyInventory ? 'In My Inventory' : 'Not In My Inventory'}
+                                    </p>
+                                </div>
                            )}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
@@ -552,5 +555,3 @@ export default function ProductsPage() {
     </AppShell>
   );
 }
-
-    
