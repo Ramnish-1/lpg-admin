@@ -9,10 +9,9 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Building2, Package, MapPin, Mail, Phone } from 'lucide-react';
+import { Loader2, Building2, Mail, Phone, MapPin } from 'lucide-react';
 import type { Product, AgencyInventory } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -75,7 +74,7 @@ export default function ProductAgenciesPage() {
     );
   }
   
-  const productImageUrl = product.images?.[0] || '';
+  const productImageUrl = product.images?.[0];
 
   return (
     <AppShell>
