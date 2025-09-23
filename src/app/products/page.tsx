@@ -42,8 +42,6 @@ export default function ProductsPage() {
   const fetchData = useCallback(async () => {
     if (!token) return;
     setIsLoading(true);
-    // All roles now fetch from the global products endpoint.
-    // We can include inventory data to know which products are in the agency's inventory.
     const url = `${API_BASE_URL}/api/products?includeInventory=true`;
       
     try {
@@ -96,15 +94,12 @@ export default function ProductsPage() {
   };
 
   const handleManageInventory = (product: Product) => {
-    // For agency owner, this opens the edit dialog focused on inventory
     setSelectedItem(product);
     setIsEditOpen(true);
   }
 
   const confirmDelete = async () => {
     if (!selectedItem || !token) return;
-    
-    // Only admins can delete global products
     if (!isAdmin) return;
 
     const url = `${API_BASE_URL}/api/products/${selectedItem.id}`;
@@ -154,7 +149,8 @@ export default function ProductsPage() {
             body: formData,
         });
         if (!response.ok) {
-          handleApiError(response);
+          const errorData = await response.json();
+          toast({ variant: 'destructive', title: 'Error', description: errorData.error || 'Failed to update product.' });
           return false;
         }
         const result = await response.json();
@@ -177,19 +173,15 @@ export default function ProductsPage() {
     if (!token || isAdmin || !selectedItem) return false;
 
     const { variants, lowStockThreshold } = inventoryData;
-    const stock = variants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0);
-    const agencyId = profile.agencyId;
-
+    
     const payload = {
-      stock,
       lowStockThreshold,
       agencyVariants: variants.map((v: any) => ({ label: v.label, price: v.price, stock: v.stock })),
       isActive: true,
     };
     
-    // Check if inventory exists to decide between POST (add) and PUT (update)
-    const inventoryExists = selectedItem.AgencyInventory?.some(inv => inv.agencyId === agencyId);
-    const url = `${API_BASE_URL}/api/products/${selectedItem.id}/inventory/agency/${agencyId}`;
+    const inventoryExists = selectedItem.AgencyInventory?.some(inv => inv.agencyId === profile.agencyId);
+    const url = `${API_BASE_URL}/api/products/${selectedItem.id}/inventory/agency/${profile.agencyId}`;
     
     try {
       const response = await fetch(url, {
@@ -203,7 +195,8 @@ export default function ProductsPage() {
       });
 
       if (!response.ok) {
-        handleApiError(response);
+        const errorData = await response.json();
+        toast({ variant: 'destructive', title: 'Error', description: errorData.error || 'Failed to update inventory.' });
         return false;
       }
       
@@ -240,10 +233,13 @@ export default function ProductsPage() {
             headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' },
             body: formData,
         });
+
         if (!response.ok) {
-          handleApiError(response);
+          const errorData = await response.json();
+          toast({ variant: 'destructive', title: 'Error adding product', description: errorData.error || 'An unknown error occurred.' });
           return false;
         }
+
         const result = await response.json();
         if (result.success) {
             toast({ title: 'Product Added', description: `${newProduct.productName} has been successfully added.` });
@@ -255,7 +251,7 @@ export default function ProductsPage() {
         }
     } catch(e) {
         console.error("Failed to add product:", e);
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to add product.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred while adding the product.' });
         return false;
     }
   }
@@ -368,8 +364,8 @@ export default function ProductsPage() {
                     : null;
                   
                   const totalStock = isAdmin
-                    ? product.AgencyInventory?.reduce((sum, inv) => sum + inv.stock, 0) ?? 0
-                    : agencyInventory?.stock ?? 0;
+                    ? product.AgencyInventory?.reduce((sum, inv) => sum + inv.agencyVariants.reduce((s, v) => s + v.stock, 0), 0) ?? 0
+                    : agencyInventory?.agencyVariants.reduce((s, v) => s + v.stock, 0) ?? 0;
                   
                   const lowStockThreshold = isAdmin
                     ? product.lowStockThreshold
@@ -559,5 +555,7 @@ export default function ProductsPage() {
     </AppShell>
   );
 }
+
+    
 
     
