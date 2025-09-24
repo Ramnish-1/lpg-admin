@@ -239,6 +239,8 @@ function OrdersPageContent() {
   const { socket, removeNotification } = useNotifications();
   const [activeTab, setActiveTab] = useState<string>('pending');
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalItems: 0 });
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+
 
   const fetchOrders = useCallback(async (page = 1, status = activeTab, search = searchTerm) => {
       if (!token) return;
@@ -272,9 +274,34 @@ function OrdersPageContent() {
       }
   }, [token, toast, handleApiError, activeTab, searchTerm]);
 
+  const fetchStatusCounts = useCallback(async () => {
+    if (!token) return;
+    const counts: Record<string, number> = {};
+    for (const status of orderStatusesForTabs) {
+      try {
+        const url = new URL(`${API_BASE_URL}/api/orders`);
+        url.searchParams.append('limit', '1'); // We only need the count
+        url.searchParams.append('status', status === 'in-progress' ? 'assigned,in-progress' : status === 'out-for-delivery' ? 'out_for_delivery' : status);
+        const response = await fetch(url.toString(), {
+          headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
+        });
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            counts[status] = result.data.pagination.totalItems;
+          }
+        }
+      } catch (error) {
+        console.error(`Failed to fetch count for ${status}`, error);
+      }
+    }
+    setStatusCounts(counts);
+  }, [token]);
+
   useEffect(() => {
     fetchOrders(1, activeTab, searchTerm);
-  }, [activeTab, searchTerm, fetchOrders]);
+    fetchStatusCounts();
+  }, [activeTab, searchTerm, fetchOrders, fetchStatusCounts]);
 
   const handlePageChange = (newPage: number) => {
       fetchOrders(newPage, activeTab, searchTerm);
@@ -284,6 +311,7 @@ function OrdersPageContent() {
     if (socket) {
         const handleNewOrder = () => {
             fetchOrders(); 
+            fetchStatusCounts();
         };
         socket.on('newOrder', handleNewOrder);
 
@@ -291,7 +319,7 @@ function OrdersPageContent() {
             socket.off('newOrder', handleNewOrder);
         };
     }
-  }, [socket, fetchOrders]);
+  }, [socket, fetchOrders, fetchStatusCounts]);
 
   const fetchAgents = useCallback(async () => {
      if (!token) return;
@@ -365,6 +393,7 @@ function OrdersPageContent() {
           description: `Agent has been assigned and status updated.`,
         });
         fetchOrders(pagination.currentPage);
+        fetchStatusCounts();
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to assign agent.' });
       }
@@ -403,6 +432,7 @@ function OrdersPageContent() {
             removeNotification(order.id);
         }
         fetchOrders(pagination.currentPage);
+        fetchStatusCounts();
         setIsDetailsOpen(false);
         return true;
       } else {
@@ -456,12 +486,6 @@ function OrdersPageContent() {
        setSelectedOrder(null);
     }
   };
-
-  const getOrderCountForCurrentView = () => {
-    // This provides the count for the currently displayed, filtered, and paginated set of orders.
-    // For a total count per tab, the API would need to provide this information.
-    return orders.length;
-  }
   
   const handleExport = async () => {
     if (!token) return;
@@ -527,8 +551,8 @@ function OrdersPageContent() {
                 className="capitalize px-4 py-1.5 text-sm font-medium rounded-md"
               >
                 <span className="mr-2">{status.replace('_', '-')}</span>
-                <Badge variant={status === activeTab ? 'default' : 'secondary'}>
-                  {status === activeTab ? pagination.totalItems : ''}
+                 <Badge variant={status === activeTab ? 'default' : 'secondary'}>
+                    {statusCounts[status] ?? 0}
                 </Badge>
               </TabsTrigger>
             ))}
