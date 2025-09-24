@@ -187,7 +187,7 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                  {order.status === 'cancelled' && order.cancelledBy && (
                    <div className="flex justify-between items-start pt-2">
                         <span className="text-muted-foreground flex items-center gap-2"><User className="h-4 w-4"/>Cancelled By</span>
-                        <span className="text-right capitalize text-sm font-medium">{order.cancelledBy} ({order.cancelledByName})</span>
+                        <span className="text-right capitalize text-sm font-medium">{order.cancelledBy} ({order.cancelledBy === 'customer' ? order.customerName : order.cancelledByName})</span>
                     </div>
                 )}
             </div>
@@ -304,3 +304,5 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
     </>
   );
 }
+
+    
