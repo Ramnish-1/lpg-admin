@@ -42,15 +42,19 @@ const orderStatusesForTabs: (Order['status'] | 'in-progress')[] = ['pending', 'c
 
 
 function OrdersTable({ 
-  orders, 
-  onShowDetails, 
-  onAssignAgent, 
+  orders,
+  onShowDetails,
+  onAssignAgent,
   onStatusChange,
   onReturn,
   onCancel,
   onConfirmAndAssign,
   updatingOrderId,
-}: { 
+  currentPage,
+  totalPages,
+  onPageChange,
+  totalItems,
+}: {
   orders: Order[],
   onShowDetails: (order: Order) => void,
   onAssignAgent: (order: Order) => void,
@@ -59,25 +63,17 @@ function OrdersTable({
   onCancel: (order: Order) => void;
   onConfirmAndAssign: (order: Order) => void;
   updatingOrderId: string | null;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  totalItems: number;
 }) {
-  const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = Math.ceil(orders.length / ITEMS_PER_PAGE);
-
-  const paginatedOrders = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    return orders.slice(startIndex, endIndex);
-  }, [orders, currentPage]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [orders]);
 
   const isActionDisabled = (status: Order['status']) => {
     return ['delivered', 'cancelled', 'returned'].includes(status);
   }
   
-  const tableStatus = paginatedOrders[0]?.status;
+  const tableStatus = orders[0]?.status;
 
 
   return (
@@ -97,7 +93,7 @@ function OrdersTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedOrders.map((order: Order) => (
+              {orders.map((order: Order) => (
                 <TableRow key={order.id} onClick={() => onShowDetails(order)} className="cursor-pointer">
                   <TableCell className="font-medium text-primary">#{order.orderNumber.slice(-8)}</TableCell>
                   <TableCell>{order.customerName}</TableCell>
@@ -194,13 +190,13 @@ function OrdersTable({
        {totalPages > 1 && (
         <CardFooter className="flex justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {paginatedOrders.length} of {orders.length} orders.
+            Showing {orders.length} of {totalItems} orders.
           </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
               disabled={currentPage === 1}
             >
               Previous
@@ -211,7 +207,7 @@ function OrdersTable({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
               disabled={currentPage === totalPages}
             >
               Next
@@ -241,19 +237,31 @@ function OrdersPageContent() {
   const { handleApiError } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const { socket, removeNotification } = useNotifications();
+  const [activeTab, setActiveTab] = useState<string>('pending');
+  const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalItems: 0 });
 
-
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = useCallback(async (page = 1, status = activeTab, search = searchTerm) => {
       if (!token) return;
       setIsLoading(true);
       try {
-          const response = await fetch(`${API_BASE_URL}/api/orders`, {
+          const url = new URL(`${API_BASE_URL}/api/orders`);
+          url.searchParams.append('page', String(page));
+          url.searchParams.append('limit', String(ITEMS_PER_PAGE));
+          if (status && status !== 'all') {
+            url.searchParams.append('status', status === 'in-progress' ? 'assigned,in-progress' : status === 'out-for-delivery' ? 'out_for_delivery' : status);
+          }
+          if (search) {
+              url.searchParams.append('search', search);
+          }
+
+          const response = await fetch(url.toString(), {
               headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
           });
           if (!response.ok) handleApiError(response);
           const result = await response.json();
           if (result.success) {
               setOrders(result.data.orders);
+              setPagination(result.data.pagination);
           } else {
               toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch orders.' });
           }
@@ -262,7 +270,15 @@ function OrdersPageContent() {
       } finally {
           setIsLoading(false);
       }
-  }, [token, toast, handleApiError]);
+  }, [token, toast, handleApiError, activeTab, searchTerm]);
+
+  useEffect(() => {
+    fetchOrders(1, activeTab, searchTerm);
+  }, [activeTab, searchTerm, fetchOrders]);
+
+  const handlePageChange = (newPage: number) => {
+      fetchOrders(newPage, activeTab, searchTerm);
+  }
 
   useEffect(() => {
     if (socket) {
@@ -294,31 +310,20 @@ function OrdersPageContent() {
   }, [token, handleApiError]);
 
   useEffect(() => {
-    fetchOrders();
     fetchAgents();
-  }, [token, fetchOrders, fetchAgents]);
+  }, [token, fetchAgents]);
   
   useEffect(() => {
     const assignAgentOrderId = searchParams.get('assignAgent');
     if (assignAgentOrderId) {
-      const orderToAssign = orders.find(o => o.id === assignAgentOrderId);
-      if (orderToAssign) {
-        handleAssignAgent(orderToAssign);
-        // Remove the query param from URL
-        router.replace('/orders', { scroll: false });
-      }
+      // We can't guarantee the order is in the current view, so we fetch all orders
+      // or we can fetch the specific order and open the dialog
+      // For simplicity, we just trigger the dialog. A more robust solution might fetch the order details.
+      const orderToAssign = orders.find(o => o.id === assignAgentOrderId) || { id: assignAgentOrderId } as Order; // Partial order
+      handleAssignAgent(orderToAssign);
+      router.replace('/orders', { scroll: false });
     }
   }, [searchParams, orders, router]);
-
-
-  const filteredOrders = useMemo(() => {
-    return orders.filter(order =>
-        order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (order.assignedAgent && order.assignedAgent.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [orders, searchTerm]);
-
 
   const handleShowDetails = (order: Order) => {
     setSelectedOrder(order);
@@ -359,7 +364,7 @@ function OrdersPageContent() {
           title: "Agent Assigned",
           description: `Agent has been assigned and status updated.`,
         });
-        fetchOrders();
+        fetchOrders(pagination.currentPage);
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to assign agent.' });
       }
@@ -397,7 +402,7 @@ function OrdersPageContent() {
         if(newStatus === 'confirmed') {
             removeNotification(order.id);
         }
-        fetchOrders();
+        fetchOrders(pagination.currentPage);
         setIsDetailsOpen(false);
         return true;
       } else {
@@ -453,45 +458,38 @@ function OrdersPageContent() {
   };
 
   const getOrderCount = (status: string) => {
-    if (status === 'in-progress') {
-      return filteredOrders.filter(o => ['assigned', 'in-progress'].includes(o.status)).length;
-    }
-    if (status === 'out-for-delivery') {
-      return filteredOrders.filter(o => o.status === 'out_for_delivery').length;
-    }
-    return filteredOrders.filter(o => o.status === status).length;
+    if (status === 'all') return pagination.totalItems;
+    // Note: The count is for the current filtered view, not global.
+    // For a more accurate global count per tab, we'd need another API endpoint.
+    return orders.filter(o => {
+      if (status === 'in-progress') return ['assigned', 'in-progress'].includes(o.status);
+      if (status === 'out-for-delivery') return o.status === 'out_for_delivery';
+      return o.status === status;
+    }).length;
   }
   
-  const handleExport = () => {
-    const csvHeader = "Order ID,Customer Name,Customer Phone,Agent Name,Agent Phone,Status,Total Amount,Date,Products\n";
-    const csvRows = filteredOrders.map(o => {
-        const productList = o.items.map(p => `${p.productName} ${p.variantLabel} (x${p.quantity})`).join('; ');
-        const row = [
-            o.orderNumber,
-            `"${o.customerName}"`,
-            o.customerPhone,
-            `"${o.assignedAgent?.name || 'N/A'}"`,
-            o.assignedAgent?.phone || 'N/A',
-            o.status,
-            o.totalAmount,
-            new Date(o.createdAt).toISOString(),
-            `"${productList}"`
-        ].join(',');
-        return row;
-    }).join('\n');
-
-    const csvContent = csvHeader + csvRows;
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    if (link.href) {
-        URL.revokeObjectURL(link.href);
+  const handleExport = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/orders/export`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
+      });
+      if (!response.ok) {
+        handleApiError(response);
+        return;
+      }
+      const blob = await response.blob();
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+      link.setAttribute('download', 'orders_export.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to export orders.' });
     }
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-    link.setAttribute('download', 'orders_export.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   }
 
 
@@ -519,46 +517,28 @@ function OrdersPageContent() {
           </Button>
         </div>
       </PageHeader>
-      {isLoading ? (
+      {isLoading && orders.length === 0 ? (
         <div className="flex justify-center items-center h-64">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       ) : (
-      <Tabs defaultValue="pending">
+      <Tabs defaultValue="pending" onValueChange={setActiveTab}>
         <div className="overflow-x-auto">
           <TabsList className="bg-muted p-1 rounded-lg">
-            {orderStatusesForTabs.map(status => {
-              const count = getOrderCount(status);
-              return (
-                <TabsTrigger 
-                  key={status} 
-                  value={status}
-                  className="capitalize px-4 py-1.5 text-sm font-medium rounded-md"
-                >
-                  <span className="mr-2">{status.replace('_', '-')}</span>
-                  <Badge 
-                    variant={count > 0 ? "default" : "secondary"}
-                    className="rounded-full px-2"
-                  >
-                    {count}
-                  </Badge>
-                </TabsTrigger>
-              )
-            })}
+            {orderStatusesForTabs.map(status => (
+              <TabsTrigger 
+                key={status} 
+                value={status}
+                className="capitalize px-4 py-1.5 text-sm font-medium rounded-md"
+              >
+                <span className="mr-2">{status.replace('_', '-')}</span>
+              </TabsTrigger>
+            ))}
           </TabsList>
         </div>
-        {orderStatusesForTabs.map(status => (
-          <TabsContent key={status} value={status} className="mt-4">
+          <TabsContent value={activeTab} className="mt-4">
             <OrdersTable 
-              orders={filteredOrders.filter(o => {
-                if (status === 'in-progress') {
-                  return ['assigned', 'in-progress'].includes(o.status);
-                }
-                 if (status === 'out-for-delivery') {
-                  return o.status === 'out_for_delivery';
-                }
-                return o.status === status;
-              })}
+              orders={orders}
               onShowDetails={handleShowDetails}
               onAssignAgent={handleAssignAgent}
               onStatusChange={handleStatusChange}
@@ -566,9 +546,12 @@ function OrdersPageContent() {
               onCancel={handleCancelOrder}
               onConfirmAndAssign={handleConfirmAndAssign}
               updatingOrderId={updatingOrderId}
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              onPageChange={handlePageChange}
+              totalItems={pagination.totalItems}
             />
           </TabsContent>
-        ))}
       </Tabs>
       )}
       
