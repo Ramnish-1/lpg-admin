@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MoreHorizontal, FileDown, ChevronDown, Search, Loader2 } from 'lucide-react';
 import type { Order, Agent } from '@/lib/types';
 import { useEffect, useState, useMemo, useContext, useCallback } from 'react';
-import { OrderDetailsDialog } from '@/components/order-details-dialog';
 import { AssignAgentDialog } from '@/components/assign-agent-dialog';
 import { CancelOrderDialog } from '@/components/cancel-order-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -227,7 +226,6 @@ function OrdersPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isReturnOpen, setIsReturnOpen] = useState(false);
@@ -354,8 +352,7 @@ function OrdersPageContent() {
   }, [searchParams, orders, router]);
 
   const handleShowDetails = (order: Order) => {
-    setSelectedOrder(order);
-    setIsDetailsOpen(true);
+    router.push(`/orders/${order.id}`);
   };
   
   const handleAssignAgent = (order: Order) => {
@@ -433,7 +430,6 @@ function OrdersPageContent() {
         }
         fetchOrders(pagination.currentPage);
         fetchStatusCounts();
-        setIsDetailsOpen(false);
         return true;
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
@@ -577,14 +573,6 @@ function OrdersPageContent() {
       </Tabs>
       )}
       
-      {selectedOrder && <OrderDetailsDialog 
-        order={selectedOrder} 
-        isOpen={isDetailsOpen} 
-        onOpenChange={setIsDetailsOpen}
-        onConfirmAndAssign={() => handleConfirmAndAssign(selectedOrder)}
-        onCancelOrder={() => handleCancelOrder(selectedOrder)}
-        isUpdating={!!updatingOrderId}
-      />}
       {selectedOrder && <AssignAgentDialog order={selectedOrder} isOpen={isAssignOpen} onOpenChange={setIsAssignOpen} onAgentAssigned={handleAgentAssigned} agents={agents} />}
       {selectedOrder && <CancelOrderDialog order={selectedOrder} isOpen={isCancelOpen} onOpenChange={setIsCancelOpen} onConfirm={confirmCancelOrder} />}
       {selectedOrder && <ReturnOrderDialog order={selectedOrder} isOpen={isReturnOpen} onOpenChange={setIsReturnOpen} onConfirm={confirmReturnOrder} />}
