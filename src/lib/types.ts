@@ -134,6 +134,9 @@ export interface Order {
   outForDeliveryAt?: string | null;
   deliveredAt?: string | null;
   cancelledAt?: string | null;
+  cancelledBy?: 'admin' | 'customer' | 'agency';
+  cancelledById?: string;
+  cancelledByName?: string;
   assignedAgent?: {
     id: string;
     name: string;

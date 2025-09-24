@@ -184,6 +184,12 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                         <span className="text-right text-destructive text-sm font-medium">{order.adminNotes}</span>
                     </div>
                 )}
+                 {order.status === 'cancelled' && order.cancelledBy && (
+                   <div className="flex justify-between items-start pt-2">
+                        <span className="text-muted-foreground flex items-center gap-2"><User className="h-4 w-4"/>Cancelled By</span>
+                        <span className="text-right capitalize text-sm font-medium">{order.cancelledBy} ({order.cancelledByName})</span>
+                    </div>
+                )}
             </div>
             
             <Separator className="my-4" />
