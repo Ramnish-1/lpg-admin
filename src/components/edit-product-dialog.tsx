@@ -35,7 +35,7 @@ interface EditProductDialogProps {
   item: Product;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onProductUpdate: (product: EditProductPayload, imagesToDelete?: string[], newImages?: File[]) => Promise<boolean>;
+  onProductUpdate: (product: EditProductPayload, existingImages: string[], imagesToDelete: string[], newImages: File[]) => Promise<boolean>;
   onInventoryUpdate: (inventoryData: any) => Promise<boolean>;
   isAdmin: boolean;
 }
@@ -59,7 +59,7 @@ type ProductFormValues = z.infer<typeof productSchema>;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export function EditProductDialog({ item: product, isOpen, onOpenChange, onProductUpdate, onInventoryUpdate, isAdmin }: EditProductDialogProps) {
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
@@ -81,7 +81,7 @@ export function EditProductDialog({ item: product, isOpen, onOpenChange, onProdu
   
   const resetState = () => {
     form.reset();
-    setImagePreviews([]);
+    setExistingImages([]);
     setImagesToDelete([]);
     setNewImageFiles([]);
     if(fileInputRef.current) fileInputRef.current.value = "";
@@ -106,7 +106,7 @@ export function EditProductDialog({ item: product, isOpen, onOpenChange, onProdu
             variants: variantsToShow.map(v => ({...v, value: parseFloat(v.label), unit: v.label.endsWith('kg') ? 'kg' : 'meter' })),
             lowStockThreshold: thresholdToShow
         });
-        setImagePreviews(product.images || []);
+        setExistingImages(product.images || []);
         setImagesToDelete([]);
         setNewImageFiles([]);
     }
@@ -129,7 +129,7 @@ export function EditProductDialog({ item: product, isOpen, onOpenChange, onProdu
             })),
             id: product.id,
         };
-        const success = await onProductUpdate(payload, imagesToDelete, newImageFiles);
+        const success = await onProductUpdate(payload, existingImages, imagesToDelete, newImageFiles);
         if(success) {
             handleOpenChange(false);
         }
@@ -148,9 +148,6 @@ export function EditProductDialog({ item: product, isOpen, onOpenChange, onProdu
     if (files) {
         const newFiles = Array.from(files);
         setNewImageFiles(prev => [...prev, ...newFiles]);
-
-        const newFilePreviews = newFiles.map(file => URL.createObjectURL(file));
-        setImagePreviews(prevPreviews => [...prevPreviews, ...newFilePreviews]);
     }
   };
 
@@ -159,20 +156,17 @@ export function EditProductDialog({ item: product, isOpen, onOpenChange, onProdu
     setIsViewerOpen(true);
   };
   
-  const removeImage = (indexToRemove: number) => {
-    const imageToRemove = imagePreviews[indexToRemove];
-    
-    if (imageToRemove.startsWith('http') || imageToRemove.startsWith('/uploads')) {
-        setImagesToDelete(prev => [...prev, imageToRemove]);
-    } else { 
-        const blobUrlIndex = imagePreviews.filter(p => p.startsWith("blob:")).findIndex(p => p === imageToRemove);
-        if (blobUrlIndex > -1) {
-            setNewImageFiles(prev => prev.filter((_, i) => i !== blobUrlIndex));
-        }
+  const removeImage = (image: string, isNew: boolean) => {
+    if (isNew) {
+      setNewImageFiles(files => files.filter(f => URL.createObjectURL(f) !== image));
+    } else {
+      setExistingImages(images => images.filter(i => i !== image));
+      setImagesToDelete(prev => [...prev, image]);
     }
-    
-    setImagePreviews(previews => previews.filter((_, i) => i !== indexToRemove));
   };
+  
+  const allImages = [...existingImages, ...newImageFiles.map(f => URL.createObjectURL(f))];
+
 
   return (
     <>
@@ -233,31 +227,35 @@ export function EditProductDialog({ item: product, isOpen, onOpenChange, onProdu
                                   </div>
                               </div>
                             </FormControl>
-                          {imagePreviews.length > 0 && (
+                          {allImages.length > 0 && (
                               <Carousel className="w-full mt-4">
                                   <CarouselContent className="-ml-2">
-                                      {imagePreviews.map((src, index) => (
-                                      <CarouselItem key={src} className="pl-2 basis-1/3 sm:basis-1/4 md:basis-1/5">
-                                          <div className="relative aspect-square group">
-                                              <Image 
-                                                  src={src.startsWith('http') || src.startsWith('blob:') ? src : `${API_BASE_URL}/${src}`} 
-                                                  alt={`Preview ${index + 1}`} 
-                                                  fill
-                                                  className="rounded-md object-cover cursor-pointer"
-                                                  onClick={() => openImageViewer(src.startsWith('http') || src.startsWith('blob:') ? src : `${API_BASE_URL}/${src}`)}
-                                              />
-                                              <Button 
-                                                  type="button" 
-                                                  variant="destructive" 
-                                                  size="icon" 
-                                                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                                                  onClick={(e) => { e.stopPropagation(); removeImage(index);}}
-                                              >
-                                                  <X className="h-4 w-4"/>
-                                              </Button>
-                                          </div>
-                                      </CarouselItem>
-                                      ))}
+                                      {allImages.map((src, index) => {
+                                        const isNew = src.startsWith('blob:');
+                                        const finalSrc = src.startsWith('http') || isNew ? src : `${API_BASE_URL}/${src}`;
+                                        return (
+                                          <CarouselItem key={src} className="pl-2 basis-1/3 sm:basis-1/4 md:basis-1/5">
+                                              <div className="relative aspect-square group">
+                                                  <Image 
+                                                      src={finalSrc} 
+                                                      alt={`Preview ${index + 1}`} 
+                                                      fill
+                                                      className="rounded-md object-cover cursor-pointer"
+                                                      onClick={() => openImageViewer(finalSrc)}
+                                                  />
+                                                  <Button 
+                                                      type="button" 
+                                                      variant="destructive" 
+                                                      size="icon" 
+                                                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                                      onClick={(e) => { e.stopPropagation(); removeImage(src, isNew);}}
+                                                  >
+                                                      <X className="h-4 w-4"/>
+                                                  </Button>
+                                              </div>
+                                          </CarouselItem>
+                                        );
+                                      })}
                                   </CarouselContent>
                                   <CarouselPrevious />
                                   <CarouselNext />
@@ -285,4 +283,5 @@ export function EditProductDialog({ item: product, isOpen, onOpenChange, onProdu
     </>
   );
 }
+
 

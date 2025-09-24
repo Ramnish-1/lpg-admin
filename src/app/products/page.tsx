@@ -125,7 +125,7 @@ export default function ProductsPage() {
     }
   }
 
- const handleProductUpdate = async (updatedProduct: Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images' | 'AgencyInventory'> & { id: string }, imagesToDelete?: string[], newImages?: File[]): Promise<boolean> => {
+ const handleProductUpdate = async (updatedProduct: Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images' | 'AgencyInventory'> & { id: string }, existingImages: string[] = [], imagesToDelete: string[] = [], newImages: File[] = []): Promise<boolean> => {
     if(!token || !isAdmin) return false;
 
     const formData = new FormData();
@@ -135,6 +135,9 @@ export default function ProductsPage() {
     formData.append('lowStockThreshold', String(updatedProduct.lowStockThreshold));
     formData.append('variants', JSON.stringify(updatedProduct.variants));
     
+    if (existingImages.length > 0) {
+      formData.append('existingImages', JSON.stringify(existingImages));
+    }
     if (imagesToDelete && imagesToDelete.length > 0) {
       formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
     }
@@ -406,7 +409,7 @@ export default function ProductsPage() {
                                             <span>
                                                 {product.status}
                                             </span>
-                                            <ChevronDown className="h-4 w-4 text-muted-foreground"/>
+                                            <ChevronDown className="h-4 w-4"/>
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="start">
@@ -561,4 +564,5 @@ export default function ProductsPage() {
     
 
     
+
 
