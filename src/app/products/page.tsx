@@ -138,8 +138,10 @@ export default function ProductsPage() {
     if (imagesToDelete && imagesToDelete.length > 0) {
       formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
     }
-    if (newImages) {
-        newImages.forEach(file => formData.append('images', file));
+    if (newImages && newImages.length > 0) {
+        newImages.forEach(file => {
+            formData.append('images', file);
+        });
     }
 
     try {
@@ -559,3 +561,4 @@ export default function ProductsPage() {
     
 
     
+
