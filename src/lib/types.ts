@@ -230,3 +230,5 @@ export interface PrivacyPolicy {
     createdAt: string;
     updatedAt: string;
 }
+
+    

@@ -187,7 +187,9 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                  {order.status === 'cancelled' && order.cancelledBy && (
                    <div className="flex justify-between items-start pt-2">
                         <span className="text-muted-foreground flex items-center gap-2"><User className="h-4 w-4"/>Cancelled By</span>
-                        <span className="text-right capitalize text-sm font-medium">{order.cancelledBy} ({order.cancelledBy === 'customer' ? order.customerName : order.cancelledByName})</span>
+                        <span className="text-right capitalize text-sm font-medium">
+                            {order.cancelledBy} ({order.cancelledBy === 'customer' ? order.customerName : order.cancelledByName})
+                        </span>
                     </div>
                 )}
             </div>
@@ -258,15 +260,21 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
          </div>
          <div className="p-4 rounded-lg border bg-card">
             <h3 className="font-semibold mb-3 text-foreground flex items-center gap-2"><Truck className="h-5 w-5"/> Delivery Agent</h3>
-             <div className="text-sm">
+             <div className="text-sm space-y-2">
                 <div className="font-medium">{order.assignedAgent?.name || 'Unassigned'}</div>
                  {order.assignedAgent?.phone && (
-                    <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                    <div className="text-xs text-muted-foreground flex items-center gap-1">
                         <Phone className="h-3 w-3"/>
                         <a href={`tel:${order.assignedAgent.phone}`} className="hover:underline">{order.assignedAgent.phone}</a>
                         <Button variant="ghost" size="icon" className="h-6 w-6 text-green-500 hover:text-green-600 -ml-1" onClick={() => handleWhatsAppClick(order.assignedAgent?.phone)}>
                             <WhatsAppIcon className="h-4 w-4" />
                         </Button>
+                    </div>
+                )}
+                 {order.assignedAgent?.vehicleNumber && (
+                    <div className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Truck className="h-3 w-3"/>
+                        <span>{order.assignedAgent.vehicleNumber}</span>
                     </div>
                 )}
             </div>
@@ -304,5 +312,7 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
     </>
   );
 }
+
+    
 
     
