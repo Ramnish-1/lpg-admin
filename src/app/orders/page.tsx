@@ -457,15 +457,10 @@ function OrdersPageContent() {
     }
   };
 
-  const getOrderCount = (status: string) => {
-    if (status === 'all') return pagination.totalItems;
-    // Note: The count is for the current filtered view, not global.
-    // For a more accurate global count per tab, we'd need another API endpoint.
-    return orders.filter(o => {
-      if (status === 'in-progress') return ['assigned', 'in-progress'].includes(o.status);
-      if (status === 'out-for-delivery') return o.status === 'out_for_delivery';
-      return o.status === status;
-    }).length;
+  const getOrderCountForCurrentView = () => {
+    // This provides the count for the currently displayed, filtered, and paginated set of orders.
+    // For a total count per tab, the API would need to provide this information.
+    return orders.length;
   }
   
   const handleExport = async () => {
@@ -532,6 +527,9 @@ function OrdersPageContent() {
                 className="capitalize px-4 py-1.5 text-sm font-medium rounded-md"
               >
                 <span className="mr-2">{status.replace('_', '-')}</span>
+                <Badge variant={status === activeTab ? 'default' : 'secondary'}>
+                  {status === activeTab ? pagination.totalItems : ''}
+                </Badge>
               </TabsTrigger>
             ))}
           </TabsList>
@@ -576,5 +574,7 @@ export default function OrdersPage() {
         <OrdersPageContent />
     );
 }
+
+    
 
     
