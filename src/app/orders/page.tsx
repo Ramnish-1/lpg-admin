@@ -136,6 +136,11 @@ function OrdersTable({
                             </DropdownMenuRadioGroup>
                         </DropdownMenuContent>
                     </DropdownMenu>
+                    {order.status === 'cancelled' && order.cancelledBy && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          by <span className="font-medium capitalize">{order.cancelledBy}</span>
+                        </p>
+                    )}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     {new Date(order.createdAt).toLocaleDateString()}
