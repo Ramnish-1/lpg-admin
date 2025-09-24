@@ -55,6 +55,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageDropzoneRef = useRef<HTMLDivElement>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -76,7 +77,13 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
   });
 
   const resetDialog = () => {
-    form.reset();
+    form.reset({
+        productName: '',
+        description: '',
+        category: 'lpg',
+        lowStockThreshold: 10,
+        variants: [{ value: '' as any, unit: 'kg', price: '' as any }],
+    });
     setImageFiles([]);
     setImagePreviews([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -86,6 +93,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
   const handleSubmit = async (values: ProductFormValues) => {
     if (imageFiles.length === 0) {
       form.setError("root", { message: "At least one image is required." });
+      imageDropzoneRef.current?.focus();
       return;
     }
     form.clearErrors("root");
@@ -199,8 +207,11 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                             <div >
                                 <input ref={fileInputRef} id="image-upload" type="file" multiple onChange={handleImageChange} className="hidden" accept="image/*"/>
                                 <div
-                                    className="mt-2 flex justify-center items-center flex-col w-full h-32 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted/50"
+                                    ref={imageDropzoneRef}
+                                    tabIndex={0}
+                                    className="mt-2 flex justify-center items-center flex-col w-full h-32 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                                     onClick={() => fileInputRef.current?.click()}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click()}}
                                 >
                                     <ImagePlus className="h-8 w-8 text-muted-foreground"/>
                                     <p className="text-sm text-muted-foreground mt-2">Click or drag to add images</p>
@@ -257,3 +268,4 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     </>
   );
 }
+
