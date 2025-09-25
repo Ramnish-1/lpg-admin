@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {
@@ -22,7 +23,7 @@ export function ImageViewerDialog({ imageUrl, isOpen, onOpenChange }: ImageViewe
         <div className="relative aspect-video w-full h-full">
           <Image
             src={imageUrl}
-            alt="Enlarged product image"
+            alt="Enlarged image view"
             layout="fill"
             className="object-contain"
           />
@@ -31,5 +32,3 @@ export function ImageViewerDialog({ imageUrl, isOpen, onOpenChange }: ImageViewe
     </Dialog>
   );
 }
-
-    

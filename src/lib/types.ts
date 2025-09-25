@@ -157,6 +157,9 @@ export interface Order {
     city: string;
     status: 'active' | 'inactive';
   }
+  deliveryProofImage?: string;
+  deliveryNote?: string;
+  paymentReceived?: boolean;
 }
 
 

@@ -1,10 +1,11 @@
 
+
 "use client";
 
 import { useState } from 'react';
 import type { Order, Agent } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
-import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package, Phone, MapPin, XCircle, CheckCircle, Loader2, Mail, Building2 } from 'lucide-react';
+import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package, Phone, MapPin, XCircle, CheckCircle, Loader2, Mail, Building2, FileText, Banknote, Image as ImageIcon } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Button } from './ui/button';
 import Link from 'next/link';
@@ -13,6 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { AssignAgentDialog } from './assign-agent-dialog';
 import { CancelOrderDialog } from './cancel-order-dialog';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
+import { ImageViewerDialog } from './image-viewer-dialog';
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg
@@ -52,6 +55,9 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+
 
   const handleWhatsAppClick = (phone?: string) => {
     if (!phone) return;
@@ -166,6 +172,12 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
        await updateOrderStatus('cancelled', reason);
        setIsCancelOpen(false);
   };
+  
+  const openImageViewer = (imageUrl: string) => {
+    setSelectedImageUrl(imageUrl);
+    setIsViewerOpen(true);
+  };
+
 
   return (
     <>
@@ -325,6 +337,33 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                 )}
             </div>
          </div>
+          {order.status === 'delivered' && (
+              <div className="p-4 rounded-lg border bg-card">
+                  <h3 className="font-semibold mb-3 text-foreground flex items-center gap-2"><CheckCircle className="h-5 w-5"/> Delivery Details</h3>
+                  <div className="space-y-3 text-sm">
+                      <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground flex items-center gap-2"><Banknote className="h-4 w-4"/>Payment Received</span>
+                          <Badge variant={order.paymentReceived ? 'default' : 'destructive'}>
+                              {order.paymentReceived ? 'Yes' : 'No'}
+                          </Badge>
+                      </div>
+                      {order.deliveryNote && (
+                          <div className="space-y-1">
+                              <span className="text-muted-foreground flex items-center gap-2"><FileText className="h-4 w-4"/>Delivery Note</span>
+                              <p className="italic text-foreground/80">"{order.deliveryNote}"</p>
+                          </div>
+                      )}
+                      {order.deliveryProofImage && (
+                          <div className="space-y-1">
+                              <span className="text-muted-foreground flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Delivery Proof</span>
+                              <div className="relative h-24 w-24 mt-2 cursor-pointer rounded-md overflow-hidden" onClick={() => openImageViewer(order.deliveryProofImage || '')}>
+                                  <Image src={order.deliveryProofImage} alt="Delivery Proof" layout="fill" className="object-cover" />
+                              </div>
+                          </div>
+                      )}
+                  </div>
+              </div>
+          )}
          <div className="p-4 rounded-lg border bg-card">
              <h3 className="font-semibold mb-3 text-foreground">Actions</h3>
              {order.status === 'pending' && (
@@ -355,6 +394,11 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
     </div>
     <AssignAgentDialog order={order} isOpen={isAssignOpen} onOpenChange={setIsAssignOpen} onAgentAssigned={handleAgentAssigned} agents={agents} />
     <CancelOrderDialog order={order} isOpen={isCancelOpen} onOpenChange={setIsCancelOpen} onConfirm={confirmCancelOrder} />
+    <ImageViewerDialog 
+        isOpen={isViewerOpen}
+        onOpenChange={setIsViewerOpen}
+        imageUrl={selectedImageUrl}
+      />
     </>
   );
 }
