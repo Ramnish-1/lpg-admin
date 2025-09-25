@@ -68,7 +68,7 @@ export function AssignAgentDialog({ order, isOpen, onOpenChange, onAgentAssigned
               {availableAgents.length > 0 ? (
                 availableAgents.map(agent => (
                   <SelectItem key={agent.id} value={agent.id}>
-                    {agent.name}
+                    {agent.name} {agent.Agency && `(${agent.Agency.name})`}
                   </SelectItem>
                 ))
               ) : (
