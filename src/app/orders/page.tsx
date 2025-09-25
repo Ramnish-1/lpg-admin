@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MoreHorizontal, FileDown, ChevronDown, Search, Loader2 } from 'lucide-react';
+import { MoreHorizontal, FileDown, ChevronDown, Search, Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import type { Order, Agent } from '@/lib/types';
 import { useEffect, useState, useMemo, useContext, useCallback } from 'react';
 import { AssignAgentDialog } from '@/components/assign-agent-dialog';
@@ -22,6 +22,9 @@ import { AuthContext, useAuth } from '@/context/auth-context';
 import { useNotifications } from '@/context/notification-context';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ProfileContext } from '@/context/profile-context';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -268,9 +271,11 @@ function OrdersPageContent() {
   const [activeTab, setActiveTab] = useState<string>('pending');
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalItems: 0 });
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
 
 
-  const fetchOrders = useCallback(async (page = 1, status = activeTab, search = searchTerm) => {
+  const fetchOrders = useCallback(async (page = 1, status = activeTab, search = searchTerm, start = startDate, end = endDate) => {
       if (!token) return;
       setIsLoading(true);
       try {
@@ -282,6 +287,12 @@ function OrdersPageContent() {
           }
           if (search) {
               url.searchParams.append('search', search);
+          }
+          if (start) {
+            url.searchParams.append('startDate', format(start, 'yyyy-MM-dd'));
+          }
+          if (end) {
+              url.searchParams.append('endDate', format(end, 'yyyy-MM-dd'));
           }
 
           const response = await fetch(url.toString(), {
@@ -300,17 +311,26 @@ function OrdersPageContent() {
       } finally {
           setIsLoading(false);
       }
-  }, [token, toast, handleApiError, activeTab, searchTerm]);
+  }, [token, toast, handleApiError, activeTab, searchTerm, startDate, endDate]);
 
-  const fetchStatusCounts = useCallback(async () => {
+  const fetchStatusCounts = useCallback(async (start = startDate, end = endDate) => {
     if (!token) return;
     const counts: Record<string, number> = {};
+    const params = new URLSearchParams();
+    params.append('limit', '1');
+     if (start) {
+        params.append('startDate', format(start, 'yyyy-MM-dd'));
+      }
+      if (end) {
+          params.append('endDate', format(end, 'yyyy-MM-dd'));
+      }
+    
     for (const status of orderStatusesForTabs) {
       try {
-        const url = new URL(`${API_BASE_URL}/api/orders`);
-        url.searchParams.append('limit', '1'); // We only need the count
-        url.searchParams.append('status', status === 'in-progress' ? 'assigned' : status === 'out-for-delivery' ? 'out_for_delivery' : status);
-        const response = await fetch(url.toString(), {
+        const statusParam = status === 'in-progress' ? 'assigned' : status === 'out-for-delivery' ? 'out_for_delivery' : status;
+        const url = `${API_BASE_URL}/api/orders?status=${statusParam}&${params.toString()}`;
+        
+        const response = await fetch(url, {
           headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
         });
         if (response.ok) {
@@ -324,22 +344,22 @@ function OrdersPageContent() {
       }
     }
     setStatusCounts(counts);
-  }, [token]);
+  }, [token, startDate, endDate]);
 
   useEffect(() => {
-    fetchOrders(1, activeTab, searchTerm);
-    fetchStatusCounts();
-  }, [activeTab, searchTerm, fetchOrders, fetchStatusCounts]);
+    fetchOrders(1, activeTab, searchTerm, startDate, endDate);
+    fetchStatusCounts(startDate, endDate);
+  }, [activeTab, searchTerm, startDate, endDate, fetchOrders, fetchStatusCounts]);
 
   const handlePageChange = (newPage: number) => {
-      fetchOrders(newPage, activeTab, searchTerm);
+      fetchOrders(newPage, activeTab, searchTerm, startDate, endDate);
   }
 
   useEffect(() => {
     if (socket) {
         const handleNewOrder = () => {
-            fetchOrders(); 
-            fetchStatusCounts();
+            fetchOrders(1, activeTab, searchTerm, startDate, endDate); 
+            fetchStatusCounts(startDate, endDate);
         };
         socket.on('newOrder', handleNewOrder);
 
@@ -347,7 +367,7 @@ function OrdersPageContent() {
             socket.off('newOrder', handleNewOrder);
         };
     }
-  }, [socket, fetchOrders, fetchStatusCounts]);
+  }, [socket, fetchOrders, fetchStatusCounts, activeTab, searchTerm, startDate, endDate]);
 
   const fetchAgents = useCallback(async () => {
      if (!token) return;
@@ -423,8 +443,8 @@ function OrdersPageContent() {
           description: `Agent has been assigned and status updated.`,
         });
         removeNotification(orderId);
-        fetchOrders(pagination.currentPage);
-        fetchStatusCounts();
+        fetchOrders(pagination.currentPage, activeTab, searchTerm, startDate, endDate);
+        fetchStatusCounts(startDate, endDate);
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to assign agent.' });
       }
@@ -462,8 +482,8 @@ function OrdersPageContent() {
         if(newStatus === 'confirmed') {
             removeNotification(order.id);
         }
-        fetchOrders(pagination.currentPage);
-        fetchStatusCounts();
+        fetchOrders(pagination.currentPage, activeTab, searchTerm, startDate, endDate);
+        fetchStatusCounts(startDate, endDate);
         return true;
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
@@ -551,10 +571,54 @@ function OrdersPageContent() {
               <Input
                 type="search"
                 placeholder="Search by customer, agent or ID..."
-                className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
+                className="pl-8 sm:w-[300px]"
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+             <Popover>
+                <PopoverTrigger asChild>
+                    <Button
+                    variant={"outline"}
+                    className={cn(
+                        "w-[240px] justify-start text-left font-normal",
+                        !startDate && "text-muted-foreground"
+                    )}
+                    >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "PPP") : <span>Start date</span>}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    initialFocus
+                    />
+                </PopoverContent>
+            </Popover>
+             <Popover>
+                <PopoverTrigger asChild>
+                    <Button
+                    variant={"outline"}
+                    className={cn(
+                        "w-[240px] justify-start text-left font-normal",
+                        !endDate && "text-muted-foreground"
+                    )}
+                    >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "PPP") : <span>End date</span>}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    initialFocus
+                    />
+                </PopoverContent>
+            </Popover>
           <Button size="sm" variant="outline" className="h-9 gap-1" onClick={handleExport}>
             <FileDown className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -618,3 +682,5 @@ export default function OrdersPage() {
         <OrdersPageContent />
     );
 }
+
+    
