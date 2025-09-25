@@ -228,7 +228,7 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
                 <Button variant="ghost" size="icon" className="relative">
                     <Bell className="h-5 w-5" />
                     {unreadCount > 0 && (
-                        <Badge className="absolute -top-1 -right-1 h-4 w-4 justify-center p-0">{unreadCount}</Badge>
+                        <Badge className="absolute -top-1 -right-1 h-4 w-4 justify-center p-0">{unreadCount > 9 ? '9+' : unreadCount}</Badge>
                     )}
                     <span className="sr-only">Notifications</span>
                 </Button>
@@ -308,3 +308,5 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
     </div>
   );
 }
+
+    
