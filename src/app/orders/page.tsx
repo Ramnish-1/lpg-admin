@@ -117,7 +117,7 @@ function OrdersTable({
                     {order.items.map((item, index) => (
                         <div key={index} className="text-xs">
                           <span className="font-semibold">{item.productName}</span>
-                          <span> (x{item.quantity})</span>
+                          <span> (quantity: {item.quantity})</span>
                           <div className="text-muted-foreground">{item.variantLabel}</div>
                            {index < order.items.length - 1 && <Separator className="my-1"/>}
                         </div>
