@@ -92,7 +92,7 @@ function OrdersTable({
                 <TableHead>Customer</TableHead>
                 {isAdmin && <TableHead className="hidden sm:table-cell">Agency</TableHead>}
                 <TableHead>Delivery Mode</TableHead>
-                <TableHead>Payment Method</TableHead>
+                <TableHead className="bg-green-200">Payment Method</TableHead>
                 {tableStatus !== 'pending' && <TableHead className="hidden sm:table-cell">Agent</TableHead>}
                 <TableHead className="hidden md:table-cell">Amount</TableHead>
                 <TableHead className="hidden lg:table-cell">Order Status</TableHead>
@@ -123,7 +123,7 @@ function OrdersTable({
                   <TableCell className="capitalize">
                     {order.deliveryMode?.replace('_', ' ')}
                   </TableCell>
-                  <TableCell className="capitalize">
+                  <TableCell className="capitalize bg-green-200">
                     {order.paymentMethod?.replace('_', ' ')}
                   </TableCell>
                    {tableStatus !== 'pending' && (
