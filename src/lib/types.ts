@@ -118,6 +118,7 @@ export interface Order {
   customerEmail: string;
   customerPhone: string;
   customerAddress: string;
+  deliveryMode?: string;
   items: OrderItem[];
   subtotal: string;
   totalAmount: string;
@@ -137,6 +138,11 @@ export interface Order {
   cancelledBy?: 'admin' | 'customer' | 'agency';
   cancelledById?: string;
   cancelledByName?: string;
+  returnedAt?: string | null;
+  returnedBy?: 'customer' | 'admin' | 'agency';
+  returnedById?: string;
+  returnedByName?: string;
+  returnReason?: string;
   assignedAgent?: {
     id: string;
     name: string;
