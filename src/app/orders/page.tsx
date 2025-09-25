@@ -161,7 +161,7 @@ function OrdersTable({
                     </DropdownMenu>
                     {order.status === 'cancelled' && order.cancelledBy && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          by <span className="font-medium capitalize">{order.cancelledBy}</span>
+                          by <span className="font-medium capitalize">{order.cancelledByName || order.cancelledBy}</span>
                         </p>
                     )}
                   </TableCell>
@@ -412,8 +412,11 @@ function OrdersPageContent() {
         },
         body: JSON.stringify({ agentId })
       });
-      if (!response.ok) handleApiError(response);
       const result = await response.json();
+      if (!response.ok) {
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to assign agent.' });
+        return;
+      }
       if (result.success) {
         toast({
           title: "Agent Assigned",
