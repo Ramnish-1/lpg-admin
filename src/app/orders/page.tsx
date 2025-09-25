@@ -419,6 +419,7 @@ function OrdersPageContent() {
           title: "Agent Assigned",
           description: `Agent has been assigned and status updated.`,
         });
+        removeNotification(orderId);
         fetchOrders(pagination.currentPage);
         fetchStatusCounts();
       } else {
@@ -490,11 +491,8 @@ function OrdersPageContent() {
     await updateOrderStatus(order, newStatus, notes);
   }
   
-  const handleConfirmAndAssign = async (order: Order) => {
-    const success = await updateOrderStatus(order, 'confirmed', 'Order confirmed and ready for delivery');
-    if (success) {
-        handleAssignAgent(order);
-    }
+  const handleConfirmAndAssign = (order: Order) => {
+    handleAssignAgent(order);
   }
 
   const confirmCancelOrder = async (reason: string) => {
