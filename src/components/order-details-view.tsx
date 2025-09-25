@@ -139,7 +139,11 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
         },
         body: JSON.stringify({ agentId })
       });
-      if (!response.ok) handleApiError(response);
+      if (!response.ok) {
+        const result = await response.json();
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to assign agent.' });
+        return;
+      }
       const result = await response.json();
       if (result.success) {
         toast({
@@ -249,6 +253,7 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                         </div>
                     )}
                 </div>
+                {order.deliveryMode !== 'pickup' && (
                  <div className="flex items-start gap-3">
                     <MapPin className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
                     <div className="text-sm">
@@ -261,6 +266,7 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                         </a>
                     </div>
                 </div>
+                )}
             </div>
          </div>
          {order.agency && (
@@ -345,3 +351,5 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
     </>
   );
 }
+
+    
