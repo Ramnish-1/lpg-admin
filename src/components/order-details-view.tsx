@@ -298,7 +298,7 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                         </div>
                     )}
                 </div>
-                {order.deliveryMode !== 'pickup' && (
+                {order.deliveryMode !== 'pickup' && order.customerAddress && (
                  <div className="flex items-start gap-3">
                     <MapPin className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
                     <div className="text-sm">
