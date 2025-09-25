@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MoreHorizontal, FileDown, ChevronDown, Search, Loader2, Calendar as CalendarIcon } from 'lucide-react';
+import { MoreHorizontal, FileDown, ChevronDown, Search, Loader2, Calendar as CalendarIcon, X } from 'lucide-react';
 import type { Order, Agent } from '@/lib/types';
 import { useEffect, useState, useMemo, useContext, useCallback } from 'react';
 import { AssignAgentDialog } from '@/components/assign-agent-dialog';
@@ -562,6 +562,10 @@ function OrdersPageContent() {
     }
   }
 
+  const clearDateFilter = () => {
+    setStartDate(undefined);
+    setEndDate(undefined);
+  }
 
   return (
     <AppShell
@@ -623,6 +627,12 @@ function OrdersPageContent() {
                     />
                 </PopoverContent>
             </Popover>
+             {(startDate || endDate) && (
+              <Button variant="ghost" size="icon" onClick={clearDateFilter}>
+                <X className="h-4 w-4" />
+                <span className="sr-only">Clear date filter</span>
+              </Button>
+            )}
           <Button size="sm" variant="outline" className="h-9 gap-1" onClick={handleExport}>
             <FileDown className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
