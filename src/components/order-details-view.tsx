@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import type { Order, Agent } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
-import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package, Phone, MapPin, XCircle, CheckCircle, Loader2, Mail } from 'lucide-react';
+import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package, Phone, MapPin, XCircle, CheckCircle, Loader2, Mail, Building2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Button } from './ui/button';
 import Link from 'next/link';
@@ -12,6 +12,7 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { AssignAgentDialog } from './assign-agent-dialog';
 import { CancelOrderDialog } from './cancel-order-dialog';
+import { cn } from '@/lib/utils';
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg
@@ -188,7 +189,7 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                    <div className="flex justify-between items-start pt-2">
                         <span className="text-muted-foreground flex items-center gap-2"><User className="h-4 w-4"/>Cancelled By</span>
                         <span className="text-right capitalize text-sm font-medium">
-                            {order.cancelledBy} ({order.cancelledBy === 'customer' ? order.customerName : order.cancelledByName})
+                            {order.cancelledBy === 'customer' ? order.customerName : order.cancelledByName}
                         </span>
                     </div>
                 )}
@@ -258,6 +259,34 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                 </div>
             </div>
          </div>
+         {order.agency && (
+           <div className="p-4 rounded-lg border bg-card">
+              <h3 className="font-semibold mb-3 text-foreground flex items-center gap-2"><Building2 className="h-5 w-5"/> Agency Details</h3>
+              <div className="space-y-3">
+                  <div className="text-sm">
+                      <div className="font-medium">{order.agency.name}</div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                          <Mail className="h-3 w-3"/>
+                          <a href={`mailto:${order.agency.email}`} className="hover:underline">{order.agency.email}</a>
+                      </div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                          <Phone className="h-3 w-3"/>
+                          <a href={`tel:${order.agency.phone}`} className="hover:underline">{order.agency.phone}</a>
+                      </div>
+                       <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1 capitalize">
+                          <MapPin className="h-3 w-3"/>
+                          {order.agency.city}
+                      </div>
+                  </div>
+                   <div className="flex items-center">
+                      <span className="text-sm font-medium mr-2">Status:</span>
+                      <Badge variant={order.agency.status === 'active' ? 'secondary' : 'destructive'} className="capitalize">
+                          {order.agency.status}
+                      </Badge>
+                  </div>
+              </div>
+            </div>
+          )}
          <div className="p-4 rounded-lg border bg-card">
             <h3 className="font-semibold mb-3 text-foreground flex items-center gap-2"><Truck className="h-5 w-5"/> Delivery Agent</h3>
              <div className="text-sm space-y-2">
@@ -312,7 +341,3 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
     </>
   );
 }
-
-    
-
-    
