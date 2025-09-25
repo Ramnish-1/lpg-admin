@@ -264,8 +264,7 @@ function OrdersPageContent() {
   const [isReturnOpen, setIsReturnOpen] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const { toast } = useToast();
-  const { token } = useContext(AuthContext);
-  const { handleApiError } = useAuth();
+  const { token, handleApiError } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const { socket, removeNotification } = useNotifications();
   const [activeTab, setActiveTab] = useState<string>('pending');
@@ -275,7 +274,7 @@ function OrdersPageContent() {
   const [endDate, setEndDate] = useState<Date | undefined>();
 
 
-  const fetchOrders = useCallback(async (page = 1, status = activeTab, search = searchTerm, start = startDate, end = endDate) => {
+  const fetchOrders = useCallback(async (page = 1, status = activeTab, search = searchTerm, start?: Date, end?: Date) => {
       if (!token) return;
       setIsLoading(true);
       try {
@@ -283,7 +282,8 @@ function OrdersPageContent() {
           url.searchParams.append('page', String(page));
           url.searchParams.append('limit', String(ITEMS_PER_PAGE));
           if (status && status !== 'all') {
-            url.searchParams.append('status', status === 'in-progress' ? 'assigned' : status === 'out-for-delivery' ? 'out_for_delivery' : status);
+            const statusParam = status === 'in-progress' ? 'assigned' : status === 'out-for-delivery' ? 'out_for_delivery' : status;
+            url.searchParams.append('status', statusParam);
           }
           if (search) {
               url.searchParams.append('search', search);
@@ -311,9 +311,9 @@ function OrdersPageContent() {
       } finally {
           setIsLoading(false);
       }
-  }, [token, toast, handleApiError, activeTab, searchTerm, startDate, endDate]);
+  }, [token, toast, handleApiError, activeTab, searchTerm]);
 
-  const fetchStatusCounts = useCallback(async (start = startDate, end = endDate) => {
+  const fetchStatusCounts = useCallback(async (start?: Date, end?: Date) => {
     if (!token) return;
     const counts: Record<string, number> = {};
     const params = new URLSearchParams();
@@ -344,7 +344,7 @@ function OrdersPageContent() {
       }
     }
     setStatusCounts(counts);
-  }, [token, startDate, endDate]);
+  }, [token]);
 
   useEffect(() => {
     fetchOrders(1, activeTab, searchTerm, startDate, endDate);
