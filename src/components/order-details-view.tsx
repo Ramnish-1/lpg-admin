@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState } from 'react';
@@ -181,8 +180,8 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
 
   return (
     <>
-    <div className="grid md:grid-cols-3 gap-6">
-      <div className="md:col-span-2 space-y-6">
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-6">
         <div className="p-4 rounded-lg border bg-card">
             <h3 className="font-semibold mb-3 text-foreground flex items-center gap-2"><ShoppingBag className="h-5 w-5"/> Order Summary</h3>
             <div className="space-y-3 text-sm">
@@ -231,7 +230,7 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                         </div>
                          <div className="text-center px-4">
                            <p className="font-medium">{item.quantity}</p>
-                           <p className="text-xs text-muted-foreground">Quantity</p>
+                           <p className="text-xs text-muted-foreground">quantity</p>
                         </div>
                         <div className="text-right">
                            <p className="font-medium">₹{item.total.toLocaleString()}</p>
@@ -251,6 +250,33 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                 <span className="flex items-center text-primary"><IndianRupee className="h-5 w-5" />{parseFloat(order.totalAmount).toLocaleString()}</span>
             </div>
         </div>
+         {order.status === 'delivered' && (
+              <div className="p-4 rounded-lg border bg-card">
+                  <h3 className="font-semibold mb-3 text-foreground flex items-center gap-2"><CheckCircle className="h-5 w-5"/> Delivery Details</h3>
+                  <div className="space-y-3 text-sm">
+                      <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground flex items-center gap-2"><Banknote className="h-4 w-4"/>Payment Received</span>
+                          <Badge variant={order.paymentReceived ? 'default' : 'destructive'}>
+                              {order.paymentReceived ? 'Yes' : 'No'}
+                          </Badge>
+                      </div>
+                      {order.deliveryNote && (
+                          <div className="space-y-1">
+                              <span className="text-muted-foreground flex items-center gap-2"><FileText className="h-4 w-4"/>Delivery Note</span>
+                              <p className="italic text-foreground/80">"{order.deliveryNote}"</p>
+                          </div>
+                      )}
+                      {order.deliveryProofImage && (
+                          <div className="space-y-1">
+                              <span className="text-muted-foreground flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Delivery Proof</span>
+                              <div className="relative h-24 w-24 mt-2 cursor-pointer rounded-md overflow-hidden" onClick={() => openImageViewer(order.deliveryProofImage || '')}>
+                                  <Image src={order.deliveryProofImage} alt="Delivery Proof" layout="fill" className="object-cover" />
+                              </div>
+                          </div>
+                      )}
+                  </div>
+              </div>
+          )}
       </div>
       <div className="space-y-6">
          <div className="p-4 rounded-lg border bg-card">
@@ -337,33 +363,7 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                 )}
             </div>
          </div>
-          {order.status === 'delivered' && (
-              <div className="p-4 rounded-lg border bg-card">
-                  <h3 className="font-semibold mb-3 text-foreground flex items-center gap-2"><CheckCircle className="h-5 w-5"/> Delivery Details</h3>
-                  <div className="space-y-3 text-sm">
-                      <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground flex items-center gap-2"><Banknote className="h-4 w-4"/>Payment Received</span>
-                          <Badge variant={order.paymentReceived ? 'default' : 'destructive'}>
-                              {order.paymentReceived ? 'Yes' : 'No'}
-                          </Badge>
-                      </div>
-                      {order.deliveryNote && (
-                          <div className="space-y-1">
-                              <span className="text-muted-foreground flex items-center gap-2"><FileText className="h-4 w-4"/>Delivery Note</span>
-                              <p className="italic text-foreground/80">"{order.deliveryNote}"</p>
-                          </div>
-                      )}
-                      {order.deliveryProofImage && (
-                          <div className="space-y-1">
-                              <span className="text-muted-foreground flex items-center gap-2"><ImageIcon className="h-4 w-4"/>Delivery Proof</span>
-                              <div className="relative h-24 w-24 mt-2 cursor-pointer rounded-md overflow-hidden" onClick={() => openImageViewer(order.deliveryProofImage || '')}>
-                                  <Image src={order.deliveryProofImage} alt="Delivery Proof" layout="fill" className="object-cover" />
-                              </div>
-                          </div>
-                      )}
-                  </div>
-              </div>
-          )}
+        
          <div className="p-4 rounded-lg border bg-card">
              <h3 className="font-semibold mb-3 text-foreground">Actions</h3>
              {order.status === 'pending' && (
