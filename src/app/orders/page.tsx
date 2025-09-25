@@ -98,7 +98,13 @@ function OrdersTable({
             </TableHeader>
             <TableBody>
               {orders.map((order: Order) => (
-                <TableRow key={order.id} onClick={() => onShowDetails(order)} className="cursor-pointer">
+                <TableRow
+                  key={order.id}
+                  onClick={() => onShowDetails(order)}
+                  className={cn("cursor-pointer", {
+                    "bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30": order.deliveryMode === 'pickup'
+                  })}
+                >
                   <TableCell className="font-medium text-primary">#{order.orderNumber.slice(-8)}</TableCell>
                   <TableCell>{order.customerName}</TableCell>
                    {isAdmin && (
