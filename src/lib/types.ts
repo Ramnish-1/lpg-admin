@@ -143,6 +143,14 @@ export interface Order {
     phone: string;
     vehicleNumber: string;
   } | null;
+  agency?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    city: string;
+    status: 'active' | 'inactive';
+  }
 }
 
 
@@ -230,5 +238,3 @@ export interface PrivacyPolicy {
     createdAt: string;
     updatedAt: string;
 }
-
-    

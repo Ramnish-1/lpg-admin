@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { AuthContext, useAuth } from '@/context/auth-context';
 import { useNotifications } from '@/context/notification-context';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { ProfileContext } from '@/context/profile-context';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -53,6 +54,7 @@ function OrdersTable({
   totalPages,
   onPageChange,
   totalItems,
+  isAdmin,
 }: {
   orders: Order[],
   onShowDetails: (order: Order) => void,
@@ -66,6 +68,7 @@ function OrdersTable({
   totalPages: number;
   onPageChange: (page: number) => void;
   totalItems: number;
+  isAdmin: boolean;
 }) {
 
   const isActionDisabled = (status: Order['status']) => {
@@ -84,6 +87,7 @@ function OrdersTable({
               <TableRow>
                 <TableHead>Order ID</TableHead>
                 <TableHead>Customer</TableHead>
+                {isAdmin && <TableHead className="hidden sm:table-cell">Agency</TableHead>}
                 {tableStatus !== 'pending' && <TableHead className="hidden sm:table-cell">Agent</TableHead>}
                 <TableHead className="hidden md:table-cell">Amount</TableHead>
                 <TableHead className="hidden lg:table-cell">Order Status</TableHead>
@@ -96,6 +100,15 @@ function OrdersTable({
                 <TableRow key={order.id} onClick={() => onShowDetails(order)} className="cursor-pointer">
                   <TableCell className="font-medium text-primary">#{order.orderNumber.slice(-8)}</TableCell>
                   <TableCell>{order.customerName}</TableCell>
+                   {isAdmin && (
+                        <TableCell className="hidden sm:table-cell">
+                            {order.agency ? (
+                            <Badge variant="outline">{order.agency.name}</Badge>
+                            ) : (
+                            <span className="text-muted-foreground">N/A</span>
+                            )}
+                        </TableCell>
+                    )}
                    {tableStatus !== 'pending' && (
                         <TableCell className="hidden sm:table-cell">
                             {order.assignedAgent ? (
@@ -226,6 +239,8 @@ function OrdersTable({
 function OrdersPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { profile } = useContext(ProfileContext);
+  const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -573,6 +588,7 @@ function OrdersPageContent() {
               totalPages={pagination.totalPages}
               onPageChange={handlePageChange}
               totalItems={pagination.totalItems}
+              isAdmin={isAdmin}
             />
           </TabsContent>
       </Tabs>
@@ -591,7 +607,3 @@ export default function OrdersPage() {
         <OrdersPageContent />
     );
 }
-
-    
-
-    
