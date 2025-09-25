@@ -349,7 +349,7 @@ function OrdersPageContent() {
   useEffect(() => {
     fetchOrders(1, activeTab, searchTerm, startDate, endDate);
     fetchStatusCounts(startDate, endDate);
-  }, [activeTab, searchTerm, startDate, endDate, fetchOrders, fetchStatusCounts]);
+  }, [activeTab, searchTerm, startDate, endDate]);
 
   const handlePageChange = (newPage: number) => {
       fetchOrders(newPage, activeTab, searchTerm, startDate, endDate);
@@ -682,5 +682,3 @@ export default function OrdersPage() {
         <OrdersPageContent />
     );
 }
-
-    
