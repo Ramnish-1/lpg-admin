@@ -171,9 +171,13 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                     <span className="text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4"/>Date</span>
                     <span>{new Date(order.createdAt).toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center gap-2"><Wallet className="h-4 w-4"/>Payment</span>
-                    <span className="capitalize">{order.paymentMethod.replace('_', ' ')} ({order.paymentStatus})</span>
+                <div className="flex justify-between items-center bg-green-100 dark:bg-green-900/20 p-2 rounded-md">
+                    <span className="text-green-800 dark:text-green-300 font-medium flex items-center gap-2"><Wallet className="h-4 w-4"/>Payment</span>
+                    <span className="capitalize font-medium text-green-800 dark:text-green-300">{order.paymentMethod.replace('_', ' ')} ({order.paymentStatus})</span>
+                </div>
+                 <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground flex items-center gap-2"><Truck className="h-4 w-4"/>Delivery Mode</span>
+                    <span className="capitalize">{order.deliveryMode?.replace('_', ' ')}</span>
                 </div>
                  <div className="flex justify-between items-center">
                     <span className="text-muted-foreground flex items-center gap-2">Status</span>
@@ -260,7 +264,7 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
             </div>
          </div>
          {order.agency && (
-           <div className="p-4 rounded-lg border bg-card">
+           <div className="p-4 rounded-lg border bg-yellow-50 dark:bg-yellow-900/20">
               <h3 className="font-semibold mb-3 text-foreground flex items-center gap-2"><Building2 className="h-5 w-5"/> Agency Details</h3>
               <div className="space-y-3">
                   <div className="text-sm">
