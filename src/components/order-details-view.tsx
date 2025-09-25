@@ -229,7 +229,7 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                             <p className="text-xs text-muted-foreground">({item.variantLabel})</p>
                         </div>
                          <div className="text-center px-4">
-                           <p className="font-medium">{item.quantity}</p>
+                           <p className="font-medium">quantity: {item.quantity}</p>
                            <p className="text-xs text-muted-foreground">quantity</p>
                         </div>
                         <div className="text-right">
@@ -251,8 +251,8 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
             </div>
         </div>
          {order.status === 'delivered' && (
-              <div className="p-4 rounded-lg border bg-card">
-                  <h3 className="font-semibold mb-3 text-foreground flex items-center gap-2"><CheckCircle className="h-5 w-5"/> Delivery Details</h3>
+              <div className="p-4 rounded-lg border bg-green-50 dark:bg-green-900/30">
+                  <h3 className="font-semibold mb-3 text-green-800 dark:text-green-200 flex items-center gap-2"><CheckCircle className="h-5 w-5"/> Delivery Details</h3>
                   <div className="space-y-3 text-sm">
                       <div className="flex items-center justify-between">
                           <span className="text-muted-foreground flex items-center gap-2"><Banknote className="h-4 w-4"/>Payment Received</span>
