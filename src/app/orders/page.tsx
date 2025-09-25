@@ -25,6 +25,7 @@ import { ProfileContext } from '@/context/profile-context';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
+import { Separator } from '@/components/ui/separator';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -90,6 +91,7 @@ function OrdersTable({
               <TableRow>
                 <TableHead>Order ID</TableHead>
                 <TableHead>Customer</TableHead>
+                <TableHead>Items</TableHead>
                 {isAdmin && <TableHead className="hidden sm:table-cell">Agency</TableHead>}
                 <TableHead>Delivery Mode</TableHead>
                 <TableHead className="bg-green-200">Payment Method</TableHead>
@@ -111,6 +113,16 @@ function OrdersTable({
                 >
                   <TableCell className="font-medium text-primary">#{order.orderNumber.slice(-8)}</TableCell>
                   <TableCell>{order.customerName}</TableCell>
+                  <TableCell>
+                    {order.items.map((item, index) => (
+                        <div key={index} className="text-xs">
+                          <span className="font-semibold">{item.productName}</span>
+                          <span> (x{item.quantity})</span>
+                          <div className="text-muted-foreground">{item.variantLabel}</div>
+                           {index < order.items.length - 1 && <Separator className="my-1"/>}
+                        </div>
+                    ))}
+                  </TableCell>
                    {isAdmin && (
                         <TableCell className="hidden sm:table-cell">
                             {order.agency ? (

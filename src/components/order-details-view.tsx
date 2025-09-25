@@ -214,10 +214,14 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                             <p className="font-medium">{item.productName}</p>
                             <p className="text-xs text-muted-foreground">({item.variantLabel})</p>
                         </div>
+                         <div className="text-center px-4">
+                           <p className="font-medium">{item.quantity}</p>
+                           <p className="text-xs text-muted-foreground">Quantity</p>
+                        </div>
                         <div className="text-right">
                            <p className="font-medium">₹{item.total.toLocaleString()}</p>
                            <p className="text-xs text-muted-foreground">
-                                {item.quantity} x ₹{item.variantPrice.toLocaleString()}
+                                @ ₹{item.variantPrice.toLocaleString()}
                            </p>
                         </div>
                     </div>
@@ -351,5 +355,3 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
     </>
   );
 }
-
-    
