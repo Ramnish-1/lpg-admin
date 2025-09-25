@@ -278,7 +278,7 @@ function OrdersPageContent() {
           url.searchParams.append('page', String(page));
           url.searchParams.append('limit', String(ITEMS_PER_PAGE));
           if (status && status !== 'all') {
-            url.searchParams.append('status', status === 'in-progress' ? 'assigned,in-progress' : status === 'out-for-delivery' ? 'out_for_delivery' : status);
+            url.searchParams.append('status', status === 'in-progress' ? 'assigned' : status === 'out-for-delivery' ? 'out_for_delivery' : status);
           }
           if (search) {
               url.searchParams.append('search', search);
@@ -309,7 +309,7 @@ function OrdersPageContent() {
       try {
         const url = new URL(`${API_BASE_URL}/api/orders`);
         url.searchParams.append('limit', '1'); // We only need the count
-        url.searchParams.append('status', status === 'in-progress' ? 'assigned,in-progress' : status === 'out-for-delivery' ? 'out_for_delivery' : status);
+        url.searchParams.append('status', status === 'in-progress' ? 'assigned' : status === 'out-for-delivery' ? 'out_for_delivery' : status);
         const response = await fetch(url.toString(), {
           headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
         });
