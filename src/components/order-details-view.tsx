@@ -108,22 +108,25 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
   }
 
   const handleConfirmAndAssign = async () => {
-    const success = await updateOrderStatus('confirmed', 'Order confirmed and ready for delivery');
-    if (success) {
-        // Now open assign dialog
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
-                headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
-            });
-            if (!response.ok) handleApiError(response);
-            const result = await response.json();
-            if (result.success) {
-                setAgents(result.data.agents);
-                setIsAssignOpen(true);
-            }
-        } catch(e) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch agents.' });
-        }
+    if (order.deliveryMode === 'pickup') {
+      await updateOrderStatus('confirmed', 'Order confirmed for pickup');
+    } else {
+      const success = await updateOrderStatus('confirmed', 'Order confirmed and ready for delivery');
+      if (success) {
+          try {
+              const response = await fetch(`${API_BASE_URL}/api/delivery-agents`, {
+                  headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
+              });
+              if (!response.ok) handleApiError(response);
+              const result = await response.json();
+              if (result.success) {
+                  setAgents(result.data.agents);
+                  setIsAssignOpen(true);
+              }
+          } catch(e) {
+              toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch agents.' });
+          }
+      }
     }
   }
 

@@ -448,11 +448,12 @@ function OrdersPageContent() {
         },
         body: JSON.stringify({ agentId })
       });
-      const result = await response.json();
       if (!response.ok) {
+        const result = await response.json();
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to assign agent.' });
         return;
       }
+      const result = await response.json();
       if (result.success) {
         toast({
           title: "Agent Assigned",
@@ -531,7 +532,11 @@ function OrdersPageContent() {
   }
   
   const handleConfirmAndAssign = (order: Order) => {
-    handleAssignAgent(order);
+    if (order.deliveryMode === 'pickup') {
+      updateOrderStatus(order, 'confirmed', 'Order confirmed for pickup');
+    } else {
+      handleAssignAgent(order);
+    }
   }
 
   const confirmCancelOrder = async (reason: string) => {
