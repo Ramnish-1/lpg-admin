@@ -13,6 +13,9 @@ import type { Agency } from '@/lib/types';
 import { Mail, Phone, MapPin, Calendar, Building2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface AgencyDetailsDialogProps {
   agency: Agency | null;
@@ -35,9 +38,10 @@ export function AgencyDetailsDialog({ agency, isOpen, onOpenChange }: AgencyDeta
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-muted rounded-full">
-                <Building2 className="h-8 w-8 text-primary" />
-            </div>
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={agency.image ? `${API_BASE_URL}/${agency.image}` : undefined} alt={agency.name} />
+              <AvatarFallback>{agency.name.charAt(0)}</AvatarFallback>
+            </Avatar>
             <div>
                 <DialogTitle className="text-2xl">{agency.name}</DialogTitle>
                 <DialogDescription>

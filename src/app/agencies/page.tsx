@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { AgencyDetailsDialog } from '@/components/agency-details-dialog';
 import { ProfileContext } from '@/context/profile-context';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -113,17 +114,25 @@ export default function AgenciesPage() {
     return filteredAgencies.slice(startIndex, endIndex);
   }, [filteredAgencies, currentPage]);
 
-  const handleAddAgency = async (newAgency: Omit<Agency, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => {
+  const handleAddAgency = async (newAgency: Omit<Agency, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'image'>, image?: File): Promise<boolean> => {
     if (!token) return false;
+
+    const formData = new FormData();
+    Object.entries(newAgency).forEach(([key, value]) => {
+        formData.append(key, String(value));
+    });
+    if (image) {
+        formData.append('image', image);
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/agencies`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
           'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify(newAgency),
+        body: formData,
       });
       const result = await response.json();
 
@@ -148,18 +157,26 @@ export default function AgenciesPage() {
     }
   };
   
-  const handleUpdateAgency = async (updatedAgency: Omit<Agency, 'createdAt' | 'updatedAt' | 'status'>) => {
+  const handleUpdateAgency = async (updatedAgency: Omit<Agency, 'createdAt' | 'updatedAt' | 'status' | 'image'> & { id: string }, image?: File): Promise<boolean> => {
     if (!token) return false;
     const { id, ...payload } = updatedAgency;
+    
+    const formData = new FormData();
+     Object.entries(payload).forEach(([key, value]) => {
+        formData.append(key, String(value));
+    });
+    if (image) {
+        formData.append('image', image);
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/agencies/${id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
           'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify(payload),
+        body: formData,
       });
       const result = await response.json();
       if (!response.ok) {
@@ -331,7 +348,15 @@ export default function AgenciesPage() {
               <TableBody>
                 {paginatedAgencies.map((agency: Agency) => (
                   <TableRow key={agency.id} onClick={() => handleDetailsClick(agency)} className="cursor-pointer">
-                    <TableCell className="font-medium">{agency.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={agency.image ? `${API_BASE_URL}/${agency.image}` : undefined} alt={agency.name} />
+                          <AvatarFallback>{agency.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        {agency.name}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <div>{agency.phone}</div>
                       <div className="text-sm text-muted-foreground">{agency.email}</div>

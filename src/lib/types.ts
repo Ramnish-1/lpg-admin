@@ -157,8 +157,8 @@ export interface Order {
     city: string;
     status: 'active' | 'inactive';
   }
-  deliveryProofImage?: string;
-  deliveryNote?: string;
+  deliveryProofImage?: string | null;
+  deliveryNote?: string | null;
   paymentReceived?: boolean;
 }
 
@@ -215,6 +215,7 @@ export interface Agency {
   pincode: string;
   landmark: string;
   status: 'active' | 'inactive';
+  image?: string;
   createdAt: string;
   updatedAt: string;
   confirmationToken: string | null;

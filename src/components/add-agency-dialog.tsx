@@ -17,13 +17,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
+import { useRef, useState } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
-type NewAgencyPayload = Omit<Agency, 'id' | 'createdAt' | 'updatedAt' | 'status'>;
+type NewAgencyPayload = Omit<Agency, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'image'>;
 
 interface AddAgencyDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onAgencyAdd: (agency: NewAgencyPayload) => Promise<boolean>;
+  onAgencyAdd: (agency: NewAgencyPayload, image?: File) => Promise<boolean>;
 }
 
 const agencySchema = z.object({
@@ -40,6 +42,10 @@ const agencySchema = z.object({
 type AgencyFormValues = z.infer<typeof agencySchema>;
 
 export function AddAgencyDialog({ isOpen, onOpenChange, onAgencyAdd }: AddAgencyDialogProps) {
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const form = useForm<AgencyFormValues>({
     resolver: zodResolver(agencySchema),
     defaultValues: {
@@ -53,21 +59,36 @@ export function AddAgencyDialog({ isOpen, onOpenChange, onAgencyAdd }: AddAgency
       landmark: '',
     }
   });
+  
+  const resetForm = () => {
+    form.reset();
+    setImagePreview(null);
+    setImageFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   const handleSubmit = async (values: AgencyFormValues) => {
-    const success = await onAgencyAdd(values);
+    const success = await onAgencyAdd(values, imageFile || undefined);
     if (success) {
-      form.reset();
+      resetForm();
       onOpenChange(false);
     }
   };
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      form.reset();
+      resetForm();
     }
     onOpenChange(open);
   }
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -81,13 +102,21 @@ export function AddAgencyDialog({ isOpen, onOpenChange, onAgencyAdd }: AddAgency
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} noValidate>
              <div className="grid grid-cols-2 gap-4 py-4">
+                 <div className="col-span-2 flex flex-col items-center gap-2">
+                    <Avatar className="h-24 w-24 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                      <AvatarImage src={imagePreview || undefined} />
+                      <AvatarFallback>{form.watch('name')?.charAt(0) || 'A'}</AvatarFallback>
+                    </Avatar>
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
+                    <p className="text-xs text-muted-foreground">Click avatar to upload image</p>
+                </div>
                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Agency Name</FormLabel><FormControl><Input placeholder="e.g. Bharat Gas" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="e.g. contact@bharat.com" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone</FormLabel><FormControl><Input type="tel" placeholder="e.g. 9876543210" {...field} maxLength={10} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField control={form.control} name="addressTitle" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address Title</FormLabel><FormControl><Input placeholder="e.g. Head Office" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address</FormLabel><FormControl><Input placeholder="e.g. 123 Main Street" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="e.g. Delhi" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                <FormField control={form.control} name="pincode" render={({ field }) => ( <FormItem><FormLabel>Pincode</FormLabel><FormControl><Input placeholder="e.g. 110001" {...field} maxLength={6} /></FormControl><FormMessage /></FormItem>)}/>
+                <FormField control={form.control} name="pincode" render={({ field }) => ( <FormItem><FormLabel>Pincode</FormLabel><FormControl><Input placeholder="e.g. 110001" {...field} maxLength={6} /></FormControl><FormMessage /></FormMessage>)}/>
                 <FormField control={form.control} name="landmark" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Landmark</FormLabel><FormControl><Input placeholder="e.g. Near India Gate" {...field} /></FormControl><FormMessage /></FormItem>)}/>
               </div>
             <DialogFooter className="pt-4">
@@ -104,5 +133,3 @@ export function AddAgencyDialog({ isOpen, onOpenChange, onAgencyAdd }: AddAgency
     </Dialog>
   );
 }
-
-    
