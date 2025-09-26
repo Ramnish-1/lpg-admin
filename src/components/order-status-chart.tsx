@@ -4,7 +4,7 @@
 import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, eachYearOfInterval, isWithinInterval } from 'date-fns';
 import { Order } from '@/lib/types';
@@ -76,12 +76,12 @@ export function OrderStatusChart({ orders }: OrderStatusChartProps) {
         
         const counts = ordersInPeriod.reduce((acc, order) => {
             const statusKey = order.status.replace(/[\s-]/g, '_') as keyof typeof acc;
-            if (statusKey in acc) {
-              acc[statusKey]++;
-            } else if (['assigned', 'confirmed', 'in_progress'].includes(statusKey)) {
+            if (statusKey === 'assigned' || statusKey === 'confirmed' || statusKey === 'in_progress') {
               acc.pending++;
             } else if (statusKey === 'returned') {
               acc.cancelled++;
+            } else if (statusKey in acc) {
+              acc[statusKey]++;
             }
             return acc;
           }, { pending: 0, delivered: 0, cancelled: 0, out_for_delivery: 0 });
@@ -122,16 +122,16 @@ export function OrderStatusChart({ orders }: OrderStatusChartProps) {
           </div>
         ) : (
           <ChartContainer config={chartConfig} className="h-[250px] w-full">
-            <BarChart data={processedData} accessibilityLayer stackOffset="sign">
+            <AreaChart data={processedData} accessibilityLayer stackOffset="sign">
               <CartesianGrid vertical={false} />
               <XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} />
               <YAxis />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar dataKey="pending" stackId="a" fill="var(--color-pending)" radius={[0, 0, 4, 4]} />
-              <Bar dataKey="out_for_delivery" stackId="a" fill="var(--color-out_for_delivery)" radius={[0, 0, 4, 4]} />
-              <Bar dataKey="cancelled" stackId="a" fill="var(--color-cancelled)" radius={[0, 0, 4, 4]} />
-              <Bar dataKey="delivered" stackId="a" fill="var(--color-delivered)" radius={[4, 4, 0, 0]} />
-            </BarChart>
+              <Area dataKey="pending" type="natural" fill="var(--color-pending)" fillOpacity={0.4} stroke="var(--color-pending)" stackId="a" />
+              <Area dataKey="out_for_delivery" type="natural" fill="var(--color-out_for_delivery)" fillOpacity={0.4} stroke="var(--color-out_for_delivery)" stackId="a" />
+              <Area dataKey="cancelled" type="natural" fill="var(--color-cancelled)" fillOpacity={0.4} stroke="var(--color-cancelled)" stackId="a" />
+              <Area dataKey="delivered" type="natural" fill="var(--color-delivered)" fillOpacity={0.4} stroke="var(--color-delivered)" stackId="a" />
+            </AreaChart>
           </ChartContainer>
         )}
       </CardContent>
