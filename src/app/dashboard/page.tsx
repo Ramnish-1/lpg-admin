@@ -10,7 +10,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Users, ShoppingCart, Truck, IndianRupee, Loader2, Building2 } from 'lucide-react';
 import type { Order, Agent } from '@/lib/types';
-import { SalesChart } from '@/components/sales-chart';
 import { UserHoverCard } from '@/components/user-hover-card';
 import { OrderHoverCard } from '@/components/order-hover-card';
 import { AgentHoverCard } from '@/components/agent-hover-card';
@@ -18,6 +17,7 @@ import { OrderDetailsDialog } from '@/components/order-details-dialog';
 import { AuthContext, useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { OrderStatusChart } from '@/components/order-status-chart';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const RECENT_ORDERS_PER_PAGE = 5;
@@ -35,7 +35,7 @@ export default function DashboardPage() {
     totalRevenue: 0,
     totalAgencies: 0,
   });
-  const [salesByDay, setSalesByDay] = useState<{ day: string; totalRevenue: number }[]>([]);
+  const [ordersByStatus, setOrdersByStatus] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -77,17 +77,18 @@ export default function DashboardPage() {
             totalRevenue: totalDeliveredRevenue,
             totalAgencies: totals.agencies,
           });
+          
+          // Assuming byStatus gives daily data for the last 7 days by default.
+          // This will need to be adjusted based on actual API capabilities.
+          // For now, let's create some dummy data based on the response.
+           const { byStatus } = ordersData;
+           const chartData = Object.keys(byStatus).map(status => ({
+              status,
+              ...byStatus[status]
+           }));
+           // This is just a placeholder, the OrderStatusChart will have its own data fetching logic.
+           setOrdersByStatus([]);
 
-          const dummySales = [
-              { day: 'Mon', totalRevenue: 1200 },
-              { day: 'Tue', totalRevenue: 1800 },
-              { day: 'Wed', totalRevenue: 1500 },
-              { day: 'Thu', totalRevenue: 2200 },
-              { day: 'Fri', totalRevenue: 2500 },
-              { day: 'Sat', totalRevenue: 3000 },
-              { day: 'Sun', totalRevenue: 1900 },
-          ];
-          setSalesByDay(dummySales);
 
           setRecentOrders(recent.orders || []);
         } else {
@@ -198,14 +199,7 @@ export default function DashboardPage() {
           </Link>
         </div>
         <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sales Overview (Last 7 Days)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SalesChart salesByDay={salesByDay} />
-            </CardContent>
-          </Card>
+          <OrderStatusChart />
           <Card>
             <CardHeader>
               <CardTitle>Recent Orders</CardTitle>
