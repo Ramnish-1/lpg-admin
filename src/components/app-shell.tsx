@@ -63,7 +63,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const allNavItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/orders', label: 'Orders', icon: ShoppingCart },
-  { href: '/customers', label: 'Customers', icon: Users },
+  { href: '/customers', label: 'Customers', icon: Users, roles: ['admin', 'super_admin'] },
   { href: '/agents', label: 'Delivery Agents', icon: Truck },
   { href: '/products', label: 'Products', icon: Package },
   { href: '/agencies', label: 'Agencies', icon: Building2, roles: ['admin', 'super_admin'] },
