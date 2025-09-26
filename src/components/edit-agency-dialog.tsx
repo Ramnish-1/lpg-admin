@@ -26,7 +26,7 @@ interface EditAgencyDialogProps {
   agency: Agency;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onAgencyUpdate: (agency: Omit<Agency, 'createdAt' | 'updatedAt' | 'status' | 'image'> & { id: string }, image?: File) => Promise<boolean>;
+  onAgencyUpdate: (agency: Omit<Agency, 'createdAt' | 'updatedAt' | 'status' | 'image' | 'profileImage'> & { id: string }, image?: File) => Promise<boolean>;
 }
 
 const agencySchema = z.object({
@@ -60,7 +60,7 @@ export function EditAgencyDialog({ agency, isOpen, onOpenChange, onAgencyUpdate 
   useEffect(() => {
     if (isOpen) {
       form.reset(agency);
-      setImagePreview(getImageUrl(agency.image));
+      setImagePreview(getImageUrl(agency.profileImage));
       setImageFile(null);
       if(fileInputRef.current) fileInputRef.current.value = "";
     }

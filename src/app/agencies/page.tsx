@@ -360,7 +360,7 @@ export default function AgenciesPage() {
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={getImageUrl(agency.image)} alt={agency.name} />
+                          <AvatarImage src={getImageUrl(agency.profileImage)} alt={agency.name} />
                           <AvatarFallback>{agency.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         {agency.name}

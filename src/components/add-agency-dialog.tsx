@@ -20,7 +20,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useState, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
-type NewAgencyPayload = Omit<Agency, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'image'>;
+type NewAgencyPayload = Omit<Agency, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'profileImage'>;
 
 interface AddAgencyDialogProps {
   isOpen: boolean;
