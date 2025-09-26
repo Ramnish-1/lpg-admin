@@ -437,7 +437,8 @@ function OrdersPageContent() {
     if (!token) return;
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/assign`, {
+      // 1. Assign the agent
+      const assignResponse = await fetch(`${API_BASE_URL}/api/orders/${orderId}/assign`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -446,25 +447,31 @@ function OrdersPageContent() {
         },
         body: JSON.stringify({ agentId })
       });
-      if (!response.ok) {
-        const result = await response.json();
+
+      if (!assignResponse.ok) {
+        const result = await assignResponse.json();
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to assign agent.' });
         return;
       }
-      const result = await response.json();
-      if (result.success) {
+      
+      const assignResult = await assignResponse.json();
+      if(assignResult.success) {
         toast({
           title: "Agent Assigned",
-          description: `Agent has been assigned.`,
+          description: `Agent has been assigned to the order.`,
         });
-        await updateOrderStatus(result.data.order, 'assigned', 'Agent assigned');
+
+        // 2. Update the status
+        await updateOrderStatus(assignResult.data.order, 'assigned', 'Agent assigned');
       } else {
-        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to assign agent.' });
+        toast({ variant: 'destructive', title: 'Error', description: assignResult.error || 'Failed to assign agent.' });
       }
+
     } catch (error) {
        toast({ variant: 'destructive', title: 'Error', description: 'Failed to assign agent.' });
     }
   };
+
 
   const onUpdate = () => {
     fetchOrders(pagination.currentPage, activeTab, searchTerm, startDate, endDate);
@@ -535,10 +542,11 @@ function OrdersPageContent() {
     await updateOrderStatus(order, newStatus, notes);
   }
   
-  const handleConfirmAndAssign = async (order: Order) => {
+ const handleConfirmAndAssign = async (order: Order) => {
     if (order.deliveryMode === 'pickup') {
       await updateOrderStatus(order, 'confirmed', 'Order confirmed for pickup');
     } else {
+      // For home delivery, just open the assign dialog without changing status
       handleAssignAgent(order);
     }
   };
@@ -717,9 +725,5 @@ export default function OrdersPage() {
         <OrdersPageContent />
     );
 }
-
-    
-
-    
 
     
