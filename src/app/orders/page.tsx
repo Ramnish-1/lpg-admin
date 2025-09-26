@@ -455,9 +455,9 @@ function OrdersPageContent() {
       if (result.success) {
         toast({
           title: "Agent Assigned",
-          description: `Agent has been assigned and status updated.`,
+          description: `Agent has been assigned.`,
         });
-        onUpdate();
+        await updateOrderStatus(result.data.order, 'assigned', 'Agent assigned');
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to assign agent.' });
       }
@@ -539,10 +539,7 @@ function OrdersPageContent() {
     if (order.deliveryMode === 'pickup') {
       await updateOrderStatus(order, 'confirmed', 'Order confirmed for pickup');
     } else {
-      const success = await updateOrderStatus(order, 'confirmed', 'Order confirmed and ready for delivery');
-      if (success) {
-        handleAssignAgent(order);
-      }
+      handleAssignAgent(order);
     }
   };
 
