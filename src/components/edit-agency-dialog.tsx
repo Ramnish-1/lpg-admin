@@ -49,7 +49,9 @@ export function EditAgencyDialog({ agency, isOpen, onOpenChange, onAgencyUpdate 
 
   const getImageUrl = (imagePath?: string) => {
     if (!imagePath) return null;
-    return imagePath.startsWith('http') ? imagePath : `${API_BASE_URL}/${imagePath}`;
+    if (imagePath.startsWith('http')) return imagePath;
+    if (imagePath.startsWith('https://res.cloudinary.com')) return imagePath;
+    return `${API_BASE_URL}/${imagePath}`;
   }
 
   const form = useForm<AgencyFormValues>({

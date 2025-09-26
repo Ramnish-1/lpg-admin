@@ -284,7 +284,9 @@ export default function AgenciesPage() {
   
   const getImageUrl = (imagePath?: string) => {
     if (!imagePath) return '';
-    return imagePath.startsWith('http') ? imagePath : `${API_BASE_URL}/${imagePath}`;
+    if (imagePath.startsWith('http')) return imagePath;
+    if (imagePath.startsWith('https://res.cloudinary.com')) return imagePath;
+    return `${API_BASE_URL}/${imagePath}`;
   }
 
   return (
@@ -369,7 +371,7 @@ export default function AgenciesPage() {
                       <div>{agency.phone}</div>
                       <div className="text-sm text-muted-foreground">{agency.email}</div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{`${agency.address}, ${agency.city}, ${agency.pincode}`}</TableCell>
+                    <TableCell className="hidden md:table-cell">{`${agency.address}, ${agency.landmark ? agency.landmark + ', ' : ''}${agency.city}, ${agency.pincode}`}</TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                        <DropdownMenu>
                         <DropdownMenuTrigger asChild>
