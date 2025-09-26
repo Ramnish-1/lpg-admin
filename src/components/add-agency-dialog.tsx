@@ -67,7 +67,7 @@ export function AddAgencyDialog({ isOpen, onOpenChange, onAgencyAdd }: AddAgency
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  const handleSubmit = async (values: AgencyFormValues) => {
+  const handleProcessSubmit = async (values: AgencyFormValues) => {
     const success = await onAgencyAdd(values, imageFile || undefined);
     if (success) {
       resetForm();
@@ -100,7 +100,7 @@ export function AddAgencyDialog({ isOpen, onOpenChange, onAgencyAdd }: AddAgency
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} noValidate>
+          <form onSubmit={form.handleSubmit(handleProcessSubmit)} noValidate>
              <div className="grid grid-cols-2 gap-4 py-4">
                  <div className="col-span-2 flex flex-col items-center gap-2">
                     <Avatar className="h-24 w-24 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
