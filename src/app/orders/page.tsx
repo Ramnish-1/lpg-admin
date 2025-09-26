@@ -408,10 +408,7 @@ function OrdersPageContent() {
   useEffect(() => {
     const assignAgentOrderId = searchParams.get('assignAgent');
     if (assignAgentOrderId) {
-      // We can't guarantee the order is in the current view, so we fetch all orders
-      // or we can fetch the specific order and open the dialog
-      // For simplicity, we just trigger the dialog. A more robust solution might fetch the order details.
-      const orderToAssign = orders.find(o => o.id === assignAgentOrderId) || { id: assignAgentOrderId } as Order; // Partial order
+      const orderToAssign = orders.find(o => o.id === assignAgentOrderId) || { id: assignAgentOrderId } as Order; 
       handleAssignAgent(orderToAssign);
       router.replace('/orders', { scroll: false });
     }
@@ -438,6 +435,15 @@ function OrdersPageContent() {
 
   const handleAgentAssigned = async (orderId: string, agentId: string) => {
     if (!token) return;
+    
+    // First, update status to confirmed
+    const confirmed = await updateOrderStatus({id: orderId} as Order, 'confirmed', 'Order confirmed and ready for delivery');
+
+    if (!confirmed) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to confirm order before assigning.' });
+        return;
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/assign`, {
         method: 'PUT',
@@ -498,7 +504,7 @@ function OrdersPageContent() {
        if (result.success) {
         toast({
           title: 'Order Status Updated',
-          description: `Order #${order.orderNumber.slice(-8)} has been marked as ${newStatus}.`
+          description: `Order #${order.orderNumber?.slice(-8)} has been marked as ${newStatus}.`
         });
         if(newStatus === 'confirmed') {
             removeNotification(order.id);
@@ -539,11 +545,7 @@ function OrdersPageContent() {
     if (order.deliveryMode === 'pickup') {
       await updateOrderStatus(order, 'confirmed', 'Order confirmed for pickup');
     } else {
-      const success = await updateOrderStatus(order, 'confirmed', 'Order confirmed and ready for delivery');
-      if (success) {
-        // After successful confirmation, open the assign dialog
-        handleAssignAgent({ ...order, status: 'confirmed' });
-      }
+      handleAssignAgent(order);
     }
   };
 
