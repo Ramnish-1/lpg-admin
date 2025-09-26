@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from '@/components/ui/button';
@@ -59,13 +58,17 @@ export function AddAgencyDialog({ isOpen, onOpenChange, onAgencyAdd }: AddAgency
       landmark: '',
     }
   });
+  
+  const resetForm = () => {
+    form.reset();
+    setImagePreview(null);
+    setImageFile(null);
+    if(fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      form.reset();
-      setImagePreview(null);
-      setImageFile(null);
-       if(fileInputRef.current) fileInputRef.current.value = "";
+      resetForm();
     }
     onOpenChange(open);
   };
