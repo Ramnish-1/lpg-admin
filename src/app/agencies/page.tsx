@@ -114,18 +114,26 @@ export default function AgenciesPage() {
     return filteredAgencies.slice(startIndex, endIndex);
   }, [filteredAgencies, currentPage]);
 
-  const handleAddAgency = async (newAgency: Omit<Agency, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<boolean> => {
+  const handleAddAgency = async (newAgency: Omit<Agency, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'image'>, image?: File): Promise<boolean> => {
     if (!token) return false;
+
+    const formData = new FormData();
+    Object.entries(newAgency).forEach(([key, value]) => {
+      formData.append(key, value);
+    });
+
+    if (image) {
+      formData.append('image', image);
+    }
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/agencies`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
           'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify(newAgency),
+        body: formData,
       });
       const result = await response.json();
 
@@ -150,19 +158,28 @@ export default function AgenciesPage() {
     }
   };
   
-  const handleUpdateAgency = async (updatedAgency: Omit<Agency, 'createdAt' | 'updatedAt' | 'status'> & { id: string }): Promise<boolean> => {
+  const handleUpdateAgency = async (updatedAgency: Omit<Agency, 'createdAt' | 'updatedAt' | 'status' | 'image'> & { id: string }, image?: File): Promise<boolean> => {
     if (!token) return false;
-    const { id, ...payload } = updatedAgency;
+    
+    const formData = new FormData();
+    Object.entries(updatedAgency).forEach(([key, value]) => {
+        if (key !== 'id') { // don't append id to form data
+            formData.append(key, value);
+        }
+    });
+
+    if (image) {
+      formData.append('image', image);
+    }
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/agencies/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/agencies/${updatedAgency.id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
           'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify(payload),
+        body: formData,
       });
       const result = await response.json();
       if (!response.ok) {
@@ -264,6 +281,11 @@ export default function AgenciesPage() {
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to update status.' });
     }
   };
+  
+  const getImageUrl = (imagePath?: string) => {
+    if (!imagePath) return '';
+    return imagePath.startsWith('http') ? imagePath : `${API_BASE_URL}/${imagePath}`;
+  }
 
   return (
     <AppShell>
@@ -337,6 +359,7 @@ export default function AgenciesPage() {
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
+                          <AvatarImage src={getImageUrl(agency.image)} alt={agency.name} />
                           <AvatarFallback>{agency.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         {agency.name}

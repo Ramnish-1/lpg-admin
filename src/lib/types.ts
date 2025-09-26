@@ -215,6 +215,7 @@ export interface Agency {
   pincode: string;
   landmark: string;
   status: 'active' | 'inactive';
+  image?: string;
   createdAt: string;
   updatedAt: string;
   confirmationToken: string | null;

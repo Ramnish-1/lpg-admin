@@ -32,6 +32,11 @@ export function AgencyDetailsDialog({ agency, isOpen, onOpenChange }: AgencyDeta
     e.stopPropagation();
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`, '_blank');
   };
+  
+  const getImageUrl = (imagePath?: string) => {
+    if (!imagePath) return '';
+    return imagePath.startsWith('http') ? imagePath : `${API_BASE_URL}/${imagePath}`;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -39,6 +44,7 @@ export function AgencyDetailsDialog({ agency, isOpen, onOpenChange }: AgencyDeta
         <DialogHeader>
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
+              <AvatarImage src={getImageUrl(agency.image)} alt={agency.name} />
               <AvatarFallback>{agency.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div>
