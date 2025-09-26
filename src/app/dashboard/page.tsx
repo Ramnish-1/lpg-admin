@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useEffect, useState, useContext, useCallback } from 'react';
+import { useEffect, useState, useContext, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Users, ShoppingCart, Truck, IndianRupee, Loader2, Building2 } from 'lucide-react';
@@ -17,8 +17,10 @@ import { AgentHoverCard } from '@/components/agent-hover-card';
 import { OrderDetailsDialog } from '@/components/order-details-dialog';
 import { AuthContext, useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const RECENT_ORDERS_PER_PAGE = 5;
 
 export default function DashboardPage() {
   const { token } = useContext(AuthContext);
@@ -37,6 +39,7 @@ export default function DashboardPage() {
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [recentOrdersCurrentPage, setRecentOrdersCurrentPage] = useState(1);
 
   useEffect(() => {
     if (!token) return;
@@ -69,8 +72,6 @@ export default function DashboardPage() {
             totalAgencies: totals.agencies,
           });
 
-          // The new API doesn't provide salesByDay, so we'll use a placeholder or remove it.
-          // For now, let's use some dummy data to keep the chart.
           const dummySales = [
               { day: 'Mon', totalRevenue: 1200 },
               { day: 'Tue', totalRevenue: 1800 },
@@ -96,6 +97,15 @@ export default function DashboardPage() {
     
     fetchDashboardData();
   }, [token, toast, handleApiError]);
+
+  const recentOrdersTotalPages = Math.ceil(recentOrders.length / RECENT_ORDERS_PER_PAGE);
+
+  const paginatedRecentOrders = useMemo(() => {
+    const startIndex = (recentOrdersCurrentPage - 1) * RECENT_ORDERS_PER_PAGE;
+    const endIndex = startIndex + RECENT_ORDERS_PER_PAGE;
+    return recentOrders.slice(startIndex, endIndex);
+  }, [recentOrders, recentOrdersCurrentPage]);
+
 
   const handleShowDetails = (order: Order) => {
     setSelectedOrder(order);
@@ -206,7 +216,7 @@ export default function DashboardPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {recentOrders.map((order: Order) => (
+                    {paginatedRecentOrders.map((order: Order) => (
                       <TableRow key={order.id} onClick={() => handleShowDetails(order)} className="cursor-pointer">
                         <TableCell>
                           <div className="font-medium">{order.customerName}</div>
@@ -225,6 +235,34 @@ export default function DashboardPage() {
                 </Table>
               </div>
             </CardContent>
+             {recentOrdersTotalPages > 1 && (
+              <CardFooter className="flex justify-between">
+                <div className="text-sm text-muted-foreground">
+                  Showing {paginatedRecentOrders.length} of {recentOrders.length} orders.
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setRecentOrdersCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={recentOrdersCurrentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm">
+                    Page {recentOrdersCurrentPage} of {recentOrdersTotalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setRecentOrdersCurrentPage(prev => Math.min(prev + 1, recentOrdersTotalPages))}
+                    disabled={recentOrdersCurrentPage === recentOrdersTotalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </CardFooter>
+            )}
           </Card>
         </div>
       </div>
