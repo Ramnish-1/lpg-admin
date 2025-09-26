@@ -39,7 +39,6 @@ export function AgencyDetailsDialog({ agency, isOpen, onOpenChange }: AgencyDeta
         <DialogHeader>
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
-              <AvatarImage src={agency.image ? `${API_BASE_URL}/${agency.image}` : undefined} alt={agency.name} />
               <AvatarFallback>{agency.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div>

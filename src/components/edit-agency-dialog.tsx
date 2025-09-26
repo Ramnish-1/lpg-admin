@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -18,15 +18,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface EditAgencyDialogProps {
   agency: Agency;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onAgencyUpdate: (agency: Omit<Agency, 'createdAt' | 'updatedAt' | 'status' | 'image'> & { id: string }, image?: File) => Promise<boolean>;
+  onAgencyUpdate: (agency: Omit<Agency, 'createdAt' | 'updatedAt' | 'status'> & { id: string }) => Promise<boolean>;
 }
 
 const agencySchema = z.object({
@@ -43,39 +40,21 @@ const agencySchema = z.object({
 type AgencyFormValues = z.infer<typeof agencySchema>;
 
 export function EditAgencyDialog({ agency, isOpen, onOpenChange, onAgencyUpdate }: EditAgencyDialogProps) {
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const form = useForm<AgencyFormValues>({
     resolver: zodResolver(agencySchema),
   });
-  
-  const resetForm = () => {
-    form.reset(agency);
-    setImagePreview(agency.image ? `${API_BASE_URL}/${agency.image}` : null);
-    setImageFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }
 
   useEffect(() => {
     if (isOpen) {
-      resetForm();
+      form.reset(agency);
     }
-  }, [agency, isOpen]);
+  }, [agency, isOpen, form]);
 
   const handleSubmit = async (values: AgencyFormValues) => {
-    const success = await onAgencyUpdate({ id: agency.id, ...values }, imageFile || undefined);
+    const success = await onAgencyUpdate({ id: agency.id, ...values });
     if (success) {
       onOpenChange(false);
-    }
-  };
-
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
     }
   };
 
@@ -90,24 +69,16 @@ export function EditAgencyDialog({ agency, isOpen, onOpenChange, onAgencyUpdate 
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} noValidate>
-             <div className="grid grid-cols-2 gap-4 py-4">
-                <div className="col-span-2 flex flex-col items-center gap-2">
-                    <Avatar className="h-24 w-24 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                      <AvatarImage src={imagePreview || undefined} />
-                      <AvatarFallback>{form.watch('name')?.charAt(0) || 'A'}</AvatarFallback>
-                    </Avatar>
-                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
-                    <p className="text-xs text-muted-foreground">Click avatar to change image</p>
-                </div>
-                <FormField control={form.control} name="name" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Agency Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone</FormLabel><FormControl><Input type="tel" {...field} maxLength={10} /></FormControl><FormMessage /></FormItem>)}/>
-                <FormField control={form.control} name="addressTitle" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                <FormField control={form.control} name="pincode" render={({ field }) => ( <FormItem><FormLabel>Pincode</FormLabel><FormControl><Input {...field} maxLength={6} /></FormControl><FormMessage /></FormItem>)}/>
-                <FormField control={form.control} name="landmark" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Landmark</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-              </div>
+            <div className="grid grid-cols-2 gap-4 py-4">
+              <FormField control={form.control} name="name" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Agency Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+              <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+              <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone</FormLabel><FormControl><Input type="tel" {...field} maxLength={10} /></FormControl><FormMessage /></FormItem>)}/>
+              <FormField control={form.control} name="addressTitle" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+              <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+              <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+              <FormField control={form.control} name="pincode" render={({ field }) => ( <FormItem><FormLabel>Pincode</FormLabel><FormControl><Input {...field} maxLength={6} /></FormControl><FormMessage /></FormItem>)}/>
+              <FormField control={form.control} name="landmark" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Landmark</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+            </div>
             <DialogFooter className="pt-4">
               <DialogClose asChild>
                 <Button variant="outline" type="button">Cancel</Button>

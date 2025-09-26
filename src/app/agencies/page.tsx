@@ -114,25 +114,18 @@ export default function AgenciesPage() {
     return filteredAgencies.slice(startIndex, endIndex);
   }, [filteredAgencies, currentPage]);
 
-  const handleAddAgency = async (newAgency: Omit<Agency, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'image'>, image?: File): Promise<boolean> => {
+  const handleAddAgency = async (newAgency: Omit<Agency, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<boolean> => {
     if (!token) return false;
-
-    const formData = new FormData();
-    Object.entries(newAgency).forEach(([key, value]) => {
-        formData.append(key, String(value));
-    });
-    if (image) {
-        formData.append('image', image);
-    }
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/agencies`, {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
           'ngrok-skip-browser-warning': 'true'
         },
-        body: formData,
+        body: JSON.stringify(newAgency),
       });
       const result = await response.json();
 
@@ -157,26 +150,19 @@ export default function AgenciesPage() {
     }
   };
   
-  const handleUpdateAgency = async (updatedAgency: Omit<Agency, 'createdAt' | 'updatedAt' | 'status' | 'image'> & { id: string }, image?: File): Promise<boolean> => {
+  const handleUpdateAgency = async (updatedAgency: Omit<Agency, 'createdAt' | 'updatedAt' | 'status'> & { id: string }): Promise<boolean> => {
     if (!token) return false;
     const { id, ...payload } = updatedAgency;
     
-    const formData = new FormData();
-     Object.entries(payload).forEach(([key, value]) => {
-        formData.append(key, String(value));
-    });
-    if (image) {
-        formData.append('image', image);
-    }
-
     try {
       const response = await fetch(`${API_BASE_URL}/api/agencies/${id}`, {
         method: 'PUT',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
           'ngrok-skip-browser-warning': 'true'
         },
-        body: formData,
+        body: JSON.stringify(payload),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -351,7 +337,6 @@ export default function AgenciesPage() {
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={agency.image ? `${API_BASE_URL}/${agency.image}` : undefined} alt={agency.name} />
                           <AvatarFallback>{agency.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         {agency.name}
