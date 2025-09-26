@@ -23,7 +23,7 @@ interface OrderStatusChartProps {
 }
 
 export function OrderStatusChart({ orders }: OrderStatusChartProps) {
-  const [timeframe, setTimeframe] = useState<Timeframe>('daily');
+  const [timeframe, setTimeframe] = useState<Timeframe>('weekly');
 
   const processedData = useMemo(() => {
     if (!orders || orders.length === 0) return [];
