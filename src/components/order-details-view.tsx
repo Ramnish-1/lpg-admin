@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Order, Agent } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { IndianRupee, User, Truck, Calendar, ShoppingBag, Wallet, Package, Phone, MapPin, XCircle, CheckCircle, Loader2, Mail, Building2, FileText, Banknote, Image as ImageIcon } from 'lucide-react';
@@ -138,7 +138,7 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
   const handleAgentAssigned = async (orderId: string, agentId: string) => {
     if (!token) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/assign`, {
+      const assignResponse = await fetch(`${API_BASE_URL}/api/orders/${orderId}/assign`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -147,21 +147,25 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
         },
         body: JSON.stringify({ agentId })
       });
-      if (!response.ok) {
-        const result = await response.json();
+
+      if (!assignResponse.ok) {
+        const result = await assignResponse.json();
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to assign agent.' });
         return;
       }
-      const result = await response.json();
-      if (result.success) {
+      
+      const assignResult = await assignResponse.json();
+      if(assignResult.success) {
         toast({
           title: "Agent Assigned",
-          description: `Agent has been assigned and status updated.`,
+          description: `Agent has been assigned to the order.`,
         });
-        await updateOrderStatus(order, 'assigned', 'Agent assigned');
+
+        await updateOrderStatus(assignResult.data.order, 'assigned', 'Agent assigned');
       } else {
-        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to assign agent.' });
+        toast({ variant: 'destructive', title: 'Error', description: assignResult.error || 'Failed to assign agent.' });
       }
+
     } catch (error) {
        toast({ variant: 'destructive', title: 'Error', description: 'Failed to assign agent.' });
     }
@@ -402,5 +406,3 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
     </>
   );
 }
-
-    

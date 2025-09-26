@@ -437,7 +437,6 @@ function OrdersPageContent() {
     if (!token) return;
     
     try {
-      // 1. Assign the agent
       const assignResponse = await fetch(`${API_BASE_URL}/api/orders/${orderId}/assign`, {
         method: 'PUT',
         headers: { 
@@ -461,7 +460,6 @@ function OrdersPageContent() {
           description: `Agent has been assigned to the order.`,
         });
 
-        // 2. Update the status
         await updateOrderStatus(assignResult.data.order, 'assigned', 'Agent assigned');
       } else {
         toast({ variant: 'destructive', title: 'Error', description: assignResult.error || 'Failed to assign agent.' });
@@ -546,7 +544,6 @@ function OrdersPageContent() {
     if (order.deliveryMode === 'pickup') {
       await updateOrderStatus(order, 'confirmed', 'Order confirmed for pickup');
     } else {
-      // For home delivery, just open the assign dialog without changing status
       handleAssignAgent(order);
     }
   };
@@ -725,5 +722,3 @@ export default function OrdersPage() {
         <OrdersPageContent />
     );
 }
-
-    
