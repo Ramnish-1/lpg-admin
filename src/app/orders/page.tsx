@@ -489,7 +489,11 @@ function OrdersPageContent() {
         },
         body: JSON.stringify(requestBody)
       });
-      if (!response.ok) handleApiError(response);
+      if (!response.ok) {
+        handleApiError(response);
+        setUpdatingOrderId(null);
+        return false;
+      };
       const result = await response.json();
        if (result.success) {
         toast({
@@ -531,13 +535,17 @@ function OrdersPageContent() {
     await updateOrderStatus(order, newStatus, notes);
   }
   
-  const handleConfirmAndAssign = (order: Order) => {
+  const handleConfirmAndAssign = async (order: Order) => {
     if (order.deliveryMode === 'pickup') {
-      updateOrderStatus(order, 'confirmed', 'Order confirmed for pickup');
+      await updateOrderStatus(order, 'confirmed', 'Order confirmed for pickup');
     } else {
-      handleAssignAgent(order);
+      const success = await updateOrderStatus(order, 'confirmed', 'Order confirmed and ready for delivery');
+      if (success) {
+        // After successful confirmation, open the assign dialog
+        handleAssignAgent({ ...order, status: 'confirmed' });
+      }
     }
-  }
+  };
 
   const confirmCancelOrder = async (reason: string) => {
     if (selectedOrder) {
@@ -713,3 +721,5 @@ export default function OrdersPage() {
         <OrdersPageContent />
     );
 }
+
+    
