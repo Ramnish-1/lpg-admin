@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from '@/components/ui/button';
@@ -58,7 +59,7 @@ export function AddAgencyDialog({ isOpen, onOpenChange, onAgencyAdd }: AddAgency
       landmark: '',
     }
   });
-  
+
   const resetForm = () => {
     form.reset();
     setImagePreview(null);
@@ -81,7 +82,7 @@ export function AddAgencyDialog({ isOpen, onOpenChange, onAgencyAdd }: AddAgency
     }
   };
 
-  const onSubmit = async (values: AgencyFormValues) => {
+  const processSubmit = async (values: AgencyFormValues) => {
     const success = await onAgencyAdd(values, imageFile || undefined);
     if (success) {
       handleOpenChange(false);
@@ -98,7 +99,7 @@ export function AddAgencyDialog({ isOpen, onOpenChange, onAgencyAdd }: AddAgency
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+          <form onSubmit={form.handleSubmit(processSubmit)} noValidate>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
                <div className="md:col-span-1 flex flex-col items-center gap-4">
                   <Avatar className="h-32 w-32 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
