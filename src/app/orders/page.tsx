@@ -437,7 +437,7 @@ function OrdersPageContent() {
     if (!token) return;
     
     try {
-      const assignResponse = await fetch(`${API_BASE_URL}/api/orders/${orderId}/assign`, {
+      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/assign`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -446,37 +446,30 @@ function OrdersPageContent() {
         },
         body: JSON.stringify({ agentId })
       });
-
-      if (!assignResponse.ok) {
-        const result = await assignResponse.json();
+      if (!response.ok) {
+        const result = await response.json();
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to assign agent.' });
         return;
       }
-      
-      const assignResult = await assignResponse.json();
-
-      if (assignResult.success) {
+      const result = await response.json();
+      if (result.success) {
         toast({
           title: "Agent Assigned",
-          description: `Agent has been assigned. Now updating status.`,
+          description: `Agent has been assigned and status updated.`,
         });
-
-        const statusUpdated = await updateOrderStatus({id: orderId} as Order, 'confirmed', 'Order confirmed and ready for delivery');
-        
-        if (statusUpdated) {
-          removeNotification(orderId);
-          fetchOrders(pagination.currentPage, activeTab, searchTerm, startDate, endDate);
-          fetchStatusCounts(startDate, endDate);
-        } else {
-            toast({ variant: 'destructive', title: 'Error', description: 'Agent assigned, but failed to update order status.' });
-        }
+        onUpdate();
       } else {
-        toast({ variant: 'destructive', title: 'Error', description: assignResult.error || 'Failed to assign agent.' });
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to assign agent.' });
       }
     } catch (error) {
-       toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred while assigning the agent.' });
+       toast({ variant: 'destructive', title: 'Error', description: 'Failed to assign agent.' });
     }
   };
+
+  const onUpdate = () => {
+    fetchOrders(pagination.currentPage, activeTab, searchTerm, startDate, endDate);
+    fetchStatusCounts(startDate, endDate);
+  }
 
   const updateOrderStatus = async (order: Order, newStatus: Order['status'], notes?: string): Promise<boolean> => {
     if (!token) return false;
@@ -511,8 +504,7 @@ function OrdersPageContent() {
         if(newStatus === 'confirmed') {
             removeNotification(order.id);
         }
-        fetchOrders(pagination.currentPage, activeTab, searchTerm, startDate, endDate);
-        fetchStatusCounts(startDate, endDate);
+        onUpdate();
         return true;
       } else {
         toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update status.' });
@@ -543,11 +535,14 @@ function OrdersPageContent() {
     await updateOrderStatus(order, newStatus, notes);
   }
   
-  const handleConfirmAndAssign = (order: Order) => {
+  const handleConfirmAndAssign = async (order: Order) => {
     if (order.deliveryMode === 'pickup') {
-      updateOrderStatus(order, 'confirmed', 'Order confirmed for pickup');
+      await updateOrderStatus(order, 'confirmed', 'Order confirmed for pickup');
     } else {
-      handleAssignAgent(order);
+      const success = await updateOrderStatus(order, 'confirmed', 'Order confirmed and ready for delivery');
+      if (success) {
+        handleAssignAgent(order);
+      }
     }
   };
 
@@ -725,6 +720,8 @@ export default function OrdersPage() {
         <OrdersPageContent />
     );
 }
+
+    
 
     
 
