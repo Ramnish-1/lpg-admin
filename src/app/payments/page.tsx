@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { EditPaymentMethodDialog } from '@/components/edit-payment-method-dialog';
 import { getPaymentMethods, getPaymentsData } from '@/lib/data';
+import { ProfileContext } from '@/context/profile-context';
 
 
 const ITEMS_PER_PAGE = 10;
@@ -30,6 +31,8 @@ export default function PaymentsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
+  const { profile } = useContext(ProfileContext);
+  const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
 
   useEffect(() => {
     setIsClient(true);
@@ -168,56 +171,58 @@ export default function PaymentsPage() {
           </Card>
         </div>
 
-        <Card>
-           <CardHeader>
-            <CardTitle>Payment Methods</CardTitle>
-            <CardDescription>
-              Activate or deactivate payment methods available to customers.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Method</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead className="text-center">Status</TableHead>
-                        <TableHead><span className="sr-only">Actions</span></TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {paymentMethods.map(method => (
-                        <TableRow key={method.id}>
-                            <TableCell className="font-medium">{method.name}</TableCell>
-                            <TableCell>{method.description}</TableCell>
-                            <TableCell className="text-center">
-                                <Switch 
-                                    checked={method.status === 'Active'}
-                                    onCheckedChange={() => handleToggleStatus(method.id)}
-                                    aria-label={`Toggle ${method.name}`}
-                                />
-                            </TableCell>
-                            <TableCell>
-                               <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                    <Button aria-haspopup="true" size="icon" variant="ghost">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                        <span className="sr-only">Toggle menu</span>
-                                    </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => handleEditClick(method)}>
-                                            Edit Details
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        {isAdmin && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment Methods</CardTitle>
+              <CardDescription>
+                Activate or deactivate payment methods available to customers.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                  <TableHeader>
+                      <TableRow>
+                          <TableHead>Method</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead className="text-center">Status</TableHead>
+                          <TableHead><span className="sr-only">Actions</span></TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {paymentMethods.map(method => (
+                          <TableRow key={method.id}>
+                              <TableCell className="font-medium">{method.name}</TableCell>
+                              <TableCell>{method.description}</TableCell>
+                              <TableCell className="text-center">
+                                  <Switch 
+                                      checked={method.status === 'Active'}
+                                      onCheckedChange={() => handleToggleStatus(method.id)}
+                                      aria-label={`Toggle ${method.name}`}
+                                  />
+                              </TableCell>
+                              <TableCell>
+                                <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                      <Button aria-haspopup="true" size="icon" variant="ghost">
+                                          <MoreHorizontal className="h-4 w-4" />
+                                          <span className="sr-only">Toggle menu</span>
+                                      </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                          <DropdownMenuItem onClick={() => handleEditClick(method)}>
+                                              Edit Details
+                                          </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                  </DropdownMenu>
+                              </TableCell>
+                          </TableRow>
+                      ))}
+                  </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
