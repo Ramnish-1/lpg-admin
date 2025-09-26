@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from '@/components/ui/button';
@@ -67,7 +68,7 @@ export function AddAgencyDialog({ isOpen, onOpenChange, onAgencyAdd }: AddAgency
        if(fileInputRef.current) fileInputRef.current.value = "";
     }
     onOpenChange(open);
-  }
+  };
   
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
