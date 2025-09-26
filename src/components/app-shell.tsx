@@ -69,7 +69,7 @@ const allNavItems = [
   { href: '/agencies', label: 'Agencies', icon: Building2, roles: ['admin', 'super_admin'] },
   { href: '/terms-and-conditions', label: 'Terms & Conditions', icon: FileText, roles: ['admin', 'super_admin'] },
   { href: '/privacy-policy', label: 'Privacy Policy', icon: ShieldCheck, roles: ['admin', 'super_admin'] },
-  { href: '/payments', label: 'Payments', icon: CreditCard },
+  { href: '/transactions', label: 'Transactions', icon: CreditCard },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -308,5 +308,3 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
     </div>
   );
 }
-
-    
