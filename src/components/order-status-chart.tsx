@@ -1,13 +1,12 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Loader2 } from 'lucide-react';
-import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, eachYearOfInterval, isWithinInterval, getYear } from 'date-fns';
+import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, eachYearOfInterval, isWithinInterval } from 'date-fns';
 import { Order } from '@/lib/types';
 
 const chartConfig = {
@@ -25,7 +24,6 @@ interface OrderStatusChartProps {
 
 export function OrderStatusChart({ orders }: OrderStatusChartProps) {
   const [timeframe, setTimeframe] = useState<Timeframe>('daily');
-  const [chartData, setChartData] = useState<any[]>([]);
 
   const processedData = useMemo(() => {
     if (!orders || orders.length === 0) return [];
@@ -43,9 +41,9 @@ export function OrderStatusChart({ orders }: OrderStatusChartProps) {
         formatLabel = (d) => format(d, 'EEE');
         break;
       case 'weekly':
-        interval = { start: subDays(startOfWeek(today), 4*7), end: endOfWeek(today) };
+        interval = { start: subDays(startOfWeek(today, { weekStartsOn: 1 }), 4*7), end: endOfWeek(today) };
         getIntervals = (i) => eachWeekOfInterval(i, { weekStartsOn: 1 });
-        formatLabel = (d) => format(d, 'MMM d');
+        formatLabel = (d) => `W${format(d, 'w')}`;
         break;
       case 'monthly':
         interval = { start: startOfYear(today), end: endOfYear(today) };
@@ -57,7 +55,7 @@ export function OrderStatusChart({ orders }: OrderStatusChartProps) {
           const orderDate = new Date(order.createdAt);
           return orderDate < oldest ? orderDate : oldest;
         }, new Date());
-        interval = { start: oldestOrderDate, end: today };
+        interval = { start: startOfYear(oldestOrderDate), end: today };
         getIntervals = (i) => eachYearOfInterval(i);
         formatLabel = (d) => format(d, 'yyyy');
         break;
@@ -65,7 +63,7 @@ export function OrderStatusChart({ orders }: OrderStatusChartProps) {
     
     const intervals = getIntervals(interval);
     
-    return intervals.map((startDate, index) => {
+    return intervals.map((startDate) => {
         let endDate: Date;
         if (timeframe === 'daily') endDate = startDate;
         else if (timeframe === 'weekly') endDate = endOfWeek(startDate, { weekStartsOn: 1 });
@@ -77,16 +75,16 @@ export function OrderStatusChart({ orders }: OrderStatusChartProps) {
         const ordersInPeriod = orders.filter(order => isWithinInterval(new Date(order.createdAt), periodInterval));
         
         const counts = ordersInPeriod.reduce((acc, order) => {
-            const status = order.status.replace('-', '_') as keyof typeof chartConfig;
-            if (acc[status]) {
-                acc[status]++;
-            } else if (status === 'assigned' || status === 'confirmed' || status === 'in_progress') {
-                acc['pending']++; // Grouping into pending for simplicity
-            } else if (status === 'returned') {
-                 acc['cancelled']++; // Grouping into cancelled
+            const statusKey = order.status.replace(/[\s-]/g, '_') as keyof typeof acc;
+            if (statusKey in acc) {
+              acc[statusKey]++;
+            } else if (['assigned', 'confirmed', 'in_progress'].includes(statusKey)) {
+              acc.pending++;
+            } else if (statusKey === 'returned') {
+              acc.cancelled++;
             }
             return acc;
-        }, { pending: 0, delivered: 0, cancelled: 0, out_for_delivery: 0 });
+          }, { pending: 0, delivered: 0, cancelled: 0, out_for_delivery: 0 });
 
         return {
             date: formatLabel(startDate),
@@ -124,7 +122,7 @@ export function OrderStatusChart({ orders }: OrderStatusChartProps) {
           </div>
         ) : (
           <ChartContainer config={chartConfig} className="h-[250px] w-full">
-            <BarChart data={processedData} accessibilityLayer>
+            <BarChart data={processedData} accessibilityLayer stackOffset="sign">
               <CartesianGrid vertical={false} />
               <XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} />
               <YAxis />
