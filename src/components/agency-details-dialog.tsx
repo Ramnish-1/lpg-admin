@@ -35,7 +35,8 @@ export function AgencyDetailsDialog({ agency, isOpen, onOpenChange }: AgencyDeta
   
   const getImageUrl = (imagePath?: string) => {
     if (!imagePath) return '';
-    return imagePath.startsWith('http') ? imagePath : `${API_BASE_URL}/${imagePath}`;
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${API_BASE_URL}/${imagePath}`;
   }
 
   return (

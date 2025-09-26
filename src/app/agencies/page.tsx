@@ -285,7 +285,6 @@ export default function AgenciesPage() {
   const getImageUrl = (imagePath?: string) => {
     if (!imagePath) return '';
     if (imagePath.startsWith('http')) return imagePath;
-    if (imagePath.startsWith('https://res.cloudinary.com')) return imagePath;
     return `${API_BASE_URL}/${imagePath}`;
   }
 
