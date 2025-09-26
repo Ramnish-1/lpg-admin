@@ -8,7 +8,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { useAuth } from '@/context/auth-context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Loader2 } from 'lucide-react';
-import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachDayOfInterval } from 'date-fns';
+import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -64,7 +64,11 @@ export function OrderStatusChart() {
       }
       const result = await response.json();
       if (result.success) {
-        setData(result.data.stats);
+        const formattedData = result.data.stats.map((item: any) => ({
+            ...item,
+            date: format(new Date(item.date), timeframe === 'daily' ? 'EEE' : 'MMM')
+        }));
+        setData(formattedData);
       }
     } catch (error) {
       console.error("Failed to fetch chart data:", error);

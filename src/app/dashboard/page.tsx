@@ -35,7 +35,6 @@ export default function DashboardPage() {
     totalRevenue: 0,
     totalAgencies: 0,
   });
-  const [ordersByStatus, setOrdersByStatus] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -77,18 +76,6 @@ export default function DashboardPage() {
             totalRevenue: totalDeliveredRevenue,
             totalAgencies: totals.agencies,
           });
-          
-          // Assuming byStatus gives daily data for the last 7 days by default.
-          // This will need to be adjusted based on actual API capabilities.
-          // For now, let's create some dummy data based on the response.
-           const { byStatus } = ordersData;
-           const chartData = Object.keys(byStatus).map(status => ({
-              status,
-              ...byStatus[status]
-           }));
-           // This is just a placeholder, the OrderStatusChart will have its own data fetching logic.
-           setOrdersByStatus([]);
-
 
           setRecentOrders(recent.orders || []);
         } else {
