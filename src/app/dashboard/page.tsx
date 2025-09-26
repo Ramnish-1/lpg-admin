@@ -62,13 +62,19 @@ export default function DashboardPage() {
           const { totals, orders: ordersData, recent, agencies } = result.data;
           
           const activeAgentsCount = ordersData.perAgent.filter((a: any) => a.DeliveryAgent?.status === 'online').length;
+          const totalDeliveredRevenue = recent.orders.reduce((acc: number, order: Order) => {
+            if (order.status === 'delivered') {
+                return acc + parseFloat(order.totalAmount);
+            }
+            return acc;
+          }, 0);
           
           setStats({
             totalUsers: totals.users,
             totalOrders: totals.orders,
             totalAgents: totals.agents,
             activeAgents: activeAgentsCount,
-            totalRevenue: ordersData.byStatus.delivered, // Assuming this is revenue
+            totalRevenue: totalDeliveredRevenue,
             totalAgencies: totals.agencies,
           });
 
@@ -218,17 +224,17 @@ export default function DashboardPage() {
                   <TableBody>
                     {paginatedRecentOrders.map((order: Order) => (
                       <TableRow key={order.id} onClick={() => handleShowDetails(order)} className="cursor-pointer">
-                        <TableCell>
+                        <TableCell className="py-2">
                           <div className="font-medium">{order.customerName}</div>
                           <div className="text-sm text-muted-foreground">#{order.orderNumber.slice(-8)}</div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-2">
                            <Badge variant={statusVariant[order.status.replace('_', '-')] || 'secondary'} className="capitalize">{order.status.replace('_', ' ')}</Badge>
                         </TableCell>
-                        <TableCell className="hidden sm:table-cell">
+                        <TableCell className="hidden sm:table-cell py-2">
                           {new Date(order.createdAt).toLocaleDateString()}
                         </TableCell>
-                        <TableCell className="text-right">₹{parseFloat(order.totalAmount).toLocaleString()}</TableCell>
+                        <TableCell className="text-right py-2">₹{parseFloat(order.totalAmount).toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
