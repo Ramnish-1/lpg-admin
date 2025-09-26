@@ -118,7 +118,7 @@ export function AddAgencyDialog({ isOpen, onOpenChange, onAgencyAdd }: AddAgency
                   <FormField control={form.control} name="addressTitle" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address Title</FormLabel><FormControl><Input placeholder="e.g. Head Office" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address</FormLabel><FormControl><Input placeholder="e.g. 123 Main Street" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="e.g. Delhi" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="pincode" render={({ field }) => ( <FormItem><FormLabel>Pincode</FormLabel><FormControl><Input placeholder="e.g. 110001" {...field} maxLength={6} /></FormControl><FormMessage /></FormMessage>)}/>
+                  <FormField control={form.control} name="pincode" render={({ field }) => ( <FormItem><FormLabel>Pincode</FormLabel><FormControl><Input placeholder="e.g. 110001" {...field} maxLength={6} /></FormControl><FormMessage /></FormItem>)}/>
                   <FormField control={form.control} name="landmark" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Landmark</FormLabel><FormControl><Input placeholder="e.g. Near India Gate" {...field} /></FormControl><FormMessage /></FormItem>)}/>
               </div>
             </div>
