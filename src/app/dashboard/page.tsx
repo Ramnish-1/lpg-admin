@@ -18,12 +18,14 @@ import { AuthContext, useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { OrderStatusChart } from '@/components/order-status-chart';
+import { ProfileContext } from '@/context/profile-context';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const RECENT_ORDERS_PER_PAGE = 5;
 
 export default function DashboardPage() {
   const { token } = useContext(AuthContext);
+  const { profile } = useContext(ProfileContext);
   const { handleApiError } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +42,8 @@ export default function DashboardPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [recentOrdersCurrentPage, setRecentOrdersCurrentPage] = useState(1);
+
+  const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
 
   useEffect(() => {
     if (!token) return;
@@ -135,19 +139,21 @@ export default function DashboardPage() {
       <PageHeader title="Dashboard" />
       <div className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Link href="/customers">
-            <UserHoverCard>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalUsers}</div>
-                </CardContent>
-              </Card>
-            </UserHoverCard>
-          </Link>
+          {isAdmin && (
+            <Link href="/customers">
+              <UserHoverCard>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.totalUsers}</div>
+                  </CardContent>
+                </Card>
+              </UserHoverCard>
+            </Link>
+          )}
           <Link href="/orders">
             <OrderHoverCard>
               <Card>
@@ -175,17 +181,19 @@ export default function DashboardPage() {
               </Card>
             </AgentHoverCard>
           </Link>
-          <Link href="/agencies">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Agencies</CardTitle>
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalAgencies}</div>
-                </CardContent>
-              </Card>
-          </Link>
+          {isAdmin && (
+            <Link href="/agencies">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Agencies</CardTitle>
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.totalAgencies}</div>
+                  </CardContent>
+                </Card>
+            </Link>
+          )}
         </div>
         <div className="grid gap-4 lg:grid-cols-2">
           <OrderStatusChart orders={allOrders} />
@@ -268,3 +276,5 @@ export default function DashboardPage() {
     </AppShell>
   );
 }
+
+    
