@@ -1,16 +1,14 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, useContext } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
-import { useAuth } from '@/context/auth-context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Loader2 } from 'lucide-react';
-import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, eachYearOfInterval, isWithinInterval, getYear } from 'date-fns';
+import { Order } from '@/lib/types';
 
 const chartConfig = {
   pending: { label: "Pending", color: "hsl(var(--chart-2))" },
@@ -21,65 +19,82 @@ const chartConfig = {
 
 type Timeframe = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
-export function OrderStatusChart() {
-  const [data, setData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface OrderStatusChartProps {
+    orders: Order[];
+}
+
+export function OrderStatusChart({ orders }: OrderStatusChartProps) {
   const [timeframe, setTimeframe] = useState<Timeframe>('daily');
-  const { token, handleApiError } = useAuth();
+  const [chartData, setChartData] = useState<any[]>([]);
 
-  const fetchData = useCallback(async (selectedTimeframe: Timeframe) => {
-    if (!token) return;
-    setIsLoading(true);
+  const processedData = useMemo(() => {
+    if (!orders || orders.length === 0) return [];
+    
+    let interval;
+    let formatLabel: (date: Date) => string;
+    let getIntervals: (interval: Interval) => Date[];
 
-    let startDate, endDate;
     const today = new Date();
 
-    switch(selectedTimeframe) {
-        case 'daily':
-            startDate = format(subDays(today, 6), 'yyyy-MM-dd');
-            endDate = format(today, 'yyyy-MM-dd');
-            break;
-        case 'weekly':
-            startDate = format(subDays(startOfWeek(today), 4*7), 'yyyy-MM-dd');
-            endDate = format(endOfWeek(today), 'yyyy-MM-dd');
-            break;
-        case 'monthly':
-            startDate = format(startOfYear(today), 'yyyy-MM-dd');
-            endDate = format(endOfYear(today), 'yyyy-MM-dd');
-            break;
-        case 'yearly':
-            startDate = format(subDays(today, 365 * 2), 'yyyy-MM-dd'); // last 2 years
-            endDate = format(today, 'yyyy-MM-dd');
-            break;
+    switch(timeframe) {
+      case 'daily':
+        interval = { start: subDays(today, 6), end: today };
+        getIntervals = (i) => eachDayOfInterval(i);
+        formatLabel = (d) => format(d, 'EEE');
+        break;
+      case 'weekly':
+        interval = { start: subDays(startOfWeek(today), 4*7), end: endOfWeek(today) };
+        getIntervals = (i) => eachWeekOfInterval(i, { weekStartsOn: 1 });
+        formatLabel = (d) => format(d, 'MMM d');
+        break;
+      case 'monthly':
+        interval = { start: startOfYear(today), end: endOfYear(today) };
+        getIntervals = (i) => eachMonthOfInterval(i);
+        formatLabel = (d) => format(d, 'MMM');
+        break;
+      case 'yearly':
+        const oldestOrderDate = orders.reduce((oldest, order) => {
+          const orderDate = new Date(order.createdAt);
+          return orderDate < oldest ? orderDate : oldest;
+        }, new Date());
+        interval = { start: oldestOrderDate, end: today };
+        getIntervals = (i) => eachYearOfInterval(i);
+        formatLabel = (d) => format(d, 'yyyy');
+        break;
     }
+    
+    const intervals = getIntervals(interval);
+    
+    return intervals.map((startDate, index) => {
+        let endDate: Date;
+        if (timeframe === 'daily') endDate = startDate;
+        else if (timeframe === 'weekly') endDate = endOfWeek(startDate, { weekStartsOn: 1 });
+        else if (timeframe === 'monthly') endDate = endOfMonth(startDate);
+        else endDate = endOfYear(startDate);
+        
+        const periodInterval = { start: startDate, end: endDate };
 
-    try {
-      const url = `${API_BASE_URL}/api/dashboard/order-stats?timeframe=${selectedTimeframe}&startDate=${startDate}&endDate=${endDate}`;
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
-      });
-      if (!response.ok) {
-        handleApiError(response);
-        return;
-      }
-      const result = await response.json();
-      if (result.success) {
-        const formattedData = result.data.stats.map((item: any) => ({
-            ...item,
-            date: format(new Date(item.date), timeframe === 'daily' ? 'EEE' : 'MMM')
-        }));
-        setData(formattedData);
-      }
-    } catch (error) {
-      console.error("Failed to fetch chart data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [token, handleApiError]);
+        const ordersInPeriod = orders.filter(order => isWithinInterval(new Date(order.createdAt), periodInterval));
+        
+        const counts = ordersInPeriod.reduce((acc, order) => {
+            const status = order.status.replace('-', '_') as keyof typeof chartConfig;
+            if (acc[status]) {
+                acc[status]++;
+            } else if (status === 'assigned' || status === 'confirmed' || status === 'in_progress') {
+                acc['pending']++; // Grouping into pending for simplicity
+            } else if (status === 'returned') {
+                 acc['cancelled']++; // Grouping into cancelled
+            }
+            return acc;
+        }, { pending: 0, delivered: 0, cancelled: 0, out_for_delivery: 0 });
 
-  useEffect(() => {
-    fetchData(timeframe);
-  }, [timeframe, fetchData]);
+        return {
+            date: formatLabel(startDate),
+            ...counts
+        };
+    });
+
+  }, [orders, timeframe]);
 
   return (
     <Card>
@@ -103,13 +118,13 @@ export function OrderStatusChart() {
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {processedData.length === 0 ? (
           <div className="h-[250px] w-full flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin" />
+             <p className="text-muted-foreground">No data to display for the selected period.</p>
           </div>
         ) : (
           <ChartContainer config={chartConfig} className="h-[250px] w-full">
-            <BarChart data={data} accessibilityLayer>
+            <BarChart data={processedData} accessibilityLayer>
               <CartesianGrid vertical={false} />
               <XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} />
               <YAxis />

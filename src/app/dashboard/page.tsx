@@ -35,6 +35,7 @@ export default function DashboardPage() {
     totalRevenue: 0,
     totalAgencies: 0,
   });
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -58,7 +59,7 @@ export default function DashboardPage() {
         const result = await response.json();
         
         if (result.success) {
-          const { totals, orders: ordersData, recent, agencies } = result.data;
+          const { totals, orders: ordersData, recent } = result.data;
           
           const activeAgentsCount = ordersData.perAgent.filter((a: any) => a.DeliveryAgent?.status === 'online').length;
           const totalDeliveredRevenue = recent.orders.reduce((acc: number, order: Order) => {
@@ -77,7 +78,8 @@ export default function DashboardPage() {
             totalAgencies: totals.agencies,
           });
 
-          setRecentOrders(recent.orders || []);
+          setAllOrders(recent.orders || []);
+          setRecentOrders(recent.orders.slice(0, 20) || []);
         } else {
           toast({ variant: 'destructive', title: 'Error', description: 'Failed to process dashboard data.' });
         }
@@ -186,7 +188,7 @@ export default function DashboardPage() {
           </Link>
         </div>
         <div className="grid gap-4 lg:grid-cols-2">
-          <OrderStatusChart />
+          <OrderStatusChart orders={allOrders} />
           <Card>
             <CardHeader>
               <CardTitle>Recent Orders</CardTitle>
