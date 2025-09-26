@@ -12,16 +12,19 @@ import { Loader2 } from 'lucide-react';
 import { useEffect, useState, useMemo, useContext, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { AuthContext, useAuth } from '@/context/auth-context';
+import { ProfileContext } from '@/context/profile-context';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-export default function TransactionsPage() {
+export default function PaymentsPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const { token, handleApiError } = useAuth();
+  const { profile } = useContext(ProfileContext);
+  const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
   
   const fetchTransactions = useCallback(async (page = 1) => {
     if (!token) return;
@@ -66,7 +69,7 @@ export default function TransactionsPage() {
 
   return (
     <AppShell>
-      <PageHeader title="Transactions" />
+      <PageHeader title="Payments" />
         <Card>
           <CardHeader>
             <CardTitle>Completed & In-Transit Orders</CardTitle>
@@ -136,9 +139,15 @@ export default function TransactionsPage() {
             </CardFooter>
             )}
         </Card>
+         {isAdmin && (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Payment Methods</CardTitle>
+                    <CardDescription>Activate or deactivate payment methods available to customers.</CardDescription>
+                </CardHeader>
+                {/* Content for payment methods would go here */}
+            </Card>
+        )}
     </AppShell>
   );
 }
-
-
-    
