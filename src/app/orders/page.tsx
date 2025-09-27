@@ -26,6 +26,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -53,6 +55,7 @@ function OrdersTable({
   onReturn,
   onCancel,
   onConfirmAndAssign,
+  onPaymentReceivedToggle,
   updatingOrderId,
   currentPage,
   totalPages,
@@ -67,6 +70,7 @@ function OrdersTable({
   onReturn: (order: Order) => void;
   onCancel: (order: Order) => void;
   onConfirmAndAssign: (order: Order) => void;
+  onPaymentReceivedToggle: (order: Order, received: boolean) => void;
   updatingOrderId: string | null;
   currentPage: number;
   totalPages: number;
@@ -94,8 +98,9 @@ function OrdersTable({
                 <TableHead>Items</TableHead>
                 {isAdmin && <TableHead className="hidden sm:table-cell">Agency</TableHead>}
                 <TableHead>Delivery Mode</TableHead>
-                <TableHead className="bg-green-200">Payment Method</TableHead>
+                <TableHead>Payment Method</TableHead>
                 {tableStatus !== 'pending' && <TableHead className="hidden sm:table-cell">Agent</TableHead>}
+                {tableStatus === 'confirmed' && <TableHead>Payment Received</TableHead>}
                 <TableHead className="hidden md:table-cell">Amount</TableHead>
                 <TableHead className="hidden lg:table-cell">Order Status</TableHead>
                 <TableHead className="hidden sm:table-cell">Date</TableHead>
@@ -135,7 +140,7 @@ function OrdersTable({
                   <TableCell className="capitalize">
                     {order.deliveryMode?.replace('_', ' ')}
                   </TableCell>
-                  <TableCell className="capitalize bg-green-200">
+                  <TableCell className="capitalize">
                     {order.paymentMethod?.replace('_', ' ')}
                   </TableCell>
                    {tableStatus !== 'pending' && (
@@ -147,6 +152,25 @@ function OrdersTable({
                             )}
                         </TableCell>
                     )}
+                  {tableStatus === 'confirmed' && (
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      {order.deliveryMode === 'pickup' ? (
+                          <div className="flex items-center space-x-2">
+                             <Switch
+                                id={`payment-${order.id}`}
+                                checked={order.paymentReceived}
+                                onCheckedChange={(checked) => onPaymentReceivedToggle(order, checked)}
+                                disabled={!!updatingOrderId && updatingOrderId === order.id}
+                              />
+                              <Label htmlFor={`payment-${order.id}`} className={cn(order.paymentReceived ? "text-green-600" : "text-destructive")}>
+                                {order.paymentReceived ? 'Paid' : 'Unpaid'}
+                              </Label>
+                          </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">N/A</span>
+                      )}
+                    </TableCell>
+                  )}
                   <TableCell className="hidden md:table-cell">₹{parseFloat(order.totalAmount).toLocaleString()}</TableCell>
                   <TableCell className="hidden lg:table-cell">
                      <DropdownMenu>
@@ -409,8 +433,10 @@ function OrdersPageContent() {
     const assignAgentOrderId = searchParams.get('assignAgent');
     if (assignAgentOrderId) {
       const orderToAssign = orders.find(o => o.id === assignAgentOrderId) || { id: assignAgentOrderId } as Order; 
-      handleAssignAgent(orderToAssign);
-      router.replace('/orders', { scroll: false });
+      if (orderToAssign) {
+        handleAssignAgent(orderToAssign);
+        router.replace('/orders', { scroll: false });
+      }
     }
   }, [searchParams, orders, router]);
 
@@ -540,11 +566,47 @@ function OrdersPageContent() {
     await updateOrderStatus(order, newStatus, notes);
   }
   
- const handleConfirmAndAssign = async (order: Order) => {
+  const handleConfirmAndAssign = async (order: Order) => {
+    // For pickup orders, just confirm.
     if (order.deliveryMode === 'pickup') {
       await updateOrderStatus(order, 'confirmed', 'Order confirmed for pickup');
     } else {
+      // For home delivery, don't update status, just open assign dialog.
+      // Status will be updated upon successful assignment.
       handleAssignAgent(order);
+    }
+  };
+
+  const handlePaymentReceivedToggle = async (order: Order, received: boolean) => {
+    if (!token) return;
+    setUpdatingOrderId(order.id);
+    const notes = received ? "Payment received in cash at counter" : "Customer did not come for pickup";
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/orders/${order.id}/payment`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify({ paymentReceived: received, notes: notes })
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update payment status.' });
+        return;
+      }
+      if (result.success) {
+        toast({ title: 'Payment Status Updated', description: `Order payment status set to ${received ? 'Paid' : 'Unpaid'}` });
+        onUpdate();
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update payment status.' });
+      }
+    } catch (error) {
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred.' });
+    } finally {
+      setUpdatingOrderId(null);
     }
   };
 
@@ -698,6 +760,7 @@ function OrdersPageContent() {
               onReturn={handleReturnOrder}
               onCancel={handleCancelOrder}
               onConfirmAndAssign={handleConfirmAndAssign}
+              onPaymentReceivedToggle={handlePaymentReceivedToggle}
               updatingOrderId={updatingOrderId}
               currentPage={pagination.currentPage}
               totalPages={pagination.totalPages}
