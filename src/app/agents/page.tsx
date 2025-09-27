@@ -30,6 +30,7 @@ import { AuthContext, useAuth } from '@/context/auth-context';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ProfileContext } from '@/context/profile-context';
 import { cn } from '@/lib/utils';
+import { useNotifications } from '@/context/notification-context';
 
 
 const ITEMS_PER_PAGE = 10;
@@ -65,6 +66,7 @@ export default function AgentsPage() {
   const { handleApiError } = useAuth();
   const { profile } = useContext(ProfileContext);
   const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
+  const { socket } = useNotifications();
 
 
   const fetchAgents = useCallback(async () => {
@@ -117,6 +119,27 @@ export default function AgentsPage() {
     fetchAgencies();
   }, [fetchAgents, fetchAgencies]);
   
+  useEffect(() => {
+    if (socket) {
+      const handleAgentUpdate = () => {
+        toast({ title: "Live Update", description: "Agent data has been updated." });
+        fetchAgents();
+      };
+
+      socket.on('agent_created', handleAgentUpdate);
+      socket.on('agent_updated', handleAgentUpdate);
+      socket.on('agent_deleted', handleAgentUpdate);
+      socket.on('agent_status_changed', handleAgentUpdate);
+
+      return () => {
+        socket.off('agent_created', handleAgentUpdate);
+        socket.off('agent_updated', handleAgentUpdate);
+        socket.off('agent_deleted', handleAgentUpdate);
+        socket.off('agent_status_changed', handleAgentUpdate);
+      };
+    }
+  }, [socket, fetchAgents, toast]);
+
   const filteredAgents = useMemo(() => {
     if (selectedAgency === 'all') {
       return agents;

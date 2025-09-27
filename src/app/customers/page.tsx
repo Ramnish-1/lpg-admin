@@ -11,12 +11,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, FileDown, Loader2 } from 'lucide-react';
 import type { User } from '@/lib/types';
 import { Input } from '@/components/ui/input';
-import { useEffect, useState, useMemo, useContext } from 'react';
+import { useEffect, useState, useMemo, useContext, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { UserDetailsDialog } from '@/components/user-details-dialog';
 import { AuthContext, useAuth } from '@/context/auth-context';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
+import { useNotifications } from '@/context/notification-context';
 
 
 const ITEMS_PER_PAGE = 10;
@@ -34,9 +35,10 @@ export default function CustomersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const { token, handleApiError } = useAuth();
+  const { socket } = useNotifications();
 
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
       if (!token) return;
       setIsLoading(true);
       try {
@@ -74,13 +76,32 @@ export default function CustomersPage() {
       } finally {
         setIsLoading(false);
       }
-    };
+    }, [token, handleApiError, toast]);
 
   useEffect(() => {
     if (token) {
       fetchUsers();
     }
-  }, [token, toast, handleApiError]);
+  }, [token, fetchUsers]);
+
+  useEffect(() => {
+    if (socket) {
+        const handleUserUpdate = () => {
+            toast({ title: 'Live Update', description: 'Customer data has been updated.' });
+            fetchUsers();
+        };
+
+        socket.on('user_created', handleUserUpdate);
+        socket.on('user_updated', handleUserUpdate);
+        socket.on('user_deleted', handleUserUpdate);
+
+        return () => {
+            socket.off('user_created', handleUserUpdate);
+            socket.off('user_updated', handleUserUpdate);
+            socket.off('user_deleted', handleUserUpdate);
+        };
+    }
+  }, [socket, fetchUsers, toast]);
   
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
 

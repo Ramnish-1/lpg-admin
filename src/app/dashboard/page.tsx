@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { OrderStatusChart } from '@/components/order-status-chart';
 import { ProfileContext } from '@/context/profile-context';
+import { useNotifications } from '@/context/notification-context';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const RECENT_ORDERS_PER_PAGE = 5;
@@ -42,13 +43,12 @@ export default function DashboardPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [recentOrdersCurrentPage, setRecentOrdersCurrentPage] = useState(1);
+  const { socket } = useNotifications();
 
   const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
 
-  useEffect(() => {
-    if (!token) return;
-
-    const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
+      if (!token) return;
       setIsLoading(true);
       try {
         const response = await fetch(`${API_BASE_URL}/api/dashboard`, {
@@ -93,10 +93,41 @@ export default function DashboardPage() {
       } finally {
         setIsLoading(false);
       }
-    };
-    
+    }, [token, toast, handleApiError]);
+
+
+  useEffect(() => {
     fetchDashboardData();
-  }, [token, toast, handleApiError]);
+  }, [fetchDashboardData]);
+
+  useEffect(() => {
+    if (socket) {
+      const handleDashboardUpdate = () => {
+        toast({ title: "Live Update", description: "Dashboard data has been updated." });
+        fetchDashboardData();
+      };
+
+      socket.on('order_created', handleDashboardUpdate);
+      socket.on('order_updated', handleDashboardUpdate);
+      socket.on('order_deleted', handleDashboardUpdate);
+      socket.on('user_created', handleDashboardUpdate);
+      socket.on('user_deleted', handleDashboardUpdate);
+      socket.on('agent_status_changed', handleDashboardUpdate);
+      socket.on('agency_created', handleDashboardUpdate);
+      socket.on('agency_deleted', handleDashboardUpdate);
+
+      return () => {
+        socket.off('order_created', handleDashboardUpdate);
+        socket.off('order_updated', handleDashboardUpdate);
+        socket.off('order_deleted', handleDashboardUpdate);
+        socket.off('user_created', handleDashboardUpdate);
+        socket.off('user_deleted', handleDashboardUpdate);
+        socket.off('agent_status_changed', handleDashboardUpdate);
+        socket.off('agency_created', handleDashboardUpdate);
+        socket.off('agency_deleted', handleDashboardUpdate);
+      };
+    }
+  }, [socket, fetchDashboardData, toast]);
 
   const recentOrdersTotalPages = Math.ceil(recentOrders.length / RECENT_ORDERS_PER_PAGE);
 

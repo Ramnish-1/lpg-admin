@@ -13,6 +13,8 @@ interface NotificationContextType {
   removeNotification: (orderId: string) => void;
   markAsRead: (orderId: string) => void;
   socket: Socket | null;
+  joinRoom: (room: string, data?: any) => void;
+  leaveRoom: (room: string, data?: any) => void;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
@@ -23,6 +25,8 @@ export const NotificationContext = createContext<NotificationContextType>({
   removeNotification: () => {},
   markAsRead: () => {},
   socket: null,
+  joinRoom: () => {},
+  leaveRoom: () => {},
 });
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
@@ -31,45 +35,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
 
-  const fetchPendingOrders = useCallback(async () => {
-    if (isAuthenticated && token) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/orders?status=pending`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
-        });
-        if (!response.ok) {
-            handleApiError(response);
-            return;
-        };
-        const result = await response.json();
-        if (result.success) {
-          const pendingOrders: Order[] = result.data.orders;
-          const pendingNotifications: Notification[] = pendingOrders.map(order => ({
-            id: order.id,
-            message: `Order #${order.orderNumber.slice(-8)} from ${order.customerName}`,
-            orderId: order.id,
-            timestamp: new Date(order.createdAt),
-            read: false,
-          }));
-          setNotifications(prev => {
-            const existingIds = new Set(prev.map(p => p.id));
-            const newNotifs = pendingNotifications.filter(n => !existingIds.has(n.id));
-            return [...prev, ...newNotifs].sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime());
-          });
-        }
-      } catch (error) {
-        console.error("Failed to fetch pending orders", error);
-      }
-    }
-  }, [isAuthenticated, token, handleApiError]);
-
-
   useEffect(() => {
-    fetchPendingOrders();
-  
     if (isAuthenticated && token) {
       const newSocket = io(API_BASE_URL, {
-        query: { token },
+        auth: { token },
+        transports: ['websocket', 'polling'],
         extraHeaders: {
             'ngrok-skip-browser-warning': 'true'
         }
@@ -80,19 +50,34 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         console.log('Socket connected');
       });
 
-      newSocket.on('newOrder', (order: Order) => {
+      newSocket.on('order_created', (data: { data: Order }) => {
          toast({
             title: "New Order Received!",
-            description: `Order #${order.orderNumber.slice(-8)} from ${order.customerName}.`
+            description: `Order #${data.data.orderNumber.slice(-8)} from ${data.data.customerName}.`
         });
         addNotification({
-          message: `Order #${order.orderNumber.slice(-8)} from ${order.customerName}`,
-          orderId: order.id,
+          message: `Order #${data.data.orderNumber.slice(-8)} from ${data.data.customerName}`,
+          orderId: data.data.id,
+        });
+      });
+      
+      newSocket.on('system_notification', (data) => {
+        toast({
+            title: data.data.title || "System Notification",
+            description: data.data.message
         });
       });
 
       newSocket.on('disconnect', () => {
         console.log('Socket disconnected');
+      });
+      
+      newSocket.on('error_occurred', (data) => {
+         toast({
+            variant: 'destructive',
+            title: data.data.title || "An Error Occurred",
+            description: data.data.message
+        });
       });
 
       return () => {
@@ -127,9 +112,17 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     );
   }, []);
   
+  const joinRoom = useCallback((room: string, data?: any) => {
+    socket?.emit(room, data);
+  }, [socket]);
+
+  const leaveRoom = useCallback((room: string, data?: any) => {
+    socket?.emit(room, data);
+  }, [socket]);
+  
 
   return (
-    <NotificationContext.Provider value={{ notifications, addNotification, removeNotification, markAsRead, socket }}>
+    <NotificationContext.Provider value={{ notifications, addNotification, removeNotification, markAsRead, socket, joinRoom, leaveRoom }}>
       {children}
     </NotificationContext.Provider>
   );

@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { AgencyDetailsDialog } from '@/components/agency-details-dialog';
 import { ProfileContext } from '@/context/profile-context';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useNotifications } from '@/context/notification-context';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -40,7 +41,8 @@ export default function AgenciesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAgencyFilter, setSelectedAgencyFilter] = useState('all');
   const { profile } = useContext(ProfileContext);
-  const isAdmin = profile.role === 'admin';
+  const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
+  const { socket } = useNotifications();
 
   const fetchAgencies = useCallback(async () => {
     if (!token) return;
@@ -91,6 +93,32 @@ export default function AgenciesPage() {
     fetchAgencies();
     fetchActiveAgencies();
   }, [fetchAgencies, fetchActiveAgencies]);
+  
+  useEffect(() => {
+    if (socket) {
+      const handleAgencyUpdate = () => {
+        toast({ title: "Live Update", description: "Agency data has been updated." });
+        fetchAgencies();
+        fetchActiveAgencies();
+      };
+
+      socket.on('agency_created', handleAgencyUpdate);
+      socket.on('agency_updated', handleAgencyUpdate);
+      socket.on('agency_deleted', handleAgencyUpdate);
+      socket.on('agency_status_changed', handleAgencyUpdate);
+      socket.on('agency_owner_created', handleAgencyUpdate);
+      socket.on('agency_owner_updated', handleAgencyUpdate);
+
+      return () => {
+        socket.off('agency_created', handleAgencyUpdate);
+        socket.off('agency_updated', handleAgencyUpdate);
+        socket.off('agency_deleted', handleAgencyUpdate);
+        socket.off('agency_status_changed', handleAgencyUpdate);
+        socket.off('agency_owner_created', handleAgencyUpdate);
+        socket.off('agency_owner_updated', handleAgencyUpdate);
+      };
+    }
+  }, [socket, fetchAgencies, fetchActiveAgencies, toast]);
   
   const filteredAgencies = useMemo(() => {
     let agenciesToFilter = agencies;
@@ -158,7 +186,7 @@ export default function AgenciesPage() {
     }
   };
   
-  const handleUpdateAgency = async (updatedAgency: Omit<Agency, 'createdAt' | 'updatedAt' | 'status' | 'image'> & { id: string }, image?: File): Promise<boolean> => {
+  const handleUpdateAgency = async (updatedAgency: Omit<Agency, 'createdAt' | 'updatedAt' | 'status' | 'image' | 'profileImage'> & { id: string }, image?: File): Promise<boolean> => {
     if (!token) return false;
     
     const formData = new FormData();

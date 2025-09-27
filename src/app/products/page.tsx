@@ -21,6 +21,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useAuth } from '@/context/auth-context';
 import { ProfileContext } from '@/context/profile-context';
 import Link from 'next/link';
+import { useNotifications } from '@/context/notification-context';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -38,6 +39,7 @@ export default function ProductsPage() {
   const { token, handleApiError } = useAuth();
   const { profile } = useContext(ProfileContext);
   const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
+  const { socket } = useNotifications();
 
   const fetchData = useCallback(async () => {
     if (!token) return;
@@ -70,6 +72,27 @@ export default function ProductsPage() {
     fetchData();
   }, [fetchData]);
   
+  useEffect(() => {
+    if (socket) {
+      const handleProductUpdate = () => {
+        toast({ title: "Live Update", description: "Product data has been updated." });
+        fetchData();
+      };
+
+      socket.on('product_created', handleProductUpdate);
+      socket.on('product_updated', handleProductUpdate);
+      socket.on('product_deleted', handleProductUpdate);
+      socket.on('inventory_updated', handleProductUpdate);
+
+      return () => {
+        socket.off('product_created', handleProductUpdate);
+        socket.off('product_updated', handleProductUpdate);
+        socket.off('product_deleted', handleProductUpdate);
+        socket.off('inventory_updated', handleProductUpdate);
+      };
+    }
+  }, [socket, fetchData, toast]);
+
   const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
 
   const paginatedItems = useMemo(() => {
@@ -370,7 +393,7 @@ export default function ProductsPage() {
                   
                   const totalStock = isAdmin
                     ? product.AgencyInventory?.reduce((sum, inv) => sum + inv.agencyVariants.reduce((s, v) => s + v.stock, 0), 0) ?? 0
-                    : agencyInventory?.agencyVariants.reduce((s, v) => s + v.stock, 0) ?? 0;
+                    : agencyInventory?.agencyVariants.reduce((s, v) => s + (v.stock || 0), 0) ?? 0;
                   
                   const lowStockThreshold = isAdmin
                     ? product.lowStockThreshold
@@ -564,5 +587,3 @@ export default function ProductsPage() {
     
 
     
-
-
