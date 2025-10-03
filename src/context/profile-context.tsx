@@ -27,11 +27,11 @@ interface ProfileContextType {
 }
 
 const defaultProfile: Profile = { 
-  name: 'Admin', 
+  name: '', 
   photoUrl: '',
-  email: 'admin@gastrack.com',
-  phone: '+91 99999 88888',
-  role: 'admin' // Default to admin for initial state
+  email: '',
+  phone: '',
+  role: '' // Default to admin for initial state
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;

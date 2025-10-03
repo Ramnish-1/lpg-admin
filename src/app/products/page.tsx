@@ -82,15 +82,15 @@ export default function ProductsPage() {
   }, [fetchData]);
 
   // Socket connection status effect
-  useEffect(() => {
-    if (isConnected) {
-      toast({
-        title: "🔗 Real-time Connected",
-        description: "You'll receive live updates for products and inventory",
-        variant: "default",
-      });
-    }
-  }, [isConnected, toast]);
+  // useEffect(() => {
+  //   if (isConnected) {
+  //     toast({
+  //       title: "🔗 Real-time Connected",
+  //       description: "You'll receive live updates for products and inventory",
+  //       variant: "default",
+  //     });
+  //   }
+  // }, [isConnected, toast]);
   
   // New socket event handlers for real-time updates
   useEffect(() => {

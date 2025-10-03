@@ -13,7 +13,7 @@ import {
   DialogClose
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Agent } from '@/lib/types';
+import { Agent, Agency } from '@/lib/types';
 import { ScrollArea } from './ui/scroll-area';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,16 +23,19 @@ import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 type NewAgentPayload = Omit<Agent, 'id' | 'joinedAt' | 'createdAt' | 'status' | 'report' | 'currentLocation' | 'updatedAt' | 'vehicleDetails' | 'panCard' | 'aadharCard' | 'drivingLicense' | 'accountDetails' | 'profileImage'>;
 
 interface AddAgentDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onAgentAdd: (agent: NewAgentPayload, image?: File) => Promise<{success: boolean, error?: string}>;
+  onAgentAdd: (agent: NewAgentPayload & { agencyId?: string }, image?: File) => Promise<{success: boolean, error?: string}>;
+  agencies?: Agency[];
+  isAdmin?: boolean;
 }
 
-const agentSchema = z.object({
+const createAgentSchema = (isAdmin: boolean) => z.object({
   name: z.string().min(1, { message: "Name is required." }),
   email: z.string().email({ message: "Invalid email address." }).min(1, { message: "Email is required." }),
   phone: z.string().length(10, { message: "Phone number must be exactly 10 digits." }),
@@ -41,21 +44,23 @@ const agentSchema = z.object({
   aadharCardNumber: z.string().length(12, { message: "Aadhar card must be 12 digits." }),
   drivingLicence: z.string().min(1, { message: "Driving license is required." }),
   bankDetails: z.string().min(1, { message: "Account details are required." }),
+  agencyId: isAdmin ? z.string().min(1, { message: "Please select an agency." }) : z.string().optional(),
 });
 
-type AgentFormValues = z.infer<typeof agentSchema>;
+type AgentFormValues = z.infer<ReturnType<typeof createAgentSchema>>;
 
-export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDialogProps) {
+export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd, agencies = [], isAdmin = false }: AddAgentDialogProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<AgentFormValues>({
-    resolver: zodResolver(agentSchema),
+    resolver: zodResolver(createAgentSchema(isAdmin)),
     defaultValues: {
       name: '', email: '', phone: '', vehicleNumber: '',
       panCardNumber: '', aadharCardNumber: '', drivingLicence: '', bankDetails: '',
+      agencyId: '',
     }
   });
 
@@ -69,7 +74,15 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
 
   const handleSubmit = async (values: AgentFormValues) => {
     setApiError(null);
-    const result = await onAgentAdd(values, imageFile || undefined);
+    
+    // Prepare payload based on role
+    const payload = { ...values };
+    if (!isAdmin) {
+      // Remove agencyId for agency owners
+      delete payload.agencyId;
+    }
+    
+    const result = await onAgentAdd(payload, imageFile || undefined);
     if (result.success) {
       resetForm();
       onOpenChange(false);
@@ -129,6 +142,28 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd }: AddAgentDia
                       <FormField control={form.control} name="vehicleNumber" render={({ field }) => (<FormItem><FormLabel>Vehicle Number</FormLabel><FormControl><Input placeholder="e.g. KA-01-AB-1234" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   </div>
                   <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {isAdmin && agencies.length > 0 && (
+                        <FormField control={form.control} name="agencyId" render={({ field }) => (
+                          <FormItem className="sm:col-span-2">
+                            <FormLabel>Agency</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select an agency" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {agencies.map((agency) => (
+                                  <SelectItem key={agency.id} value={agency.id}>
+                                    {agency.name} - {agency.city}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}/>
+                      )}
                       <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="e.g. John Doe" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                       <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input placeholder="e.g. 9876543210" {...field} maxLength={10} /></FormControl><FormMessage /></FormItem>)}/>
                       <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="e.g. john.doe@example.com" {...field} /></FormControl><FormMessage /></FormItem>)}/>

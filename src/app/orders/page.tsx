@@ -84,7 +84,7 @@ function OrdersTable({
 }) {
 
   const isActionDisabled = (status: Order['status']) => {
-    return ['delivered', 'cancelled', 'returned'].includes(status);
+    return ['delivered', 'returned'].includes(status);
   }
   
   const tableStatus = orders[0]?.status;
@@ -237,7 +237,7 @@ function OrdersTable({
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem onClick={() => onShowDetails(order)}>View Details</DropdownMenuItem>
-                            {(order.status === 'confirmed') && (
+                            {(order.status === 'confirmed' && order.deliveryMode !== 'pickup') && (
                             <DropdownMenuItem className="bg-green-500 text-white hover:!bg-green-600 hover:!text-white focus:!bg-green-600 focus:!text-white" onClick={() => onAssignAgent(order)}>Assign Agent</DropdownMenuItem>
                             )}
                             {order.status === 'delivered' && (
@@ -364,35 +364,63 @@ function OrdersPageContent() {
 
   const fetchStatusCounts = useCallback(async (start?: Date, end?: Date) => {
     if (!token) return;
-    const counts: Record<string, number> = {};
-    const params = new URLSearchParams();
-    params.append('limit', '1');
-     if (start) {
+    
+    try {
+      const params = new URLSearchParams();
+      if (start) {
         params.append('startDate', format(start, 'yyyy-MM-dd'));
       }
       if (end) {
-          params.append('endDate', format(end, 'yyyy-MM-dd'));
+        params.append('endDate', format(end, 'yyyy-MM-dd'));
       }
-    
-    for (const status of orderStatusesForTabs) {
-      try {
-        const statusParam = status === 'in-progress' ? 'assigned' : status === 'out-for-delivery' ? 'out_for_delivery' : status;
-        const url = `${API_BASE_URL}/api/orders?status=${statusParam}&${params.toString()}`;
-        
-        const response = await fetch(url, {
-          headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
-        });
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success) {
-            counts[status] = result.data.pagination.totalItems;
-          }
+      
+      // Single API call to get all orders without status filter
+      const url = new URL(`${API_BASE_URL}/api/orders`);
+      url.searchParams.append('limit', '1000'); // Get more orders to count all statuses
+      
+      // Add date parameters if provided
+      if (start) {
+        url.searchParams.append('startDate', format(start, 'yyyy-MM-dd'));
+      }
+      if (end) {
+        url.searchParams.append('endDate', format(end, 'yyyy-MM-dd'));
+      }
+      
+      const response = await fetch(url.toString(), {
+        headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          const counts: Record<string, number> = {};
+          
+          // Initialize all status counts to 0
+          orderStatusesForTabs.forEach(status => {
+            counts[status] = 0;
+          });
+          
+          // Count orders by status
+          result.data.orders.forEach((order: Order) => {
+            let statusKey = order.status as string;
+            // Map API status to frontend status
+            if (order.status === 'assigned') {
+              statusKey = 'in-progress';
+            } else if ((order.status as string) === 'out_for_delivery') {
+              statusKey = 'out-for-delivery';
+            }
+            
+            if (counts.hasOwnProperty(statusKey)) {
+              counts[statusKey]++;
+            }
+          });
+          
+          setStatusCounts(counts);
         }
-      } catch (error) {
-        console.error(`Failed to fetch count for ${status}`, error);
       }
+    } catch (error) {
+      console.error('Failed to fetch status counts', error);
     }
-    setStatusCounts(counts);
   }, [token]);
 
   useEffect(() => {
@@ -405,15 +433,15 @@ function OrdersPageContent() {
   }
 
   // Socket connection status effect
-  useEffect(() => {
-    if (isConnected) {
-      toast({
-        title: "🔗 Real-time Connected",
-        description: "You'll receive live updates for orders",
-        variant: "default",
-      });
-    }
-  }, [isConnected, toast]);
+  // useEffect(() => {
+  //   if (isConnected) {
+  //     toast({
+  //       title: "🔗 Real-time Connected",
+  //       description: "You'll receive live updates for orders",
+  //       variant: "default",
+  //     });
+  //   }
+  // }, [isConnected, toast]);
 
   // New socket event handlers for real-time updates
   useEffect(() => {
@@ -780,7 +808,7 @@ function OrdersPageContent() {
                 </PopoverContent>
             </Popover>
              {(startDate || endDate) && (
-              <Button variant="ghost" size="icon" onClick={clearDateFilter}>
+              <Button variant="ghost" size="icon" onClick={clearDateFilter} className="bg-red-500 hover:bg-red-600 text-white">
                 <X className="h-4 w-4" />
                 <span className="sr-only">Clear date filter</span>
               </Button>

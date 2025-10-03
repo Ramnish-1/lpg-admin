@@ -31,6 +31,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ProfileContext } from '@/context/profile-context';
 import { cn } from '@/lib/utils';
 import { useNotifications } from '@/context/notification-context';
+import { useRouter } from 'next/navigation';
 
 
 const ITEMS_PER_PAGE = 10;
@@ -67,6 +68,7 @@ export default function AgentsPage() {
   const { profile } = useContext(ProfileContext);
   const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
   const { socket } = useNotifications();
+  const router = useRouter();
 
 
   const fetchAgents = useCallback(async () => {
@@ -233,8 +235,7 @@ export default function AgentsPage() {
   }
 
   const handleViewReport = (agent: Agent) => {
-    setSelectedAgent(agent);
-    setIsReportDialogOpen(true);
+    router.push(`/agents/${agent.id}`);
   };
 
   const handleAgentUpdate = async (updatedAgent: Omit<Agent, 'id' | 'createdAt' | 'updatedAt' | 'joinedAt'>, agentId: string, image?: File) => {
@@ -279,7 +280,7 @@ export default function AgentsPage() {
     }
   }
 
-  const handleAgentAdd = async (newAgent: Omit<Agent, 'id' | 'createdAt' | 'updatedAt' | 'joinedAt'>, image?: File): Promise<{success: boolean, error?: string}> => {
+  const handleAgentAdd = async (newAgent: Omit<Agent, 'id' | 'createdAt' | 'updatedAt' | 'joinedAt'> & { agencyId?: string }, image?: File): Promise<{success: boolean, error?: string}> => {
      if (!token) return { success: false, error: "Authentication token not found."};
 
      const formData = new FormData();
@@ -430,14 +431,12 @@ export default function AgentsPage() {
             </span>
           </Button>
         ) : (
-          !isAdmin && (
             <Button size="sm" className="h-8 gap-1" onClick={() => setIsAddDialogOpen(true)}>
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                 Add Agent
               </span>
             </Button>
-          )
         )}
       </PageHeader>
       <Card>
@@ -489,9 +488,7 @@ export default function AgentsPage() {
                 <TableHead className="hidden sm:table-cell">Vehicle</TableHead>
                 <TableHead className="hidden md:table-cell">Agent Status</TableHead>
                 <TableHead className="hidden lg:table-cell">Joined On</TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
+                <TableHead className="hidden lg:table-cell">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -628,6 +625,8 @@ export default function AgentsPage() {
         isOpen={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onAgentAdd={handleAgentAdd}
+        agencies={agencies}
+        isAdmin={isAdmin}
       />
 
       {selectedAgent && (

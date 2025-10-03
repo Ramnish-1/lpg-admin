@@ -377,9 +377,7 @@ export default function AgenciesPage() {
                   <TableHead className="hidden md:table-cell">Address</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Joined On</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
+                  <TableHead className="hidden lg:table-cell">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -398,7 +396,7 @@ export default function AgenciesPage() {
                       <div>{agency.phone}</div>
                       <div className="text-sm text-muted-foreground">{agency.email}</div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{`${agency.address}, ${agency.landmark ? agency.landmark + ', ' : ''}${agency.city}, ${agency.pincode}`}</TableCell>
+                    <TableCell className="hidden md:table-cell max-w-[600px]">{`${agency.address}, ${agency.landmark ? agency.landmark + ', ' : ''}${agency.city}, ${agency.pincode}`}</TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                        <DropdownMenu>
                         <DropdownMenuTrigger asChild>

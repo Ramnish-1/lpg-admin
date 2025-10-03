@@ -9,12 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, FileDown, Loader2, Search, X } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { User } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { useEffect, useState, useMemo, useContext, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { UserDetailsDialog } from '@/components/user-details-dialog';
 import { AuthContext, useAuth } from '@/context/auth-context';
+import { useRouter } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
 import { useNotifications } from '@/context/notification-context';
@@ -31,12 +33,12 @@ export default function CustomersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [action, setAction] = useState<'Block' | 'Unblock' | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
   const { token, handleApiError } = useAuth();
   const { socket } = useNotifications();
+  const router = useRouter();
 
 
   const fetchUsers = useCallback(async () => {
@@ -204,8 +206,7 @@ export default function CustomersPage() {
 
 
   const handleShowDetails = (user: User) => {
-    setSelectedUser(user);
-    setIsDetailsOpen(true);
+    router.push(`/customers/${user.id}`);
   }
 
   const handleAddressClick = (e: React.MouseEvent, address: string) => {
@@ -297,9 +298,7 @@ export default function CustomersPage() {
                     <TableHead className="hidden md:table-cell">Contact</TableHead>
                     <TableHead className="hidden sm:table-cell">Status</TableHead>
                     <TableHead className="hidden lg:table-cell">Registered On</TableHead>
-                    <TableHead>
-                      <span className="sr-only">Actions</span>
-                    </TableHead>
+                    <TableHead className="hidden lg:table-cell">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -312,12 +311,20 @@ export default function CustomersPage() {
                       })}
                     >
                       <TableCell>
-                        <div className="font-medium">{user.name}</div>
-                        <div 
-                          className="text-sm text-muted-foreground hover:underline md:hidden"
-                          onClick={(e) => handleAddressClick(e, user.address)}
-                        >
-                          {user.address}
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={user.profileImage || undefined} alt={user.name} />
+                            <AvatarFallback>{user.name?.charAt(0) || 'C'}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{user.name}</div>
+                            <div 
+                              className="text-sm text-muted-foreground hover:underline md:hidden"
+                              onClick={(e) => handleAddressClick(e, user.address)}
+                            >
+                              {user.address}
+                            </div>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
@@ -402,7 +409,6 @@ export default function CustomersPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <UserDetailsDialog user={selectedUser} isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} />
 
     </AppShell>
   );

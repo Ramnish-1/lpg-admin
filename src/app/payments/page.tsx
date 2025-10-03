@@ -19,42 +19,42 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function PaymentsPage() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const { token, handleApiError } = useAuth();
   const { profile } = useContext(ProfileContext);
   const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
   
-  const fetchTransactions = useCallback(async (page = 1) => {
-    if (!token) return;
-    setIsLoading(true);
-    try {
-        const statuses = ['delivered', 'out_for_delivery'];
-        const response = await fetch(`${API_BASE_URL}/api/orders?page=${page}&limit=${ITEMS_PER_PAGE}&status=${statuses.join(',')}`, {
-            headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
-        });
-        if (!response.ok) {
-            handleApiError(response);
-            return;
-        }
-        const result = await response.json();
-        if (result.success) {
-            setOrders(result.data.orders);
-        } else {
-            toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch transactions.' });
-        }
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred while fetching transactions.' });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [token, toast, handleApiError]);
+  // const fetchTransactions = useCallback(async (page = 1) => {
+  //   if (!token) return;
+  //   setIsLoading(true);
+  //   try {
+  //       const statuses = ['delivered', 'out_for_delivery'];
+  //       const response = await fetch(`${API_BASE_URL}/api/orders?page=${page}&limit=${ITEMS_PER_PAGE}&status=${statuses.join(',')}`, {
+  //           headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
+  //       });
+  //       if (!response.ok) {
+  //           handleApiError(response);
+  //           return;
+  //       }
+  //       const result = await response.json();
+  //       if (result.success) {
+  //           setOrders(result.data.orders);
+  //       } else {
+  //           toast({ variant: 'destructive', title: 'Error', description: result.message || 'Failed to fetch transactions.' });
+  //       }
+  //   } catch (error) {
+  //     toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred while fetching transactions.' });
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // }, [token, toast, handleApiError]);
 
 
-  useEffect(() => {
-    fetchTransactions(currentPage);
-  }, [fetchTransactions, currentPage]);
+  // useEffect(() => {
+  //   fetchTransactions(currentPage);
+  // }, [fetchTransactions, currentPage]);
 
   const totalPages = useMemo(() => {
     // This is a simplification. For real pagination, the API should return total pages/items.

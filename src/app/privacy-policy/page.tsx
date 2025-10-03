@@ -218,9 +218,7 @@ export default function PrivacyPolicyPage() {
                   <TableHead className="hidden md:table-cell">Version</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Last Updated</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
+                  <TableHead className="hidden lg:table-cell">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

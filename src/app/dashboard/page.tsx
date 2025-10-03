@@ -316,9 +316,9 @@ export default function DashboardPage() {
                   <CardTitle className="text-sm font-medium">Active Agents</CardTitle>
                   <Truck className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
+                <CardContent className='flex gap-2' style={{alignItems: 'center'}}>
                   <div className="text-2xl font-bold">{stats.activeAgents}</div>
-                  <p className="text-xs text-muted-foreground">{stats.totalAgents} total agents</p>
+                  <p className="text-[12px]">{stats.totalAgents} total agents</p>
                 </CardContent>
               </Card>
             </AgentHoverCard>
