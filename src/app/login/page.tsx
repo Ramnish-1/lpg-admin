@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
+import { useSocket } from '@/context/socket-context';
 import Image from 'next/image';
 import { Eye, EyeOff } from 'lucide-react';
 import { LoginAnimation } from '@/components/login-animation';
@@ -37,6 +38,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { login } = useAuth();
+  const { disconnect, connect } = useSocket();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +47,16 @@ export default function LoginPage() {
     setIsLoading(false);
 
     if (result.success) {
+       // Reconnect socket with new auth token
+       const token = localStorage.getItem('authToken');
+       if (token) {
+         disconnect(); // Disconnect old socket
+         setTimeout(() => {
+           connect(token); // Reconnect with new token
+           console.log('🔄 Socket reconnected with auth token');
+         }, 500);
+       }
+       
        setShowAnimation(true);
        setTimeout(() => {
           toast({

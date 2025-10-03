@@ -41,6 +41,7 @@ import { ProfileContext } from '@/context/profile-context';
 import { SettingsContext } from '@/context/settings-context';
 import { useAuth } from '@/context/auth-context';
 import { useNotifications } from '@/context/notification-context';
+import { useForceLogout } from '@/hooks/use-force-logout';
 import { Badge } from './ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { Order } from '@/lib/types';
@@ -89,6 +90,9 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
   const { isAuthenticated, logout } = useAuth();
   const { notifications } = useNotifications();
   const [confirmingOrderId, setConfirmingOrderId] = React.useState<string | null>(null);
+  
+  // Enable force logout functionality for all users
+  useForceLogout();
 
   const unreadCount = notifications.filter(n => !n.read).length;
 

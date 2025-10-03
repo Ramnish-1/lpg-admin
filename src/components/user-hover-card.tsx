@@ -15,27 +15,27 @@ export function UserHoverCard({ children }: { children: React.ReactNode }) {
   const { token } = useContext(AuthContext);
   const { handleApiError } = useAuth();
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      if (!token) return;
-      try {
-         const response = await fetch(`${API_BASE_URL}/api/users?limit=10`, { // Fetch last 10 users
-             headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
-        });
-        if (!response.ok) {
-            handleApiError(response);
-            return;
-        }
-        const result = await response.json();
-        if (result.success) {
-          setUsers(result.data.users);
-        }
-      } catch (error) {
-        console.error("Failed to load users for hover card:", error);
-      }
-    };
-    fetchUsers();
-  }, [token, handleApiError]);
+  // useEffect(() => {
+  //   const fetchUsers = async () => {
+  //     if (!token) return;
+  //     try {
+  //        const response = await fetch(`${API_BASE_URL}/api/users?limit=10`, { // Fetch last 10 users
+  //            headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
+  //       });
+  //       if (!response.ok) {
+  //           handleApiError(response);
+  //           return;
+  //       }
+  //       const result = await response.json();
+  //       if (result.success) {
+  //         setUsers(result.data.users);
+  //       }
+  //     } catch (error) {
+  //       console.error("Failed to load users for hover card:", error);
+  //     }
+  //   };
+  //   fetchUsers();
+  // }, [token, handleApiError]);
 
   return (
     <HoverCard>

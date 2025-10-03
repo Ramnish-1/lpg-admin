@@ -78,7 +78,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(loggedInUser);
             setToken(result.data.token);
             setIsAuthenticated(true);
+            
+            // Store token and user data for socket authentication
             window.localStorage.setItem(TOKEN_STORAGE_KEY, result.data.token);
+            window.localStorage.setItem('authToken', result.data.token); // For socket
+            window.localStorage.setItem('userId', loggedInUser.id);
+            window.localStorage.setItem('userRole', loggedInUser.role);
+            if (loggedInUser.agencyId) {
+                window.localStorage.setItem('agencyId', loggedInUser.agencyId);
+            }
+            
             return { success: true };
         }
         return { success: false, error: result.error || 'Invalid email or password.' };
@@ -109,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setIsAuthenticated(false);
     if (typeof window !== 'undefined') {
+        // Clear all authentication-related data
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
@@ -117,6 +127,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         }
         keysToRemove.forEach(key => localStorage.removeItem(key));
+        
+        // Also clear socket-related auth data
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('agencyId');
+        
         window.location.href = '/login';
     }
   }

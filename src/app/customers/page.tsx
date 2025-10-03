@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, FileDown, Loader2 } from 'lucide-react';
+import { MoreHorizontal, FileDown, Loader2, Search, X } from 'lucide-react';
 import type { User } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { useEffect, useState, useMemo, useContext, useCallback } from 'react';
@@ -33,6 +33,7 @@ export default function CustomersPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
   const { token, handleApiError } = useAuth();
   const { socket } = useNotifications();
@@ -113,14 +114,42 @@ export default function CustomersPage() {
 
   
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const searchTerm = event.target.value.toLowerCase();
+    const newSearchTerm = event.target.value.toLowerCase().trim();
+    setSearchTerm(newSearchTerm);
     setCurrentPage(1);
-    const filtered = users.filter(user => 
-        user.name.toLowerCase().includes(searchTerm) ||
-        user.email.toLowerCase().includes(searchTerm) ||
-        user.phone.toLowerCase().includes(searchTerm)
-    );
+    
+    console.log('🔍 Search term:', newSearchTerm);
+    console.log('🔍 Total users:', users.length);
+    
+    if (!newSearchTerm) {
+      setFilteredUsers(users);
+      return;
+    }
+    
+    const filtered = users.filter(user => {
+      const name = user.name?.toLowerCase() || '';
+      const email = user.email?.toLowerCase() || '';
+      const phone = user.phone?.toString().toLowerCase() || '';
+      
+      const matches = name.includes(newSearchTerm) ||
+             email.includes(newSearchTerm) ||
+             phone.includes(newSearchTerm);
+      
+      if (matches) {
+        console.log('✅ Match found:', { name, email, phone });
+      }
+      
+      return matches;
+    });
+    
+    console.log('🔍 Filtered results:', filtered.length);
     setFilteredUsers(filtered);
+  };
+
+  const clearSearch = () => {
+    setSearchTerm('');
+    setFilteredUsers(users);
+    setCurrentPage(1);
   };
   
   const handleAction = (user: User, userAction: 'Block' | 'Unblock') => {
@@ -228,11 +257,30 @@ export default function CustomersPage() {
         <CardHeader>
            <CardTitle>Customers</CardTitle>
             <div className="mt-4">
-                <Input 
-                    placeholder="Search customers..." 
-                    className="max-w-xs" 
-                    onChange={handleSearch}
-                />
+                <div className="relative max-w-xs">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input 
+                        placeholder="Search customers..." 
+                        className="pl-10 pr-10" 
+                        value={searchTerm}
+                        onChange={handleSearch}
+                    />
+                    {searchTerm && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                            onClick={clearSearch}
+                        >
+                            <X className="h-3 w-3" />
+                        </Button>
+                    )}
+                </div>
+                {searchTerm && (
+                    <div className="mt-2 text-sm text-muted-foreground">
+                        {filteredUsers.length} of {users.length} customers found
+                    </div>
+                )}
             </div>
         </CardHeader>
         <CardContent>

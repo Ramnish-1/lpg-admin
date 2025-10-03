@@ -22,6 +22,10 @@ import { AuthContext, useAuth } from '@/context/auth-context';
 import { useNotifications } from '@/context/notification-context';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ProfileContext } from '@/context/profile-context';
+import { useSocket } from '@/context/socket-context';
+import { useSocketOrders } from '@/hooks/use-socket-orders';
+import { useForceLogout } from '@/hooks/use-force-logout';
+import socketService from '@/lib/socket';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -295,6 +299,11 @@ function OrdersPageContent() {
   const { profile } = useContext(ProfileContext);
   const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
 
+  // Socket hooks
+  const { isConnected } = useSocket();
+  const { orders: socketOrders, addOrder, updateOrder, clearOrders } = useSocketOrders();
+  useForceLogout(); // Enable force logout functionality
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -395,6 +404,48 @@ function OrdersPageContent() {
       fetchOrders(newPage, activeTab, searchTerm, startDate, endDate);
   }
 
+  // Socket connection status effect
+  useEffect(() => {
+    if (isConnected) {
+      toast({
+        title: "🔗 Real-time Connected",
+        description: "You'll receive live updates for orders",
+        variant: "default",
+      });
+    }
+  }, [isConnected, toast]);
+
+  // New socket event handlers for real-time updates
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const handleOrderCreated = () => {
+      console.log('🔄 Order created event received, refreshing...');
+      fetchOrders(pagination.currentPage, activeTab, searchTerm, startDate, endDate); 
+      fetchStatusCounts(startDate, endDate);
+    };
+
+    const handleOrderUpdate = () => {
+      console.log('🔄 Order update event received, refreshing...');
+      fetchOrders(pagination.currentPage, activeTab, searchTerm, startDate, endDate); 
+      fetchStatusCounts(startDate, endDate);
+    };
+
+    // Listen to socket events
+    socketService.on('order:created', handleOrderCreated);
+    socketService.on('order:status-updated', handleOrderUpdate);
+    socketService.on('order:assigned', handleOrderUpdate);
+    socketService.on('order:delivered', handleOrderUpdate);
+
+    return () => {
+      socketService.off('order:created', handleOrderCreated);
+      socketService.off('order:status-updated', handleOrderUpdate);
+      socketService.off('order:assigned', handleOrderUpdate);
+      socketService.off('order:delivered', handleOrderUpdate);
+    };
+  }, [isConnected, fetchOrders, fetchStatusCounts, activeTab, searchTerm, startDate, endDate, pagination.currentPage]);
+
+  // Legacy socket event handlers (keeping for backward compatibility)
   useEffect(() => {
     if (socket) {
       const handleDataUpdate = () => {
@@ -668,6 +719,13 @@ function OrdersPageContent() {
     >
       <PageHeader title="Orders Management">
         <div className="flex items-center gap-2">
+          {/* Socket Connection Status */}
+          <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-muted">
+            <div className={cn("w-2 h-2 rounded-full", isConnected ? "bg-green-500" : "bg-red-500")} />
+            <span className="text-xs text-muted-foreground">
+              {isConnected ? "Live" : "Offline"}
+            </span>
+          </div>
            <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -778,7 +836,7 @@ function OrdersPageContent() {
       </Tabs>
       )}
       
-      {selectedOrder && <AssignAgentDialog order={selectedOrder} isOpen={isAssignOpen} onOpenChange={setIsAssignOpen} onAgentAssigned={handleAgentAssigned} agents={agents} />}
+      {selectedOrder && <AssignAgentDialog order={selectedOrder} isOpen={isAssignOpen} onOpenChange={setIsAssignOpen} onAgentAssigned={handleAgentAssigned} initialAgents={agents} />}
       {selectedOrder && <CancelOrderDialog order={selectedOrder} isOpen={isCancelOpen} onOpenChange={setIsCancelOpen} onConfirm={confirmCancelOrder} />}
       {selectedOrder && <ReturnOrderDialog order={selectedOrder} isOpen={isReturnOpen} onOpenChange={setIsReturnOpen} onConfirm={confirmReturnOrder} />}
 

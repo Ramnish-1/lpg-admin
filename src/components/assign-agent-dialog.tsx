@@ -20,17 +20,20 @@ import {
 } from '@/components/ui/select';
 import type { Agent, Order } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useSocketAgents } from '@/hooks/use-socket-agents';
 
 interface AssignAgentDialogProps {
   order: Order | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onAgentAssigned: (orderId: string, agentId: string) => void;
-  agents: Agent[];
+  initialAgents?: Agent[]; // Optional initial agents for fallback
 }
 
-export function AssignAgentDialog({ order, isOpen, onOpenChange, onAgentAssigned, agents }: AssignAgentDialogProps) {
+export function AssignAgentDialog({ order, isOpen, onOpenChange, onAgentAssigned, initialAgents = [] }: AssignAgentDialogProps) {
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const { agents, isConnected } = useSocketAgents(initialAgents);
+  const { toast } = useToast();
 
   const handleAssign = () => {
     if (order && selectedAgentId) {
@@ -45,10 +48,25 @@ export function AssignAgentDialog({ order, isOpen, onOpenChange, onAgentAssigned
     }
   }, [isOpen]);
 
+  // Show connection status when dialog opens
+  useEffect(() => {
+    if (isOpen && isConnected) {
+      toast({
+        title: "🔗 Real-time Connected",
+        description: "Agent status updates are live",
+        variant: "default",
+      });
+    }
+  }, [isOpen, isConnected, toast]);
 
   if (!order) return null;
   
   const availableAgents = agents.filter(a => a.status.toLowerCase() === 'online');
+  
+  // Debug logging
+  console.log('🔍 AssignAgentDialog - All agents:', agents);
+  console.log('🔍 AssignAgentDialog - Available agents:', availableAgents);
+  console.log('🔍 AssignAgentDialog - Socket connected:', isConnected);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -68,11 +86,17 @@ export function AssignAgentDialog({ order, isOpen, onOpenChange, onAgentAssigned
               {availableAgents.length > 0 ? (
                 availableAgents.map(agent => (
                   <SelectItem key={agent.id} value={agent.id}>
-                    {agent.name} {agent.Agency && `(${agent.Agency.name})`}
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${agent.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                      <span>{agent.name}</span>
+                      {agent.Agency && <span className="text-muted-foreground">({agent.Agency.name})</span>}
+                    </div>
                   </SelectItem>
                 ))
               ) : (
-                <div className="p-4 text-center text-sm text-muted-foreground">No agents are online.</div>
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  {isConnected ? "No agents are online." : "No agents are online."}
+                </div>
               )}
             </SelectContent>
           </Select>

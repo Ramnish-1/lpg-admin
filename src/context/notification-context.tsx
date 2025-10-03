@@ -48,8 +48,72 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
       newSocket.on('connect', () => {
         console.log('Socket connected');
+        
+        // Subscribe to events based on user role
+        const userRole = localStorage.getItem('userRole') || sessionStorage.getItem('userRole');
+        const agencyId = localStorage.getItem('agencyId') || sessionStorage.getItem('agencyId');
+        
+        console.log('🔔 Notification socket - User role:', userRole);
+        
+        switch (userRole) {
+          case 'admin':
+            newSocket.emit('subscribe-orders');
+            newSocket.emit('subscribe-products');
+            newSocket.emit('subscribe-agencies');
+            newSocket.emit('subscribe-agents');
+            console.log('🔔 Admin subscribed to all events via notification socket');
+            break;
+
+          case 'agency_owner':
+            newSocket.emit('subscribe-orders');
+            if (agencyId) {
+              newSocket.emit('subscribe-inventory', agencyId);
+            }
+            console.log('🔔 Agency owner subscribed to orders and inventory via notification socket');
+            break;
+
+          case 'customer':
+            newSocket.emit('subscribe-orders');
+            console.log('🔔 Customer subscribed to orders via notification socket');
+            break;
+
+          case 'agent':
+            newSocket.emit('subscribe-orders');
+            console.log('🔔 Agent subscribed to orders via notification socket');
+            break;
+
+          default:
+            console.log('🔔 No specific subscriptions for role:', userRole);
+        }
       });
 
+      // New socket events
+      newSocket.on('order:created', (data: { data: Order }) => {
+         toast({
+            title: "New Order Received!",
+            description: `Order #${data.data.orderNumber.slice(-8)} from ${data.data.customerName}.`
+        });
+        addNotification({
+          message: `Order #${data.data.orderNumber.slice(-8)} from ${data.data.customerName}`,
+          orderId: data.data.id,
+        });
+      });
+
+      newSocket.on('order:status-updated', (data: { data: Order }) => {
+         toast({
+            title: "Order Status Updated",
+            description: `Order #${data.data.orderNumber.slice(-8)} is now ${data.data.status}`
+        });
+      });
+
+      newSocket.on('agent:status-updated', (data: { data: any }) => {
+         toast({
+            title: "Agent Status Updated",
+            description: `${data.data.name} is now ${data.data.status}`
+        });
+      });
+
+      // Legacy events (for backward compatibility)
       newSocket.on('order_created', (data: { data: Order }) => {
          toast({
             title: "New Order Received!",

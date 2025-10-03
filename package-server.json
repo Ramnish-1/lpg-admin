@@ -1,0 +1,20 @@
+{
+  "name": "socket-test-server",
+  "version": "1.0.0",
+  "description": "Test Socket.IO server for LPG Admin",
+  "main": "test-socket-server.js",
+  "scripts": {
+    "start": "node test-socket-server.js",
+    "dev": "nodemon test-socket-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
+
+

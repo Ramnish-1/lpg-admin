@@ -22,11 +22,20 @@ import { useAuth } from '@/context/auth-context';
 import { ProfileContext } from '@/context/profile-context';
 import Link from 'next/link';
 import { useNotifications } from '@/context/notification-context';
+import { useSocket } from '@/context/socket-context';
+import { useSocketInventory } from '@/hooks/use-socket-inventory';
+import { useForceLogout } from '@/hooks/use-force-logout';
+import socketService from '@/lib/socket';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function ProductsPage() {
+  // Socket hooks
+  const { isConnected } = useSocket();
+  const { inventory, products: socketProducts, addProduct, updateProduct, addInventoryItem, updateInventoryItem } = useSocketInventory();
+  useForceLogout(); // Enable force logout functionality
+
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<Product | null>(null);
@@ -71,7 +80,57 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Socket connection status effect
+  useEffect(() => {
+    if (isConnected) {
+      toast({
+        title: "🔗 Real-time Connected",
+        description: "You'll receive live updates for products and inventory",
+        variant: "default",
+      });
+    }
+  }, [isConnected, toast]);
   
+  // New socket event handlers for real-time updates
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const handleProductCreated = () => {
+      console.log('🔄 Product created event received, refreshing...');
+      fetchData();
+    };
+
+    const handleProductUpdated = () => {
+      console.log('🔄 Product updated event received, refreshing...');
+      fetchData();
+    };
+
+    const handleInventoryUpdated = () => {
+      console.log('🔄 Inventory updated event received, refreshing...');
+      fetchData();
+    };
+
+    const handleLowStock = () => {
+      console.log('⚠️ Low stock event received, refreshing...');
+      fetchData();
+    };
+
+    // Listen to socket events
+    socketService.on('product:created', handleProductCreated);
+    socketService.on('product:updated', handleProductUpdated);
+    socketService.on('inventory:updated', handleInventoryUpdated);
+    socketService.on('inventory:low-stock', handleLowStock);
+
+    return () => {
+      socketService.off('product:created', handleProductCreated);
+      socketService.off('product:updated', handleProductUpdated);
+      socketService.off('inventory:updated', handleInventoryUpdated);
+      socketService.off('inventory:low-stock', handleLowStock);
+    };
+  }, [isConnected, fetchData]);
+  
+  // Legacy socket event handlers (keeping for backward compatibility)
   useEffect(() => {
     if (socket) {
       const handleProductUpdate = () => {
@@ -352,14 +411,23 @@ export default function ProductsPage() {
   return (
     <AppShell>
       <PageHeader title="Product & Inventory">
-        {isAdmin && (
-          <Button size="sm" className="h-8 gap-1" onClick={() => setIsAddOpen(true)}>
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-              Add Product
+        <div className="flex items-center gap-2">
+          {/* Socket Connection Status */}
+          <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-muted">
+            <div className={cn("w-2 h-2 rounded-full", isConnected ? "bg-green-500" : "bg-red-500")} />
+            <span className="text-xs text-muted-foreground">
+              {isConnected ? "Live" : "Offline"}
             </span>
-          </Button>
-        )}
+          </div>
+          {isAdmin && (
+            <Button size="sm" className="h-8 gap-1" onClick={() => setIsAddOpen(true)}>
+              <PlusCircle className="h-3.5 w-3.5" />
+              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                Add Product
+              </span>
+            </Button>
+          )}
+        </div>
       </PageHeader>
       <Card>
         <CardHeader>

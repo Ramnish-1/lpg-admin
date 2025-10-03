@@ -6,6 +6,7 @@ import { ProfileProvider } from '@/context/profile-context';
 import { SettingsProvider } from '@/context/settings-context';
 import { AuthProvider } from '@/context/auth-context';
 import { NotificationProvider } from '@/context/notification-context';
+import { SocketProvider } from '@/context/socket-context';
 
 export const metadata: Metadata = {
   title: 'lpg GasTrack',
@@ -26,13 +27,15 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased h-full" suppressHydrationWarning={true}>
         <AuthProvider>
-          <ProfileProvider>
-            <SettingsProvider>
-              <NotificationProvider>
-                {children}
-              </NotificationProvider>
-            </SettingsProvider>
-          </ProfileProvider>
+          <SocketProvider>
+            <ProfileProvider>
+              <SettingsProvider>
+                <NotificationProvider>
+                  {children}
+                </NotificationProvider>
+              </SettingsProvider>
+            </ProfileProvider>
+          </SocketProvider>
         </AuthProvider>
         <Toaster />
       </body>

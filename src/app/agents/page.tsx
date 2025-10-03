@@ -126,12 +126,74 @@ export default function AgentsPage() {
         fetchAgents();
       };
 
+      const handleAgentStatusUpdate = (data: any) => {
+        const agentData = data.data;
+        console.log('🎯 Agent status updated:', agentData);
+        
+        // Update specific agent status in state
+        setAgents(prev => prev.map(agent => 
+          agent.id === agentData.id 
+            ? { ...agent, status: agentData.status }
+            : agent
+        ));
+
+        toast({ 
+          title: "Agent Status Updated", 
+          description: `${agentData.name} is now ${agentData.status}`,
+          variant: "default"
+        });
+      };
+
+      const handleAgentCreated = (data: any) => {
+        const agentData = data.data;
+        console.log('➕ New agent created:', agentData);
+        
+        // Add new agent to state
+        setAgents(prev => [agentData, ...prev]);
+        
+        toast({ 
+          title: "New Agent Added", 
+          description: `${agentData.name} has been added`,
+          variant: "default"
+        });
+      };
+
+      const handleAgentUpdated = (data: any) => {
+        const agentData = data.data;
+        console.log('🔄 Agent updated:', agentData);
+        
+        // Update agent in state
+        setAgents(prev => prev.map(agent => 
+          agent.id === agentData.id 
+            ? { ...agent, ...agentData }
+            : agent
+        ));
+        
+        toast({ 
+          title: "Agent Updated", 
+          description: `${agentData.name} profile has been updated`,
+          variant: "default"
+        });
+      };
+
+      // New socket events
+      socket.on('agent:status-updated', handleAgentStatusUpdate);
+      socket.on('agent:created', handleAgentCreated);
+      socket.on('agent:updated', handleAgentUpdated);
+
+      // Legacy events (for backward compatibility)
       socket.on('agent_created', handleAgentUpdate);
       socket.on('agent_updated', handleAgentUpdate);
       socket.on('agent_deleted', handleAgentUpdate);
       socket.on('agent_status_changed', handleAgentUpdate);
 
       return () => {
+        // New events
+        socket.off('agent:status-updated', handleAgentStatusUpdate);
+        socket.off('agent:created', handleAgentCreated);
+        socket.off('agent:updated', handleAgentUpdated);
+        
+        // Legacy events
         socket.off('agent_created', handleAgentUpdate);
         socket.off('agent_updated', handleAgentUpdate);
         socket.off('agent_deleted', handleAgentUpdate);

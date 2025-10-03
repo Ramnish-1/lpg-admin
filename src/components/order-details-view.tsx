@@ -396,7 +396,7 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
          </div>
       </div>
     </div>
-    <AssignAgentDialog order={order} isOpen={isAssignOpen} onOpenChange={setIsAssignOpen} onAgentAssigned={handleAgentAssigned} agents={agents} />
+    <AssignAgentDialog order={order} isOpen={isAssignOpen} onOpenChange={setIsAssignOpen} onAgentAssigned={handleAgentAssigned} initialAgents={agents} />
     <CancelOrderDialog order={order} isOpen={isCancelOpen} onOpenChange={setIsCancelOpen} onConfirm={confirmCancelOrder} />
     <ImageViewerDialog 
         isOpen={isViewerOpen}

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useContext, useCallback, useMemo } from 'react';
+import { useEffect, useState, useContext, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { AppShell } from '@/components/app-shell';
 import { PageHeader } from '@/components/page-header';
@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { OrderStatusChart } from '@/components/order-status-chart';
 import { ProfileContext } from '@/context/profile-context';
 import { useNotifications } from '@/context/notification-context';
+import { useSocket } from '@/context/socket-context';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const RECENT_ORDERS_PER_PAGE = 5;
@@ -44,90 +45,200 @@ export default function DashboardPage() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [recentOrdersCurrentPage, setRecentOrdersCurrentPage] = useState(1);
   const { socket } = useNotifications();
+  const { socket: socketService } = useSocket();
 
   const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
 
-  const fetchDashboardData = useCallback(async () => {
-      if (!token) return;
-      setIsLoading(true);
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/dashboard`, {
-            headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
-        });
+  // Add debouncing and request deduplication
+  const [isFetching, setIsFetching] = useState(false);
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-        if (!response.ok) {
-            handleApiError(response);
-            return;
-        }
+  const fetchDashboardData = useCallback(async (force = false) => {
+      if (!token) return;
+      
+      // Clear any existing timeout
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+
+      // Debounce the API call by 500ms
+      fetchTimeoutRef.current = setTimeout(async () => {
+        console.log('🚀 Making dashboard API call...');
+        setIsFetching(true);
+        setIsLoading(true);
         
-        const result = await response.json();
-        
-        if (result.success) {
-          const { totals, orders: ordersData, recent } = result.data;
-          
-          const activeAgentsCount = ordersData.perAgent.filter((a: any) => a.DeliveryAgent?.status === 'online').length;
-          const totalDeliveredRevenue = recent.orders.reduce((acc: number, order: Order) => {
-            if (order.status === 'delivered') {
-                return acc + parseFloat(order.totalAmount);
-            }
-            return acc;
-          }, 0);
-          
-          setStats({
-            totalUsers: totals.users,
-            totalOrders: totals.orders,
-            totalAgents: totals.agents,
-            activeAgents: activeAgentsCount,
-            totalRevenue: totalDeliveredRevenue,
-            totalAgencies: totals.agencies,
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/dashboard`, {
+              headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
           });
 
-          setAllOrders(recent.orders || []);
-          setRecentOrders(recent.orders.slice(0, 20) || []);
-        } else {
-          toast({ variant: 'destructive', title: 'Error', description: 'Failed to process dashboard data.' });
+          if (!response.ok) {
+              handleApiError(response);
+              return;
+          }
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            const { totals, orders: ordersData, recent } = result.data;
+            
+            const activeAgentsCount = ordersData.perAgent.filter((a: any) => a.DeliveryAgent?.status === 'online').length;
+            const totalDeliveredRevenue = recent.orders.reduce((acc: number, order: Order) => {
+              if (order.status === 'delivered') {
+                  return acc + parseFloat(order.totalAmount);
+              }
+              return acc;
+            }, 0);
+            
+            setStats({
+              totalUsers: totals.users,
+              totalOrders: totals.orders,
+              totalAgents: totals.agents,
+              activeAgents: activeAgentsCount,
+              totalRevenue: totalDeliveredRevenue,
+              totalAgencies: totals.agencies,
+            });
+
+            setAllOrders(recent.orders || []);
+            setRecentOrders(recent.orders.slice(0, 20) || []);
+            console.log('✅ Dashboard data updated successfully');
+          } else {
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to process dashboard data.' });
+          }
+        } catch (error) {
+          console.error("Failed to fetch dashboard data:", error);
+          toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred while fetching dashboard data.' });
+        } finally {
+          setIsFetching(false);
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
-        toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred while fetching dashboard data.' });
-      } finally {
-        setIsLoading(false);
-      }
+      }, 500);
     }, [token, toast, handleApiError]);
 
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
-
-  useEffect(() => {
-    if (socket) {
-      const handleDashboardUpdate = () => {
-        toast({ title: "Live Update", description: "Dashboard data has been updated." });
-        fetchDashboardData();
-      };
-
-      socket.on('order_created', handleDashboardUpdate);
-      socket.on('order_updated', handleDashboardUpdate);
-      socket.on('order_deleted', handleDashboardUpdate);
-      socket.on('user_created', handleDashboardUpdate);
-      socket.on('user_deleted', handleDashboardUpdate);
-      socket.on('agent_status_changed', handleDashboardUpdate);
-      socket.on('agency_created', handleDashboardUpdate);
-      socket.on('agency_deleted', handleDashboardUpdate);
-
-      return () => {
-        socket.off('order_created', handleDashboardUpdate);
-        socket.off('order_updated', handleDashboardUpdate);
-        socket.off('order_deleted', handleDashboardUpdate);
-        socket.off('user_created', handleDashboardUpdate);
-        socket.off('user_deleted', handleDashboardUpdate);
-        socket.off('agent_status_changed', handleDashboardUpdate);
-        socket.off('agency_created', handleDashboardUpdate);
-        socket.off('agency_deleted', handleDashboardUpdate);
-      };
+    if (token) {
+      fetchDashboardData(); // Initial load
     }
-  }, [socket, fetchDashboardData, toast]);
+  }, [token]); // Only depend on token, not fetchDashboardData
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Consolidated socket event handling with deduplication
+  useEffect(() => {
+    if (!socketService && !socket) return;
+    
+    console.log('🔌 Setting up consolidated dashboard socket listeners');
+    
+    // Use a single debounced handler to prevent multiple API calls
+    const handleDashboardRefresh = (eventType: string, data?: any) => {
+      console.log(`📡 Dashboard refresh triggered by: ${eventType}`, data);
+      if (!isFetching) { // Only call if not already fetching
+        fetchDashboardData();
+      }
+    };
+
+    // Consolidated event handlers
+    const handleOrderCreated = (data: any) => {
+      console.log('📦 Order created:', data);
+      toast({ 
+        title: "New Order", 
+        description: `Order #${data.data?.orderNumber || 'Unknown'} created`,
+        variant: "default"
+      });
+      handleDashboardRefresh('order:created', data);
+    };
+
+    const handleOrderStatusUpdated = (data: any) => {
+      console.log('🔄 Order status updated:', data);
+      toast({ 
+        title: "Order Updated", 
+        description: `Order #${data.data?.orderNumber || 'Unknown'} is now ${data.data?.status || 'Unknown'}`,
+        variant: "default"
+      });
+      handleDashboardRefresh('order:status-updated', data);
+    };
+
+    const handleAgentStatusUpdated = (data: any) => {
+      console.log('🎯 Agent status updated:', data);
+      toast({ 
+        title: "Agent Status", 
+        description: `${data.data?.name || 'Unknown'} is now ${data.data?.status || 'Unknown'}`,
+        variant: "default"
+      });
+      handleDashboardRefresh('agent:status-updated', data);
+    };
+
+    const handleAgentCreated = (data: any) => {
+      console.log('➕ New agent created:', data);
+      toast({ 
+        title: "New Agent", 
+        description: `${data.data?.name || 'Unknown'} has been added`,
+        variant: "default"
+      });
+      handleDashboardRefresh('agent:created', data);
+    };
+
+    const handleAgencyCreated = (data: any) => {
+      console.log('🏢 New agency created:', data);
+      toast({ 
+        title: "New Agency", 
+        description: `${data.data?.name || 'Unknown'} has been added`,
+        variant: "default"
+      });
+      handleDashboardRefresh('agency:created', data);
+    };
+
+    // Setup listeners on primary socket (socketService takes priority)
+    const primarySocket = socketService || socket;
+    if (primarySocket) {
+      // New socket events
+      primarySocket.on('order:created', handleOrderCreated);
+      primarySocket.on('order:status-updated', handleOrderStatusUpdated);
+      primarySocket.on('agent:status-updated', handleAgentStatusUpdated);
+      primarySocket.on('agent:created', handleAgentCreated);
+      primarySocket.on('agency:created', handleAgencyCreated);
+
+      // Legacy events (for backward compatibility)
+      primarySocket.on('order_created', () => handleDashboardRefresh('order_created'));
+      primarySocket.on('order_updated', () => handleDashboardRefresh('order_updated'));
+      primarySocket.on('order_deleted', () => handleDashboardRefresh('order_deleted'));
+      primarySocket.on('user_created', () => handleDashboardRefresh('user_created'));
+      primarySocket.on('user_deleted', () => handleDashboardRefresh('user_deleted'));
+      primarySocket.on('agent_status_changed', () => handleDashboardRefresh('agent_status_changed'));
+      primarySocket.on('agency_created', () => handleDashboardRefresh('agency_created'));
+      primarySocket.on('agency_deleted', () => handleDashboardRefresh('agency_deleted'));
+    }
+
+    return () => {
+      console.log('🧹 Cleaning up dashboard socket listeners');
+      if (primarySocket) {
+        // New events
+        primarySocket.off('order:created', handleOrderCreated);
+        primarySocket.off('order:status-updated', handleOrderStatusUpdated);
+        primarySocket.off('agent:status-updated', handleAgentStatusUpdated);
+        primarySocket.off('agent:created', handleAgentCreated);
+        primarySocket.off('agency:created', handleAgencyCreated);
+        
+        // Legacy events
+        primarySocket.off('order_created');
+        primarySocket.off('order_updated');
+        primarySocket.off('order_deleted');
+        primarySocket.off('user_created');
+        primarySocket.off('user_deleted');
+        primarySocket.off('agent_status_changed');
+        primarySocket.off('agency_created');
+        primarySocket.off('agency_deleted');
+      }
+    };
+  }, [socketService, socket, isFetching, toast]);
 
   const recentOrdersTotalPages = Math.ceil(recentOrders.length / RECENT_ORDERS_PER_PAGE);
 
