@@ -22,7 +22,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 type NewAgentPayload = Omit<Agent, 'id' | 'joinedAt' | 'createdAt' | 'status' | 'report' | 'currentLocation' | 'updatedAt' | 'vehicleDetails' | 'panCard' | 'aadharCard' | 'drivingLicense' | 'accountDetails' | 'profileImage'>;
@@ -76,10 +76,14 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd, agencies = []
     setApiError(null);
     
     // Prepare payload based on role
-    const payload = { ...values };
+    const payload: any = { ...values };
     if (!isAdmin) {
       // Remove agencyId for agency owners
       delete payload.agencyId;
+    }
+    // If no image selected (or removed), send empty string to satisfy backend schema
+    if (!imageFile && imagePreview === null) {
+      payload.profileImage = '';
     }
     
     const result = await onAgentAdd(payload, imageFile || undefined);
@@ -106,6 +110,12 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd, agencies = []
     }
   };
 
+  const handleRemoveImage = () => {
+    setImagePreview(null);
+    setImageFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh] p-0">
@@ -129,23 +139,33 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd, agencies = []
                           <FormItem>
                             <FormLabel>Profile Photo</FormLabel>
                             <FormControl>
-                              <>
+                              <div className="relative">
                                 <Avatar className="h-32 w-32 mx-auto cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                                   <AvatarImage src={imagePreview || undefined} alt="Agent photo" />
                                   <AvatarFallback>{form.watch('name')?.charAt(0) || 'A'}</AvatarFallback>
                                 </Avatar>
+                                {imagePreview && (
+                                  <button
+                                    type="button"
+                                    aria-label="Remove image"
+                                    onClick={handleRemoveImage}
+                                    className="absolute right-[40px] -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white shadow ring-1 ring-black/10 hover:bg-gray-100"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                )}
                                 <input ref={fileInputRef} type="file" className="hidden" onChange={handleImageChange} accept="image/*" />
-                              </>
+                              </div>
                             </FormControl>
                             <p className="text-xs text-muted-foreground text-center">Click avatar to upload image</p>
                       </FormItem>
-                      <FormField control={form.control} name="vehicleNumber" render={({ field }) => (<FormItem><FormLabel>Vehicle Number</FormLabel><FormControl><Input placeholder="e.g. KA-01-AB-1234" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="vehicleNumber" render={({ field }) => (<FormItem><FormLabel>Vehicle Number <span className="text-red-500">*</span></FormLabel><FormControl><Input placeholder="e.g. KA-01-AB-1234" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   </div>
                   <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {isAdmin && agencies.length > 0 && (
                         <FormField control={form.control} name="agencyId" render={({ field }) => (
                           <FormItem className="sm:col-span-2">
-                            <FormLabel>Agency</FormLabel>
+                            <FormLabel>Agency <span className="text-red-500">*</span></FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger>
@@ -164,13 +184,13 @@ export function AddAgentDialog({ isOpen, onOpenChange, onAgentAdd, agencies = []
                           </FormItem>
                         )}/>
                       )}
-                      <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="e.g. John Doe" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                      <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input placeholder="e.g. 9876543210" {...field} maxLength={10} /></FormControl><FormMessage /></FormItem>)}/>
-                      <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="e.g. john.doe@example.com" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                      <FormField control={form.control} name="panCardNumber" render={({ field }) => (<FormItem><FormLabel>PAN Card</FormLabel><FormControl><Input placeholder="e.g. ABCDE1234F" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} maxLength={10} /></FormControl><FormMessage /></FormItem>)}/>
-                      <FormField control={form.control} name="aadharCardNumber" render={({ field }) => (<FormItem><FormLabel>Aadhar Card Number</FormLabel><FormControl><Input placeholder="e.g. 1234 5678 9012" {...field} maxLength={12} /></FormControl><FormMessage /></FormItem>)}/>
-                      <FormField control={form.control} name="drivingLicence" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Driving License</FormLabel><FormControl><Input placeholder="e.g. DL1420110012345" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                      <FormField control={form.control} name="bankDetails" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Bank Account Details</FormLabel><FormControl><Textarea placeholder="e.g. State Bank of India, Account: 1234567890, IFSC: SBIN0001234" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Name <span className="text-red-500">*</span></FormLabel><FormControl><Input placeholder="e.g. John Doe" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone <span className="text-red-500">*</span></FormLabel><FormControl><Input placeholder="e.g. 9876543210" {...field} maxLength={10} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Email <span className="text-red-500">*</span></FormLabel><FormControl><Input type="email" placeholder="e.g. john.doe@example.com" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="panCardNumber" render={({ field }) => (<FormItem><FormLabel>PAN Card <span className="text-red-500">*</span></FormLabel><FormControl><Input placeholder="e.g. ABCDE1234F" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} maxLength={10} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="aadharCardNumber" render={({ field }) => (<FormItem><FormLabel>Aadhar Card Number <span className="text-red-500">*</span></FormLabel><FormControl><Input placeholder="e.g. 1234 5678 9012" {...field} maxLength={12} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="drivingLicence" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Driving License <span className="text-red-500">*</span></FormLabel><FormControl><Input placeholder="e.g. DL1420110012345" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="bankDetails" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Bank Account Details <span className="text-red-500">*</span></FormLabel><FormControl><Textarea placeholder="e.g. State Bank of India, Account: 1234567890, IFSC: SBIN0001234" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   </div>
                 </div>
                 </div>

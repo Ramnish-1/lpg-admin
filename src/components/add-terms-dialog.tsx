@@ -84,8 +84,8 @@ export function AddTermsDialog({ isOpen, onOpenChange, onTermAdd }: AddTermsDial
                    {fields.map((field, index) => (
                     <div key={field.id} className="p-4 border rounded-md relative space-y-2">
                         <h4 className="text-sm font-medium">Section {index + 1}</h4>
-                        <FormField control={form.control} name={`content.${index}.title`} render={({ field }) => ( <FormItem><FormLabel>Title</FormLabel><FormControl><Input placeholder="e.g. Terms of Service" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={form.control} name={`content.${index}.description`} render={({ field }) => ( <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="e.g. These are the terms of service..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name={`content.${index}.title`} render={({ field }) => ( <FormItem><FormLabel>Title <span className="text-red-500">*</span></FormLabel><FormControl><Input placeholder="e.g. Terms of Service" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name={`content.${index}.description`} render={({ field }) => ( <FormItem><FormLabel>Description <span className="text-red-500">*</span></FormLabel><FormControl><Textarea placeholder="e.g. These are the terms of service..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>)}/>
                         <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={() => remove(index)} disabled={fields.length <= 1}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>

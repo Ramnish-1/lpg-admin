@@ -17,10 +17,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { X, MapPin } from 'lucide-react';
+import { loadGooglePlaces, createAutocomplete, parsePlace, createMap, addMapClickListener, reverseGeocode } from '@/hooks/use-google-places';
 
-type NewAgencyPayload = Omit<Agency, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'profileImage'>;
+type NewAgencyPayload = Omit<Agency, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'profileImage' | 'confirmationToken' | 'confirmationExpiresAt' | 'landmark'> & { landmark?: string };
 
 interface AddAgencyDialogProps {
   isOpen: boolean;
@@ -44,7 +46,10 @@ type AgencyFormValues = z.infer<typeof agencySchema>;
 export function AddAgencyDialog({ isOpen, onOpenChange, onAgencyAdd }: AddAgencyDialogProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [showMap, setShowMap] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const placeSearchRef = useRef<HTMLInputElement>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<AgencyFormValues>({
     resolver: zodResolver(agencySchema),
@@ -64,6 +69,7 @@ export function AddAgencyDialog({ isOpen, onOpenChange, onAgencyAdd }: AddAgency
     form.reset();
     setImagePreview(null);
     setImageFile(null);
+    setShowMap(false);
     if(fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -82,12 +88,64 @@ export function AddAgencyDialog({ isOpen, onOpenChange, onAgencyAdd }: AddAgency
     }
   };
 
+  const handleRemoveImage = () => {
+    setImagePreview(null);
+    setImageFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const processSubmit = async (values: AgencyFormValues) => {
     const success = await onAgencyAdd(values, imageFile || undefined);
     if (success) {
       handleOpenChange(false);
     }
   };
+
+  useEffect(() => {
+    const GOOGLE_MAPS_APIKEY = 'AIzaSyBXNyT9zcGdvhAUCUEYTm6e_qPw26AOPgI';
+    if (!isOpen) return;
+    let autocompleteListener: any;
+    let mapClickListener: any;
+    (async () => {
+      await loadGooglePlaces(GOOGLE_MAPS_APIKEY);
+      
+      // Setup autocomplete
+      if (placeSearchRef.current) {
+        const ac = createAutocomplete(placeSearchRef.current, { componentRestrictions: { country: 'in' } });
+        if (ac) {
+          autocompleteListener = ac.addListener('place_changed', () => {
+            const place = ac.getPlace?.();
+            const parsed = parsePlace(place);
+            if (parsed.title) form.setValue('addressTitle', parsed.title, { shouldValidate: true });
+            if (parsed.address) form.setValue('address', parsed.address, { shouldValidate: true });
+            if (parsed.city) form.setValue('city', parsed.city, { shouldValidate: true });
+            if (parsed.pincode) form.setValue('pincode', parsed.pincode, { shouldValidate: true });
+            if (parsed.landmark) form.setValue('landmark', parsed.landmark, { shouldValidate: false });
+          });
+        }
+      }
+
+      // Setup map
+      if (showMap && mapContainerRef.current) {
+        const map = createMap(mapContainerRef.current);
+        if (map) {
+          mapClickListener = addMapClickListener(map, async (lat: number, lng: number) => {
+            const parsed = await reverseGeocode(lat, lng);
+            if (parsed.title) form.setValue('addressTitle', parsed.title, { shouldValidate: true });
+            if (parsed.address) form.setValue('address', parsed.address, { shouldValidate: true });
+            if (parsed.city) form.setValue('city', parsed.city, { shouldValidate: true });
+            if (parsed.pincode) form.setValue('pincode', parsed.pincode, { shouldValidate: true });
+            if (parsed.landmark) form.setValue('landmark', parsed.landmark, { shouldValidate: false });
+            setShowMap(false);
+          });
+        }
+      }
+    })();
+    return () => {
+      try { autocompleteListener && autocompleteListener.remove && autocompleteListener.remove(); } catch {}
+      try { mapClickListener && mapClickListener.remove && mapClickListener.remove(); } catch {}
+    };
+  }, [isOpen, form, showMap]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -102,23 +160,56 @@ export function AddAgencyDialog({ isOpen, onOpenChange, onAgencyAdd }: AddAgency
           <form onSubmit={form.handleSubmit(processSubmit)} noValidate>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
                <div className="md:col-span-1 flex flex-col items-center gap-4">
-                  <Avatar className="h-32 w-32 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                    <AvatarImage src={imagePreview ?? undefined} />
-                    <AvatarFallback>{form.watch('name')?.charAt(0) || 'A'}</AvatarFallback>
-                  </Avatar>
+                  <div className="relative">
+                    <Avatar className="h-32 w-32 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                      <AvatarImage src={imagePreview ?? undefined} />
+                      <AvatarFallback>{form.watch('name')?.charAt(0) || 'A'}</AvatarFallback>
+                    </Avatar>
+                    {imagePreview && (
+                      <button
+                        type="button"
+                        aria-label="Remove image"
+                        onClick={handleRemoveImage}
+                        className="absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white shadow ring-1 ring-black/10 hover:bg-gray-100"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                   <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/*" />
                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
                      Upload Image
                    </Button>
                </div>
-               <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Agency Name</FormLabel><FormControl><Input placeholder="e.g. Bharat Gas" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="e.g. contact@bharat.com" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone</FormLabel><FormControl><Input type="tel" placeholder="e.g. 9876543210" {...field} maxLength={10} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="addressTitle" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address Title</FormLabel><FormControl><Input placeholder="e.g. Head Office" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address</FormLabel><FormControl><Input placeholder="e.g. 123 Main Street" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="e.g. Delhi" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="pincode" render={({ field }) => ( <FormItem><FormLabel>Pincode</FormLabel><FormControl><Input placeholder="e.g. 110001" {...field} maxLength={6} /></FormControl><FormMessage /></FormItem>)}/>
+              <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormItem className="col-span-2">
+                    <FormLabel>Search location</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input inputMode="search" placeholder="Search place, area, pincode" ref={placeSearchRef} />
+                        <button
+                          type="button"
+                          onClick={() => setShowMap(!showMap)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          <MapPin className="h-4 w-4 text-red-500" />
+                        </button>
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                  {showMap && (
+                    <div className="col-span-2">
+                      <div className="h-64 w-full rounded-md border" ref={mapContainerRef} />
+                      <p className="text-sm text-gray-600 mt-2">Click on the map to select location</p>
+                    </div>
+                  )}
+                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Agency Name <span className="text-red-500">*</span></FormLabel><FormControl><Input placeholder="e.g. Bharat Gas" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email <span className="text-red-500">*</span></FormLabel><FormControl><Input type="email" placeholder="e.g. contact@bharat.com" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone <span className="text-red-500">*</span></FormLabel><FormControl><Input type="tel" placeholder="e.g. 9876543210" {...field} maxLength={10} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="addressTitle" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address Title <span className="text-red-500">*</span></FormLabel><FormControl><Input placeholder="e.g. Head Office" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address <span className="text-red-500">*</span></FormLabel><FormControl><Input placeholder="e.g. 123 Main Street" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>City <span className="text-red-500">*</span></FormLabel><FormControl><Input placeholder="e.g. Delhi" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="pincode" render={({ field }) => ( <FormItem><FormLabel>Pincode <span className="text-red-500">*</span></FormLabel><FormControl><Input placeholder="e.g. 110001" {...field} maxLength={6} /></FormControl><FormMessage /></FormItem>)}/>
                   <FormField control={form.control} name="landmark" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Landmark</FormLabel><FormControl><Input placeholder="e.g. Near India Gate" {...field} /></FormControl><FormMessage /></FormItem>)}/>
               </div>
             </div>

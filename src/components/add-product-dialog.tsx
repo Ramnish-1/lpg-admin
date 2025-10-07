@@ -39,9 +39,9 @@ interface AddProductDialogProps {
 }
 
 const variantSchema = z.object({
-  value: z.coerce.number().min(0, "Value must be a positive number."),
+  value: z.coerce.number().min(0.01, "Value is required and must be greater than 0."),
   unit: z.enum(['kg', 'meter']),
-  price: z.coerce.number().min(0, "Price must be positive."),
+  price: z.coerce.number().min(0.01, "Base price is required and must be greater than 0."),
 });
 
 const productSchema = z.object({
@@ -178,28 +178,28 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                         name="productName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Product Name</FormLabel>
+                            <FormLabel>Product Name <span className="text-red-500">*</span></FormLabel>
                             <FormControl><Input placeholder="e.g. LPG Cylinder" {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>
                         )} />
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><FormControl><CategoryDropdown value={field.value} onValueChange={field.onChange} placeholder="Select a category" /></FormControl><FormMessage /></FormItem>)} />
+                           <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category <span className="text-red-500">*</span></FormLabel><FormControl><CategoryDropdown value={field.value} onValueChange={field.onChange} placeholder="Select a category" /></FormControl><FormMessage /></FormItem>)} />
                           <FormField control={form.control} name="lowStockThreshold" render={({ field }) => (<FormItem><FormLabel>Global Low Stock Threshold</FormLabel><FormControl><Input type="number" placeholder="e.g. 10" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
-                      <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="e.g. Standard household cooking gas cylinder" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description <span className="text-red-500">*</span></FormLabel><FormControl><Textarea placeholder="e.g. Standard household cooking gas cylinder" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       
                       <FormField control={form.control} name="tags" render={({ field }) => (<FormItem><FormLabel>Product Tags</FormLabel><FormControl><TagsInput value={field.value} onChange={field.onChange} placeholder="e.g. premium, fast-delivery, eco-friendly" /></FormControl><FormMessage /></FormItem>)} />
                       
                       <div>
-                          <FormLabel>Default Product Variants</FormLabel>
+                          <FormLabel>Default Product Variants <span className="text-red-500">*</span></FormLabel>
                           <div className="space-y-4 mt-2">
                               {fields.map((field, index) => (
                                   <div key={field.id} className="flex items-start gap-2 p-3 border rounded-md relative">
                                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
-                                          <FormField control={form.control} name={`variants.${index}.value`} render={({ field }) => (<FormItem><FormLabel>Value</FormLabel><FormControl><Input type="number" placeholder="e.g. 14.2" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                          <FormField control={form.control} name={`variants.${index}.value`} render={({ field }) => (<FormItem><FormLabel>Value <span className="text-red-500">*</span></FormLabel><FormControl><Input type="number" step="0.01" placeholder="e.g. 14.2" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                           <FormField control={form.control} name={`variants.${index}.unit`} render={({ field }) => (<FormItem><FormLabel>Unit</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="kg">kg</SelectItem><SelectItem value="meter">meter</SelectItem></SelectContent></Select><FormMessage/></FormItem>)} />
-                                          <FormField control={form.control} name={`variants.${index}.price`} render={({ field }) => (<FormItem><FormLabel>Base Price (₹)</FormLabel><FormControl><Input type="number" placeholder="1100" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                          <FormField control={form.control} name={`variants.${index}.price`} render={({ field }) => (<FormItem><FormLabel>Base Price (₹) <span className="text-red-500">*</span></FormLabel><FormControl><Input type="number" step="0.01" placeholder="1100" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                       </div>
                                       <Button type="button" variant="ghost" size="icon" className="shrink-0 mt-8 -mr-1" onClick={() => remove(index)} disabled={fields.length <= 1}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                   </div>
@@ -210,7 +210,7 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                       </div>
 
                       <div>
-                          <FormLabel>Product Images</FormLabel>
+                          <FormLabel>Product Images <span className="text-red-500">*</span></FormLabel>
                           <FormControl>
                             <div >
                                 <input ref={fileInputRef} id="image-upload" type="file" multiple onChange={handleImageChange} className="hidden" accept="image/*"/>

@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { ProfileContext } from '@/context/profile-context';
 import { Skeleton } from '@/components/ui/skeleton';
+import { X } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -38,8 +39,18 @@ export default function ProfilePage() {
   }, [profile, isFetchingProfile]);
 
   const handleSaveChanges = async () => {
+    // basic validation for required fields
+    const phoneDigitsOnly = phone.replace(/\D/g, '');
+    if (!name.trim()) {
+      toast({ variant: 'destructive', title: 'Name is required' });
+      return;
+    }
+    if (phoneDigitsOnly.length !== 10) {
+      toast({ variant: 'destructive', title: 'Phone must be 10 digits' });
+      return;
+    }
     setIsSaving(true);
-    const success = await setProfile({ name, email, phone, role: profile.role, photoFile: photoFile || undefined });
+    const success = await setProfile({ name, email, phone: phoneDigitsOnly, role: profile.role, photoFile: photoFile || undefined });
     if (success) {
         toast({
             title: 'Profile Updated',
@@ -67,6 +78,12 @@ export default function ProfilePage() {
       const newPhotoUrl = URL.createObjectURL(file);
       setPhotoUrl(newPhotoUrl);
     }
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoUrl('');
+    setPhotoFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
   
   const displayPhotoUrl = photoUrl.startsWith('https://') || photoUrl.startsWith('blob:')
@@ -125,10 +142,22 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center gap-6">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={displayPhotoUrl} alt="@admin" data-ai-hint="manager portrait"/>
-              <AvatarFallback>{name?.charAt(0).toUpperCase()}</AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={displayPhotoUrl} alt="@admin" data-ai-hint="manager portrait"/>
+                <AvatarFallback>{name?.charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              {displayPhotoUrl && (
+                <button
+                  type="button"
+                  aria-label="Remove photo"
+                  onClick={handleRemovePhoto}
+                  className="absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white shadow ring-1 ring-black/10 hover:bg-gray-100"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
             <Button variant="outline" onClick={handleChangePhotoClick}>Change Photo</Button>
             <input 
               type="file" 
@@ -140,7 +169,7 @@ export default function ProfilePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} />
             </div>
             <div className="space-y-2">
@@ -148,8 +177,8 @@ export default function ProfilePage() {
               <Input id="email" type="email" value={email} disabled />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} disabled={isSaving}/>
+              <Label htmlFor="phone">Phone Number <span className="text-red-500">*</span></Label>
+              <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))} maxLength={10} disabled={isSaving}/>
             </div>
              <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
@@ -158,7 +187,7 @@ export default function ProfilePage() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-end">
-          <Button onClick={handleSaveChanges} disabled={isSaving}>
+          <Button onClick={handleSaveChanges} disabled={isSaving || !name.trim() || phone.replace(/\D/g, '').length !== 10}>
             {isSaving ? 'Saving...' : 'Save Changes'}
           </Button>
         </CardFooter>
