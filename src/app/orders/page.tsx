@@ -240,6 +240,11 @@ function OrdersTable({
                             {(order.status === 'confirmed' && order.deliveryMode !== 'pickup') && (
                             <DropdownMenuItem className="bg-green-500 text-white hover:!bg-green-600 hover:!text-white focus:!bg-green-600 focus:!text-white" onClick={() => onAssignAgent(order)}>Assign Agent</DropdownMenuItem>
                             )}
+                            {order.status === 'assigned' && (
+                            <DropdownMenuItem className="bg-blue-500 text-white hover:!bg-blue-600 hover:!text-white focus:!bg-blue-600 focus:!text-white" onClick={() => onAssignAgent(order)}>
+                              {order.assignedAgent ? 'Change Agent' : 'Assign Agent'}
+                            </DropdownMenuItem>
+                            )}
                             {order.status === 'delivered' && (
                                 <DropdownMenuItem onClick={() => onReturn(order)}>Return</DropdownMenuItem>
                             )}

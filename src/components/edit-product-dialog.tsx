@@ -21,6 +21,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { CategoryDropdown } from './category-dropdown';
+import { TagsInput } from './tags-input';
 import { PlusCircle, Trash2, X, ImagePlus } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import Image from 'next/image';
@@ -50,9 +52,10 @@ const variantSchema = z.object({
 const productSchema = z.object({
   productName: z.string().min(1, "Product name is required."),
   description: z.string().min(1, "Description is required."),
-  category: z.enum(['lpg', 'accessories']),
+  category: z.string().min(1, "Category is required."),
   lowStockThreshold: z.coerce.number().int().min(0, "Threshold must be a whole number."),
   variants: z.array(variantSchema).min(1, "At least one product variant is required."),
+  tags: z.array(z.string()).default([]),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -103,8 +106,14 @@ export function EditProductDialog({ item: product, isOpen, onOpenChange, onProdu
         form.reset({
             ...product,
             category: product.category || 'lpg',
-            variants: variantsToShow.map(v => ({...v, value: parseFloat(v.label), unit: v.label.endsWith('kg') ? 'kg' : 'meter' })),
-            lowStockThreshold: thresholdToShow
+            variants: variantsToShow.map(v => ({
+                ...v, 
+                value: parseFloat(v.label || '0'), 
+                unit: (v.label || '').endsWith('kg') ? 'kg' : 'meter',
+                stock: v.stock || 0
+            })),
+            lowStockThreshold: thresholdToShow,
+            tags: product.tags || []
         });
         setExistingImages(product.images || []);
         setImagesToDelete([]);
@@ -126,7 +135,9 @@ export function EditProductDialog({ item: product, isOpen, onOpenChange, onProdu
             variants: values.variants.map(v => ({
               ...v,
               label: `${v.value}${v.unit}`,
+              stock: v.stock || 0,
             })),
+            tags: values.tags || [],
             id: product.id,
         };
         const success = await onProductUpdate(payload, existingImages, imagesToDelete, newImageFiles);
@@ -182,8 +193,10 @@ export function EditProductDialog({ item: product, isOpen, onOpenChange, onProdu
                   <div className="space-y-6 py-2">
                       <FormField control={form.control} name="productName" render={({ field }) => (<FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} disabled={!isAdmin} /></FormControl><FormMessage /></FormItem>)} />
                       <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} disabled={!isAdmin} /></FormControl><FormMessage /></FormItem>)} />
+                      
+                      <FormField control={form.control} name="tags" render={({ field }) => (<FormItem><FormLabel>Product Tags</FormLabel><FormControl><TagsInput value={field.value} onChange={field.onChange} placeholder="e.g. premium, fast-delivery, eco-friendly" disabled={!isAdmin} /></FormControl><FormMessage /></FormItem>)} />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={!isAdmin}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="lpg">LPG</SelectItem><SelectItem value="accessories">Accessories</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><FormControl><CategoryDropdown value={field.value} onValueChange={field.onChange} placeholder="Select a category" disabled={!isAdmin} /></FormControl><FormMessage /></FormItem>)} />
                           <FormField control={form.control} name="lowStockThreshold" render={({ field }) => (<FormItem><FormLabel>Low Stock Threshold</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
 

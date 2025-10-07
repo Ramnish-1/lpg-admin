@@ -81,7 +81,7 @@ export default function PrivacyPolicyPage() {
       });
       const result = await response.json();
       if (!response.ok) {
-        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to add policy.' });
+        toast({ variant: 'destructive', title: 'Error', description: result.errors[0].error || 'Failed to add policy.' });
         return false;
       }
       
@@ -97,6 +97,16 @@ export default function PrivacyPolicyPage() {
   const handleUpdatePolicy = async (id: string, content: ContentSection[]) => {
     if (!token) return false;
     try {
+      // For update API, we need to send the first content item as an object with title, description, status, and version
+      const firstContent = content[0];
+      const currentPolicy = policies.find(policy => policy.id === id);
+      const updatePayload = {
+        title: firstContent.title,
+        description: firstContent.description,
+        status: currentPolicy?.status || "active",
+        version: currentPolicy?.version || "2.0"
+      };
+      
       const response = await fetch(`${API_BASE_URL}/api/admin/privacy-policies/${id}`, {
         method: 'PUT',
         headers: {
@@ -104,7 +114,7 @@ export default function PrivacyPolicyPage() {
           'Authorization': `Bearer ${token}`,
           'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify(content),
+        body: JSON.stringify(updatePayload),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -215,7 +225,8 @@ export default function PrivacyPolicyPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
-                  <TableHead className="hidden md:table-cell">Version</TableHead>
+                  <TableHead className="hidden md:table-cell">Description</TableHead>
+                  {/* <TableHead className="hidden md:table-cell">Version</TableHead> */}
                   <TableHead>Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Last Updated</TableHead>
                   <TableHead className="hidden lg:table-cell">Actions</TableHead>
@@ -227,7 +238,10 @@ export default function PrivacyPolicyPage() {
                     <TableCell className="font-medium max-w-sm truncate">
                         {policy.title || 'No Title'}
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{policy.version}</TableCell>
+                    <TableCell className="hidden md:table-cell max-w-xs break-words whitespace-normal">
+                      {policy.description || 'No Description'}
+                    </TableCell>
+                    {/* <TableCell className="hidden md:table-cell">{policy.version}</TableCell> */}
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

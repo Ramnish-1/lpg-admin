@@ -11,13 +11,6 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import type { Agent, Order } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSocketAgents } from '@/hooks/use-socket-agents';
@@ -43,21 +36,30 @@ export function AssignAgentDialog({ order, isOpen, onOpenChange, onAgentAssigned
   };
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      if (order && order.assignedAgent) {
+        // Pre-select the currently assigned agent when dialog opens for "assigned" status
+        setSelectedAgentId(order.assignedAgent.id);
+      } else {
+        // Reset to null for new assignments (confirmed status) - this will show placeholder
+        setSelectedAgentId(null);
+      }
+    } else {
+      // Reset when dialog closes
       setSelectedAgentId(null);
     }
-  }, [isOpen]);
+  }, [isOpen, order]);
 
   // Show connection status when dialog opens
-  useEffect(() => {
-    if (isOpen && isConnected) {
-      toast({
-        title: "🔗 Real-time Connected",
-        description: "Agent status updates are live",
-        variant: "default",
-      });
-    }
-  }, [isOpen, isConnected, toast]);
+  // useEffect(() => {
+  //   if (isOpen && isConnected) {
+  //     toast({
+  //       title: "🔗 Real-time Connected",
+  //       description: "Agent status updates are live",
+  //       variant: "default",
+  //     });
+  //   }
+  // }, [isOpen, isConnected, toast]);
 
   if (!order) return null;
   
@@ -78,28 +80,26 @@ export function AssignAgentDialog({ order, isOpen, onOpenChange, onAgentAssigned
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          <Select onValueChange={setSelectedAgentId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select an online agent" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableAgents.length > 0 ? (
-                availableAgents.map(agent => (
-                  <SelectItem key={agent.id} value={agent.id}>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${agent.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                      <span>{agent.name}</span>
-                      {agent.Agency && <span className="text-muted-foreground">({agent.Agency.name})</span>}
-                    </div>
-                  </SelectItem>
-                ))
-              ) : (
-                <div className="p-4 text-center text-sm text-muted-foreground">
-                  {isConnected ? "No agents are online." : "No agents are online."}
-                </div>
-              )}
-            </SelectContent>
-          </Select>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Select Agent</label>
+            <select
+              value={selectedAgentId || ""}
+              onChange={(e) => setSelectedAgentId(e.target.value || null)}
+              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select an online agent</option>
+              {availableAgents.map(agent => (
+                <option key={agent.id} value={agent.id}>
+                  {agent.name} {agent.Agency && `(${agent.Agency.name})`}
+                </option>
+              ))}
+            </select>
+            {availableAgents.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                {isConnected ? "No agents are online." : "No agents are online."}
+              </p>
+            )}
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

@@ -69,11 +69,8 @@ export function EditTermsDialog({ term, isOpen, onOpenChange, onTermUpdate }: Ed
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh] p-0">
-        <DialogHeader className="p-6 pb-4">
-          <DialogTitle>Edit Terms: Version {term.version}</DialogTitle>
-          <DialogDescription>
-            Update the sections for this version of the terms.
-          </DialogDescription>
+        <DialogHeader className="p-4 pb-2">
+          <DialogTitle>Edit Terms & Conditions</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} noValidate className="flex flex-col overflow-hidden">
@@ -85,17 +82,17 @@ export function EditTermsDialog({ term, isOpen, onOpenChange, onTermUpdate }: Ed
                     <div key={field.id} className="p-4 border rounded-md relative space-y-2">
                         <FormField control={form.control} name={`content.${index}.title`} render={({ field }) => ( <FormItem><FormLabel>Section Title</FormLabel><FormControl><Input placeholder="e.g. Terms of Service" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                         <FormField control={form.control} name={`content.${index}.description`} render={({ field }) => ( <FormItem><FormLabel>Section Description</FormLabel><FormControl><Textarea placeholder="e.g. These are the terms of service..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>)}/>
-                        <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={() => remove(index)} disabled={fields.length <= 1}>
+                        {/* <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={() => remove(index)} disabled={fields.length <= 1}>
                           <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        </Button> */}
                     </div>
                   ))}
                 </div>
 
-                <Button type="button" variant="outline" size="sm" onClick={() => append({ title: '', description: '' })}>
+                {/* <Button type="button" variant="outline" size="sm" onClick={() => append({ title: '', description: '' })}>
                   <PlusCircle className="mr-2 h-4 w-4"/>
                   Add Section
-                </Button>
+                </Button> */}
                 <FormMessage>{form.formState.errors.content?.root?.message}</FormMessage>
 
               </div>

@@ -12,7 +12,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, PlusCircle, AlertCircle, Loader2, Trash2, Settings, PackagePlus, ChevronDown } from 'lucide-react';
 import type { Product, AgencyInventory } from '@/lib/types';
 import { useEffect, useState, useMemo, useCallback, useContext } from 'react';
-import { ProductDetailsDialog } from '@/components/product-details-dialog';
 import { EditProductDialog } from '@/components/edit-product-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { AddProductDialog } from '@/components/add-product-dialog';
@@ -21,10 +20,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useAuth } from '@/context/auth-context';
 import { ProfileContext } from '@/context/profile-context';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useNotifications } from '@/context/notification-context';
 import { useSocket } from '@/context/socket-context';
 import { useSocketInventory } from '@/hooks/use-socket-inventory';
 import { useForceLogout } from '@/hooks/use-force-logout';
+import { useCategories } from '@/hooks/use-categories';
 import socketService from '@/lib/socket';
 
 const ITEMS_PER_PAGE = 10;
@@ -34,12 +35,12 @@ export default function ProductsPage() {
   // Socket hooks
   const { isConnected } = useSocket();
   const { inventory, products: socketProducts, addProduct, updateProduct, addInventoryItem, updateInventoryItem } = useSocketInventory();
+  const { getCategoryName } = useCategories();
   useForceLogout(); // Enable force logout functionality
 
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<Product | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -49,6 +50,7 @@ export default function ProductsPage() {
   const { profile } = useContext(ProfileContext);
   const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
   const { socket } = useNotifications();
+  const router = useRouter();
 
   const fetchData = useCallback(async () => {
     if (!token) return;
@@ -161,8 +163,9 @@ export default function ProductsPage() {
   }, [products, currentPage]);
   
   const handleShowDetails = (item: Product) => {
-    setSelectedItem(item);
-    setIsDetailsOpen(true);
+    console.log('Navigating to product:', item.id);
+    console.log('Full URL:', `/products/${item.id}`);
+    router.push(`/products/${item.id}`);
   };
   
   const handleEdit = (item: Product) => {
@@ -209,13 +212,39 @@ export default function ProductsPage() {
 
  const handleProductUpdate = async (updatedProduct: Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images' | 'AgencyInventory'> & { id: string }, existingImages: string[] = [], imagesToDelete: string[] = [], newImages: File[] = []): Promise<boolean> => {
     if(!token || !isAdmin) return false;
-
+    
+    // Fetch category name from backend using category ID
+    let categoryName = updatedProduct.category; // fallback to original value
+    try {
+      const categoryResponse = await fetch(`${API_BASE_URL}/api/categories/${updatedProduct.category}`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
+      });
+      if (categoryResponse.ok) {
+        const categoryResult = await categoryResponse.json();
+        if (categoryResult.success) {
+          categoryName = categoryResult.data.category.name;
+          console.log('Category name fetched:', categoryName);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching category name:', error);
+    }
+    
+    // Create updated product object with category name
+    const updatedProductWithCategoryName = {
+      ...updatedProduct,
+      category: categoryName
+    };
+    
+    console.log('Updated product with category name:', updatedProductWithCategoryName);
+    
     const formData = new FormData();
     formData.append('productName', updatedProduct.productName);
     formData.append('description', updatedProduct.description);
-    formData.append('category', updatedProduct.category);
+    formData.append('category', categoryName); // Send category name
     formData.append('lowStockThreshold', String(updatedProduct.lowStockThreshold));
     formData.append('variants', JSON.stringify(updatedProduct.variants));
+    formData.append('tags', JSON.stringify(updatedProduct.tags || []));
     
     if (existingImages.length > 0) {
       formData.append('existingImages', JSON.stringify(existingImages));
@@ -306,12 +335,38 @@ export default function ProductsPage() {
   const handleProductAdd = async (newProduct: Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images' | 'AgencyInventory'>, images: File[]): Promise<boolean> => {
     if (!token || !isAdmin) return false;
     
+    // Fetch category name from backend using category ID
+    let categoryName = newProduct.category; // fallback to original value
+    try {
+      const categoryResponse = await fetch(`${API_BASE_URL}/api/categories/${newProduct.category}`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
+      });
+      if (categoryResponse.ok) {
+        const categoryResult = await categoryResponse.json();
+        if (categoryResult.success) {
+          categoryName = categoryResult.data.category.name;
+          console.log('Product Add - Category name fetched:', categoryName);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching category name:', error);
+    }
+    
+    // Create new product object with category name
+    const newProductWithCategoryName = {
+      ...newProduct,
+      category: categoryName
+    };
+    
+    console.log('New product with category name:', newProductWithCategoryName);
+    
     const formData = new FormData();
     formData.append('productName', newProduct.productName);
     formData.append('description', newProduct.description);
-    formData.append('category', newProduct.category);
+    formData.append('category', categoryName); // Send category name instead of ID
     formData.append('lowStockThreshold', String(newProduct.lowStockThreshold));
     formData.append('variants', JSON.stringify(newProduct.variants));
+    formData.append('tags', JSON.stringify(newProduct.tags || []));
     images.forEach(file => formData.append('images', file));
 
     try {
@@ -475,10 +530,13 @@ export default function ProductsPage() {
                       className={cn("cursor-pointer", {
                         "bg-red-100 hover:bg-red-100/80 dark:bg-red-900/20 dark:hover:bg-red-900/30": isLowStock && (isAdmin || !!agencyInventory)
                       })}
-                      onClick={() => handleShowDetails(product)}
+                      onClick={() => {
+                        console.log('Row clicked, navigating to:', `/products/${product.id}`);
+                        window.location.href = `/products/${product.id}`;
+                      }}
                     >
                       <TableCell className="font-medium">{product.productName}</TableCell>
-                      <TableCell className="capitalize">{product.category}</TableCell>
+                      <TableCell className="capitalize">{getCategoryName(product.category)}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <span>{totalStock}</span>
@@ -552,7 +610,9 @@ export default function ProductsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                            <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleShowDetails(product)}>View Details</DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link href={`/products/${product.id}`}>View Details</Link>
+                            </DropdownMenuItem>
                             {isAdmin ? (
                               <>
                                 <DropdownMenuItem onClick={() => handleEdit(product)}>Edit Product</DropdownMenuItem>
@@ -627,12 +687,6 @@ export default function ProductsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <ProductDetailsDialog
-        item={selectedItem}
-        isOpen={isDetailsOpen}
-        onOpenChange={setIsDetailsOpen}
-        isAdmin={isAdmin}
-      />
       {selectedItem && (
         <EditProductDialog
           item={selectedItem}

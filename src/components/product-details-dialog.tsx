@@ -61,6 +61,15 @@ export function ProductDetailsDialog({ item: product, isOpen, onOpenChange, isAd
           <DialogDescription>
             {product.description}
           </DialogDescription>
+          {product.tags && product.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {product.tags.map((tag, index) => (
+                <Badge key={index} variant="secondary" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
         </DialogHeader>
         
         <div className="grid gap-4 py-4">

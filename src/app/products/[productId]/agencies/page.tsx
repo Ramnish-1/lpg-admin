@@ -95,6 +95,15 @@ export default function ProductAgenciesPage() {
                 </div>
             )}
             <div className="text-sm text-muted-foreground">{product.description}</div>
+            {product.tags && product.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {product.tags.map((tag, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
         </div>
       </PageHeader>
 
@@ -133,6 +142,15 @@ export default function ProductAgenciesPage() {
                                     <div className="flex items-center gap-1.5"><Phone className="h-3 w-3"/>{inventory.Agency.phone}</div>
                                     <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3"/>{inventory.Agency.city}</div>
                                 </div>
+                                {product.tags && product.tags.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-3">
+                                    {product.tags.map((tag, index) => (
+                                      <Badge key={index} variant="outline" className="text-xs">
+                                        {tag}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>

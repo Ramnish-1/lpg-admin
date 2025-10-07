@@ -26,7 +26,10 @@ import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
 import { ImageViewerDialog } from './image-viewer-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { CategoryDropdown } from './category-dropdown';
+import { TagsInput } from './tags-input';
 
+// Updated to support dynamic categories
 type AddProductPayload = Omit<Product, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'images' | 'AgencyInventory'>;
 
 interface AddProductDialogProps {
@@ -44,9 +47,10 @@ const variantSchema = z.object({
 const productSchema = z.object({
   productName: z.string().min(1, "Product name is required."),
   description: z.string().min(1, "Description is required."),
-  category: z.enum(['lpg', 'accessories']),
+  category: z.string().min(1, "Category is required."),
   lowStockThreshold: z.coerce.number().int().min(0, "Threshold must be a whole number."),
   variants: z.array(variantSchema).min(1, "At least one product variant is required."),
+  tags: z.array(z.string()).default([]),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -65,9 +69,10 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     defaultValues: {
       productName: '',
       description: '',
-      category: 'lpg',
+      category: '',
       lowStockThreshold: 10,
       variants: [{ value: '' as any, unit: 'kg', price: '' as any }],
+      tags: [],
     }
   });
 
@@ -80,9 +85,10 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
     form.reset({
         productName: '',
         description: '',
-        category: 'lpg',
+        category: '',
         lowStockThreshold: 10,
         variants: [{ value: '' as any, unit: 'kg', price: '' as any }],
+        tags: [],
     });
     setImageFiles([]);
     setImagePreviews([]);
@@ -178,10 +184,12 @@ export function AddProductDialog({ isOpen, onOpenChange, onProductAdd }: AddProd
                           </FormItem>
                         )} />
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl><SelectContent><SelectItem value="lpg">LPG</SelectItem><SelectItem value="accessories">Accessories</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                           <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><FormControl><CategoryDropdown value={field.value} onValueChange={field.onChange} placeholder="Select a category" /></FormControl><FormMessage /></FormItem>)} />
                           <FormField control={form.control} name="lowStockThreshold" render={({ field }) => (<FormItem><FormLabel>Global Low Stock Threshold</FormLabel><FormControl><Input type="number" placeholder="e.g. 10" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
                       <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="e.g. Standard household cooking gas cylinder" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                      
+                      <FormField control={form.control} name="tags" render={({ field }) => (<FormItem><FormLabel>Product Tags</FormLabel><FormControl><TagsInput value={field.value} onChange={field.onChange} placeholder="e.g. premium, fast-delivery, eco-friendly" /></FormControl><FormMessage /></FormItem>)} />
                       
                       <div>
                           <FormLabel>Default Product Variants</FormLabel>

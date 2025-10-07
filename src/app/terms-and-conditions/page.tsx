@@ -17,6 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { cn } from '@/lib/utils';
 import { AddTermsDialog } from '@/components/add-terms-dialog';
 import { EditTermsDialog } from '@/components/edit-terms-dialog';
+import { log } from 'console';
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -81,7 +82,7 @@ export default function TermsPage() {
       });
       const result = await response.json();
       if (!response.ok) {
-          toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to add term.' });
+          toast({ variant: 'destructive', title: 'Error', description: result.errors[0].error || 'Failed to add term.' });
           return false;
       }
       
@@ -97,6 +98,16 @@ export default function TermsPage() {
   const handleUpdateTerm = async (id: string, content: ContentSection[]) => {
     if (!token) return false;
     try {
+      // For update API, we need to send the first content item as an object with title, description, status, and version
+      const firstContent = content[0];
+      const currentTerm = terms.find(term => term.id === id);
+      const updatePayload = {
+        title: firstContent.title,
+        description: firstContent.description,
+        status: currentTerm?.status || "active",
+        version: currentTerm?.version || "2.1"
+      };
+      
       const response = await fetch(`${API_BASE_URL}/api/admin/terms-and-conditions/${id}`, {
         method: 'PUT',
         headers: {
@@ -104,7 +115,7 @@ export default function TermsPage() {
           'Authorization': `Bearer ${token}`,
           'ngrok-skip-browser-warning': 'true'
         },
-        body: JSON.stringify(content),
+        body: JSON.stringify(updatePayload),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -215,7 +226,8 @@ export default function TermsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
-                  <TableHead className="hidden md:table-cell">Version</TableHead>
+                  <TableHead className="hidden md:table-cell ">Description</TableHead>
+                  {/* <TableHead className="hidden md:table-cell">Version</TableHead> */}
                   <TableHead>Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Last Updated</TableHead>
                   <TableHead className="hidden lg:table-cell">Actions</TableHead>
@@ -227,7 +239,10 @@ export default function TermsPage() {
                     <TableCell className="font-medium max-w-sm truncate">
                         {term.title || 'No Title'}
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{term.version}</TableCell>
+                    <TableCell className="hidden md:table-cell max-w-xs break-words whitespace-normal">
+                      {term.description || 'No Description'}
+                    </TableCell>
+                    {/* <TableCell className="hidden md:table-cell">{term.version}</TableCell> */}
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

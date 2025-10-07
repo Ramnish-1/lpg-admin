@@ -56,11 +56,12 @@ export interface Product {
   id: string;
   productName: string;
   description: string;
-  category: 'lpg' | 'accessories';
+  category: string; // Now dynamic category ID
   status: 'active' | 'inactive';
   lowStockThreshold: number; // This might be a global default
   variants: ProductVariant[]; // Global default variants
   images: string[]; // URLs to images
+  tags: string[]; // Product tags
   createdAt: string;
   updatedAt: string;
   AgencyInventory?: AgencyInventory[]; // An array of inventory records for different agencies
@@ -245,6 +246,14 @@ export interface PrivacyPolicy {
     description: string;
     status: 'active' | 'inactive';
     content: ContentSection[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface Category {
+    id: string;
+    name: string;
+    status: 'active' | 'inactive';
     createdAt: string;
     updatedAt: string;
 }

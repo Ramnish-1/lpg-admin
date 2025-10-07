@@ -161,7 +161,7 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
           description: `Agent has been assigned to the order.`,
         });
 
-        await updateOrderStatus(assignResult.data.order, 'assigned', 'Agent assigned');
+        await updateOrderStatus('assigned', 'Agent assigned');
       } else {
         toast({ variant: 'destructive', title: 'Error', description: assignResult.error || 'Failed to assign agent.' });
       }
@@ -190,9 +190,45 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
             <h3 className="font-semibold mb-3 text-foreground flex items-center gap-2"><ShoppingBag className="h-5 w-5"/> Order Summary</h3>
             <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4"/>Date</span>
+                    <span className="text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4"/>Created</span>
                     <span>{new Date(order.createdAt).toLocaleString()}</span>
                 </div>
+                {order.confirmedAt && (
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground flex items-center gap-2"><CheckCircle className="h-4 w-4"/>Confirmed</span>
+                        <span>{new Date(order.confirmedAt).toLocaleString()}</span>
+                    </div>
+                )}
+                {order.assignedAt && (
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground flex items-center gap-2"><User className="h-4 w-4"/>Assigned</span>
+                        <span>{new Date(order.assignedAt).toLocaleString()}</span>
+                    </div>
+                )}
+                {order.outForDeliveryAt && (
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground flex items-center gap-2"><Truck className="h-4 w-4"/>Out for Delivery</span>
+                        <span>{new Date(order.outForDeliveryAt).toLocaleString()}</span>
+                    </div>
+                )}
+                {order.deliveredAt && (
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground flex items-center gap-2"><CheckCircle className="h-4 w-4"/>Delivered</span>
+                        <span>{new Date(order.deliveredAt).toLocaleString()}</span>
+                    </div>
+                )}
+                {order.cancelledAt && (
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground flex items-center gap-2"><XCircle className="h-4 w-4"/>Cancelled</span>
+                        <span>{new Date(order.cancelledAt).toLocaleString()}</span>
+                    </div>
+                )}
+                {order.returnedAt && (
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground flex items-center gap-2"><XCircle className="h-4 w-4"/>Returned</span>
+                        <span>{new Date(order.returnedAt).toLocaleString()}</span>
+                    </div>
+                )}
                 <div className="flex justify-between items-center bg-green-100 dark:bg-green-900/20 p-2 rounded-md">
                     <span className="text-green-800 dark:text-green-300 font-medium flex items-center gap-2"><Wallet className="h-4 w-4"/>Payment</span>
                     <span className="capitalize font-medium text-green-800 dark:text-green-300">{order.paymentMethod.replace('_', ' ')} ({order.paymentStatus})</span>
@@ -217,6 +253,20 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                         <span className="text-right capitalize text-sm font-medium">
                             {order.cancelledBy === 'customer' ? order.customerName : order.cancelledByName}
                         </span>
+                    </div>
+                )}
+                 {order.status === 'returned' && order.returnedBy && (
+                   <div className="flex justify-between items-start pt-2">
+                        <span className="text-muted-foreground flex items-center gap-2"><User className="h-4 w-4"/>Returned By</span>
+                        <span className="text-right capitalize text-sm font-medium">
+                            {order.returnedBy === 'customer' ? order.customerName : order.returnedByName}
+                        </span>
+                    </div>
+                )}
+                 {order.status === 'returned' && order.returnReason && (
+                   <div className="flex justify-between items-start pt-2">
+                        <span className="text-muted-foreground flex items-center gap-2"><XCircle className="h-4 w-4"/>Return Reason</span>
+                        <span className="text-right text-destructive text-sm font-medium">{order.returnReason}</span>
                     </div>
                 )}
             </div>
@@ -368,32 +418,34 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
             </div>
          </div>
         
-         <div className="p-4 rounded-lg border bg-card">
-             <h3 className="font-semibold mb-3 text-foreground">Actions</h3>
-             {order.status === 'pending' && (
-              <div className="flex gap-2">
-                <Button variant="destructive" onClick={() => setIsCancelOpen(true)} disabled={!!updatingOrderId}>
-                  {!!updatingOrderId ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
-                  Cancel Order
-                </Button>
-                <Button className="w-full" onClick={handleConfirmAndAssign} disabled={!!updatingOrderId}>
-                  {!!updatingOrderId ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                  Confirm
-                </Button>
-              </div>
-            )}
-            {(order.status === 'in-progress' || order.status === 'out-for-delivery') && (
-                <Button asChild className="w-full">
-                    <Link href={`/track/${order.id}`}>
-                        <MapPin className="h-4 w-4 mr-2" />
-                        Track Order
-                    </Link>
-                </Button>
-            )}
-            {order.status !== 'pending' && order.status !== 'in-progress' && order.status !== 'out-for-delivery' && (
-                <p className="text-sm text-muted-foreground">No actions available for this order status.</p>
-            )}
-         </div>
+         {order.status !== 'delivered' && (
+             <div className="p-4 rounded-lg border bg-card">
+                 <h3 className="font-semibold mb-3 text-foreground">Actions</h3>
+                 {order.status === 'pending' && (
+                  <div className="flex gap-2">
+                    <Button variant="destructive" onClick={() => setIsCancelOpen(true)} disabled={!!updatingOrderId}>
+                      {!!updatingOrderId ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
+                      Cancel Order
+                    </Button>
+                    <Button className="w-full" onClick={handleConfirmAndAssign} disabled={!!updatingOrderId}>
+                      {!!updatingOrderId ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                      Confirm
+                    </Button>
+                  </div>
+                )}
+                {(order.status === 'in-progress' || order.status === 'out-for-delivery') && (
+                    <Button asChild className="w-full">
+                        <Link href={`/track/${order.id}`}>
+                            <MapPin className="h-4 w-4 mr-2" />
+                            Track Order
+                        </Link>
+                    </Button>
+                )}
+                {order.status === 'confirmed' || order.status === 'assigned' || order.status === 'cancelled' || order.status === 'returned' ? (
+                    <p className="text-sm text-muted-foreground">No actions available for this order status.</p>
+                ) : null}
+             </div>
+         )}
       </div>
     </div>
     <AssignAgentDialog order={order} isOpen={isAssignOpen} onOpenChange={setIsAssignOpen} onAgentAssigned={handleAgentAssigned} initialAgents={agents} />
