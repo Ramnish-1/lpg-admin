@@ -319,6 +319,12 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                         <span className="flex items-center"><IndianRupee className="h-4 w-4" />{parseFloat(order.platformCharge).toLocaleString()}</span>
                     </div>
                 )}
+                {order.couponCode && order.couponDiscount && parseFloat(order.couponDiscount) > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Coupon Discount ({order.couponCode})</span>
+                        <span className="flex items-center text-green-600"><IndianRupee className="h-4 w-4" />-{parseFloat(order.couponDiscount).toLocaleString()}</span>
+                    </div>
+                )}
             </div>
 
             <Separator className="my-4"/>
