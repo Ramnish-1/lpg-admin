@@ -8,6 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 interface LoginResult {
   success: boolean;
   error?: string;
+  message?: string;
+  requirePasswordReset?: boolean;
 }
 
 interface AuthContextType {
@@ -73,6 +75,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const result = await response.json();
 
         if (result.success) {
+            // If backend indicates that user must set a new password, do not complete login.
+            if (typeof result.message === 'string' && result.message.toLowerCase().includes('set a new password')) {
+                return { success: false, requirePasswordReset: true, message: result.message };
+            }
             const loggedInUser: User = result.data.user;
 
             setUser(loggedInUser);
@@ -83,14 +89,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             window.localStorage.setItem(TOKEN_STORAGE_KEY, result.data.token);
             window.localStorage.setItem('authToken', result.data.token); // For socket
             window.localStorage.setItem('userId', loggedInUser.id);
-            window.localStorage.setItem('userRole', loggedInUser.role);
+            if (typeof loggedInUser.role === 'string') {
+                window.localStorage.setItem('userRole', loggedInUser.role);
+            }
             if (loggedInUser.agencyId) {
                 window.localStorage.setItem('agencyId', loggedInUser.agencyId);
             }
             
             return { success: true };
         }
-        return { success: false, error: result.error || 'Invalid email or password.' };
+        return { success: false, error: result.error || 'Invalid email or password.', message: result.message };
     } catch (error) {
         console.error("Login API call failed", error);
         return { success: false, error: 'Could not connect to the server.' };

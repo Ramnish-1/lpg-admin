@@ -14,6 +14,7 @@ import { useSocket } from '@/context/socket-context';
 import Image from 'next/image';
 import { Eye, EyeOff } from 'lucide-react';
 import { LoginAnimation } from '@/components/login-animation';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 const GasPump = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -35,16 +36,30 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showAnimation, setShowAnimation] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSetPasswordOpen, setIsSetPasswordOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSettingPassword, setIsSettingPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const { login } = useAuth();
   const { disconnect, connect } = useSocket();
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     const result = await login(email, password);
     setIsLoading(false);
+
+    if (result.requirePasswordReset) {
+      // Show set password dialog
+      toast({ title: 'Action Required', description: result.message || 'Please set a new password to continue.' });
+      setIsSetPasswordOpen(true);
+      return;
+    }
 
     if (result.success) {
        // Reconnect socket with new auth token
@@ -69,8 +84,48 @@ export default function LoginPage() {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: result.error || 'An unexpected error occurred.',
+        description: result.error || result.message || 'An unexpected error occurred.',
       });
+    }
+  };
+
+  const handleSetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      toast({ variant: 'destructive', title: 'Email Required', description: 'Please enter your email to continue.' });
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast({ variant: 'destructive', title: 'Weak Password', description: 'Password must be at least 8 characters.' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ variant: 'destructive', title: 'Password Mismatch', description: 'Passwords do not match.' });
+      return;
+    }
+
+    setIsSettingPassword(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/agency-owner/set-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+        body: JSON.stringify({ email, password: newPassword, confirmPassword }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        toast({ title: 'Password Updated', description: 'Please login with your new password.' });
+        setIsSetPasswordOpen(false);
+      } else {
+        toast({ variant: 'destructive', title: 'Failed', description: result.error || result.message || 'Could not set password.' });
+      }
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Network Error', description: 'Could not connect to the server.' });
+    } finally {
+      setIsSettingPassword(false);
+      // Clear fields after attempt so user can re-enter easily
+      setNewPassword('');
+      setConfirmPassword('');
+      setPassword('');
     }
   };
 
@@ -151,6 +206,64 @@ export default function LoginPage() {
           data-ai-hint="happy customer"
         />
       </div>
+
+      <Dialog open={isSetPasswordOpen} onOpenChange={setIsSetPasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Set a New Password</DialogTitle>
+            <DialogDescription>For security, please set a new password to continue.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSetPassword} className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="new-password"
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  disabled={isSettingPassword}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                  onClick={() => setShowNewPassword((p) => !p)}
+                >
+                  {showNewPassword ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                </Button>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <div className="relative">
+                <Input
+                  id="confirm-password"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  disabled={isSettingPassword}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                  onClick={() => setShowConfirmPassword((p) => !p)}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                </Button>
+              </div>
+            </div>
+            <Button type="submit" disabled={isSettingPassword}>
+              {isSettingPassword ? 'Updating...' : 'Update Password'}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
