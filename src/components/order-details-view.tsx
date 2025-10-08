@@ -299,6 +299,30 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
             
             <Separator className="my-4"/>
 
+            {/* Tax Breakdown */}
+            <div className="space-y-2 mb-4">
+                <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="flex items-center"><IndianRupee className="h-4 w-4" />{parseFloat(order.subtotal || '0').toLocaleString()}</span>
+                </div>
+                {order.taxAmount && parseFloat(order.taxAmount) > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">
+                            Tax ({order.taxType === 'percentage' ? `${order.taxValue}%` : `₹${order.taxValue}`})
+                        </span>
+                        <span className="flex items-center"><IndianRupee className="h-4 w-4" />{parseFloat(order.taxAmount).toLocaleString()}</span>
+                    </div>
+                )}
+                {order.platformCharge && parseFloat(order.platformCharge) > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Platform Charge</span>
+                        <span className="flex items-center"><IndianRupee className="h-4 w-4" />{parseFloat(order.platformCharge).toLocaleString()}</span>
+                    </div>
+                )}
+            </div>
+
+            <Separator className="my-4"/>
+
             <div className="flex justify-between items-center font-bold text-lg p-3 bg-primary/10 rounded-lg">
                 <span className="text-primary">Total Amount</span>
                 <span className="flex items-center text-primary"><IndianRupee className="h-5 w-5" />{parseFloat(order.totalAmount).toLocaleString()}</span>
