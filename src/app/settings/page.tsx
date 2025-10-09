@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/page-header';
 import { TaxManagement } from '@/components/tax-management';
 import { PlatformChargeManagement } from '@/components/platform-charge-management';
 import { CouponManagement } from '@/components/coupon-management';
+import { DeliveryChargeManagement } from '@/components/delivery-charge-management';
 import { Toaster } from '@/components/ui/toaster';
 import { ProfileContext } from '@/context/profile-context';
 import { useContext } from 'react';
@@ -35,7 +36,10 @@ export default function SettingsPage() {
                   </>
                 )}
                 {isAgencyOwner && (
-                  <CouponManagement />
+                  <>
+                    <DeliveryChargeManagement />
+                    <CouponManagement />
+                  </>
                 )}
               </>
             ) : (

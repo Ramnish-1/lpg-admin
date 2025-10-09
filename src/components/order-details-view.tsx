@@ -319,6 +319,14 @@ export function OrderDetailsView({ order, onUpdate }: OrderDetailsViewProps) {
                         <span className="flex items-center"><IndianRupee className="h-4 w-4" />{parseFloat(order.platformCharge).toLocaleString()}</span>
                     </div>
                 )}
+                {order.deliveryCharge && parseFloat(order.deliveryCharge) > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">
+                            Delivery Charge {order.deliveryDistance && `(${parseFloat(order.deliveryDistance).toFixed(2)} km)`}
+                        </span>
+                        <span className="flex items-center"><IndianRupee className="h-4 w-4" />{parseFloat(order.deliveryCharge).toLocaleString()}</span>
+                    </div>
+                )}
                 {order.couponCode && order.couponDiscount && parseFloat(order.couponDiscount) > 0 && (
                     <div className="flex justify-between items-center text-sm">
                         <span className="text-muted-foreground">Coupon Discount ({order.couponCode})</span>
