@@ -85,8 +85,8 @@ export default function SignupPage() {
         <div className="mx-auto grid w-[350px] gap-6">
           <div className="grid gap-2 text-center">
             <Link href="/" className="flex items-center justify-center gap-2 font-semibold mb-4 text-primary">
-              <GasPump className="h-8 w-8" />
-              <span className="text-3xl font-bold">lpg GasTrack</span>
+            <Image src="/leadIcon.png" alt="LEADWAY GAS" width={100} height={100} className="h-8 w-8"/>
+              <span className="text-3xl font-bold">LEADWAY GAS</span>
             </Link>
             <h1 className="text-3xl font-bold">Sign Up</h1>
             <p className="text-balance text-muted-foreground">

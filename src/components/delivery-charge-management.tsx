@@ -11,6 +11,7 @@ import { Loader2, Trash2, Save, AlertCircle, IndianRupee, MapPin } from 'lucide-
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { ProfileContext } from '@/context/profile-context';
+import socketService from '@/lib/socket';
 
 interface DeliveryCharge {
   id: string;
@@ -35,7 +36,55 @@ export function DeliveryChargeManagement() {
   const [ratePerKm, setRatePerKm] = useState('');
   const [fixedAmount, setFixedAmount] = useState('');
   const [deliveryRadius, setDeliveryRadius] = useState('');
-  const { toast } = useToast();
+  const { toast} = useToast();
+
+  // Socket event listeners for real-time updates
+  useEffect(() => {
+    const handleDeliveryChargeUpdated = (data: any) => {
+      console.log('🚚 Delivery charge updated via socket:', data);
+      const chargeData = data.data;
+      
+      // Only update if it's for current agency
+      if (profile?.agencyId && chargeData.agencyId === profile.agencyId) {
+        setDeliveryCharge(chargeData);
+        setChargeType(chargeData.chargeType);
+        setRatePerKm(chargeData.ratePerKm?.toString() || '');
+        setFixedAmount(chargeData.fixedAmount?.toString() || '');
+        setDeliveryRadius(chargeData.deliveryRadius?.toString() || '');
+        
+        toast({
+          title: "Delivery Charge Updated",
+          description: "Delivery charge settings have been updated",
+        });
+      }
+    };
+
+    const handleDeliveryChargeDeleted = (data: any) => {
+      console.log('🚚 Delivery charge deleted via socket:', data);
+      const chargeData = data.data;
+      
+      // Only update if it's for current agency
+      if (profile?.agencyId && chargeData.agencyId === profile.agencyId) {
+        setDeliveryCharge(null);
+        setRatePerKm('');
+        setFixedAmount('');
+        setDeliveryRadius('');
+        
+        toast({
+          title: "Delivery Charge Removed",
+          description: "Delivery charge has been deleted",
+        });
+      }
+    };
+
+    socketService.onDeliveryChargeUpdated(handleDeliveryChargeUpdated);
+    socketService.onDeliveryChargeDeleted(handleDeliveryChargeDeleted);
+
+    return () => {
+      socketService.offDeliveryChargeUpdated(handleDeliveryChargeUpdated);
+      socketService.offDeliveryChargeDeleted(handleDeliveryChargeDeleted);
+    };
+  }, [profile, toast]);
 
   // Check if user is agency owner
   const isAgencyOwner = profile.role === 'agency_owner';

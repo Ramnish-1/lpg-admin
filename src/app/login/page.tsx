@@ -139,13 +139,13 @@ export default function LoginPage() {
         <div className="mx-auto grid w-[350px] gap-6">
            <div className="grid gap-2 text-center">
              <Link href="/" className="flex items-center justify-center gap-2 font-semibold mb-4 text-primary">
-                <GasPump className="h-8 w-8" />
-                <span className="text-3xl font-bold">lpg GasTrack</span>
+              
+                <Image src="/mainIcon.png" alt="LEADWAY GAS" width={1000} height={100} />
               </Link>
             <h1 className="text-3xl font-bold">Login</h1>
-            <p className="text-balance text-muted-foreground">
+            {/* <p className="text-balance text-muted-foreground">
               Enter your email below to login to your account
-            </p>
+            </p> */}
           </div>
           <form onSubmit={handleLogin} className="grid gap-4">
             <div className="grid gap-2">
@@ -174,6 +174,7 @@ export default function LoginPage() {
                 <Input 
                   id="password" 
                   type={showPassword ? "text" : "password"} 
+                  placeholder="password"
                   required 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -198,7 +199,7 @@ export default function LoginPage() {
       </div>
        <div className="hidden bg-muted lg:block">
         <Image
-          src="https://picsum.photos/seed/happy-customer/1200/900"
+          src="/sideimage.jpg"
           alt="Happy customer receiving delivery"
           width="1200"
           height="900"

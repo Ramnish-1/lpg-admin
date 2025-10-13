@@ -309,6 +309,54 @@ class SocketService {
     this.socket?.on('privacy:updated', callback);
   }
 
+  // Tax Management Events
+  onTaxUpdated(callback: (data: SocketEventData) => void): void {
+    this.socket?.on('tax:updated', callback);
+  }
+
+  onTaxDeleted(callback: (data: SocketEventData) => void): void {
+    this.socket?.on('tax:deleted', callback);
+  }
+
+  // Platform Charge Events
+  onPlatformChargeUpdated(callback: (data: SocketEventData) => void): void {
+    this.socket?.on('platform-charge:updated', callback);
+  }
+
+  onPlatformChargeDeleted(callback: (data: SocketEventData) => void): void {
+    this.socket?.on('platform-charge:deleted', callback);
+  }
+
+  // Delivery Charge Events
+  onDeliveryChargeCreated(callback: (data: SocketEventData) => void): void {
+    this.socket?.on('delivery-charge:created', callback);
+  }
+
+  onDeliveryChargeUpdated(callback: (data: SocketEventData) => void): void {
+    this.socket?.on('delivery-charge:updated', callback);
+  }
+
+  onDeliveryChargeDeleted(callback: (data: SocketEventData) => void): void {
+    this.socket?.on('delivery-charge:deleted', callback);
+  }
+
+  // Coupon Events
+  onCouponCreated(callback: (data: SocketEventData) => void): void {
+    this.socket?.on('coupon:created', callback);
+  }
+
+  onCouponUpdated(callback: (data: SocketEventData) => void): void {
+    this.socket?.on('coupon:updated', callback);
+  }
+
+  onCouponStatusChanged(callback: (data: SocketEventData) => void): void {
+    this.socket?.on('coupon:status-changed', callback);
+  }
+
+  onCouponDeleted(callback: (data: SocketEventData) => void): void {
+    this.socket?.on('coupon:deleted', callback);
+  }
+
   // Remove Event Listeners
   offOrderCreated(callback?: (data: SocketEventData) => void): void {
     this.socket?.off('order:created', callback);
@@ -389,6 +437,54 @@ class SocketService {
 
   offPrivacyUpdated(callback?: (data: SocketEventData) => void): void {
     this.socket?.off('privacy:updated', callback);
+  }
+
+  // Tax Management Event Removers
+  offTaxUpdated(callback?: (data: SocketEventData) => void): void {
+    this.socket?.off('tax:updated', callback);
+  }
+
+  offTaxDeleted(callback?: (data: SocketEventData) => void): void {
+    this.socket?.off('tax:deleted', callback);
+  }
+
+  // Platform Charge Event Removers
+  offPlatformChargeUpdated(callback?: (data: SocketEventData) => void): void {
+    this.socket?.off('platform-charge:updated', callback);
+  }
+
+  offPlatformChargeDeleted(callback?: (data: SocketEventData) => void): void {
+    this.socket?.off('platform-charge:deleted', callback);
+  }
+
+  // Delivery Charge Event Removers
+  offDeliveryChargeCreated(callback?: (data: SocketEventData) => void): void {
+    this.socket?.off('delivery-charge:created', callback);
+  }
+
+  offDeliveryChargeUpdated(callback?: (data: SocketEventData) => void): void {
+    this.socket?.off('delivery-charge:updated', callback);
+  }
+
+  offDeliveryChargeDeleted(callback?: (data: SocketEventData) => void): void {
+    this.socket?.off('delivery-charge:deleted', callback);
+  }
+
+  // Coupon Event Removers
+  offCouponCreated(callback?: (data: SocketEventData) => void): void {
+    this.socket?.off('coupon:created', callback);
+  }
+
+  offCouponUpdated(callback?: (data: SocketEventData) => void): void {
+    this.socket?.off('coupon:updated', callback);
+  }
+
+  offCouponStatusChanged(callback?: (data: SocketEventData) => void): void {
+    this.socket?.off('coupon:status-changed', callback);
+  }
+
+  offCouponDeleted(callback?: (data: SocketEventData) => void): void {
+    this.socket?.off('coupon:deleted', callback);
   }
 
   // Manual Subscriptions

@@ -9,7 +9,7 @@ import { NotificationProvider } from '@/context/notification-context';
 import { SocketProvider } from '@/context/socket-context';
 
 export const metadata: Metadata = {
-  title: 'lpg GasTrack',
+  title: 'LEADWAY GAS',
   description: 'Admin panel for managing gas booking and delivery.',
 };
 

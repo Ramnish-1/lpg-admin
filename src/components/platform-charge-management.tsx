@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Trash2, Save, AlertCircle, IndianRupee } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
+import socketService from '@/lib/socket';
 
 interface PlatformCharge {
   id: number | null;
@@ -26,6 +27,46 @@ export function PlatformChargeManagement() {
   const [deleting, setDeleting] = useState(false);
   const [amount, setAmount] = useState('');
   const { toast } = useToast();
+
+  // Socket event listeners for real-time updates
+  useEffect(() => {
+    const handlePlatformChargeUpdated = (data: any) => {
+      console.log('🏦 Platform charge updated via socket:', data);
+      const chargeData = data.data;
+      setPlatformCharge({
+        id: chargeData.id,
+        amount: chargeData.amount || 0
+      });
+      setAmount(chargeData.amount?.toString() || '');
+      
+      toast({
+        title: "Platform Charge Updated",
+        description: `Platform charge is now ₹${chargeData.amount}`,
+      });
+    };
+
+    const handlePlatformChargeDeleted = (data: any) => {
+      console.log('🏦 Platform charge deleted via socket:', data);
+      setPlatformCharge({
+        id: null,
+        amount: 0
+      });
+      setAmount('');
+      
+      toast({
+        title: "Platform Charge Removed",
+        description: "Platform charge has been deleted by another admin",
+      });
+    };
+
+    socketService.onPlatformChargeUpdated(handlePlatformChargeUpdated);
+    socketService.onPlatformChargeDeleted(handlePlatformChargeDeleted);
+
+    return () => {
+      socketService.offPlatformChargeUpdated(handlePlatformChargeUpdated);
+      socketService.offPlatformChargeDeleted(handlePlatformChargeDeleted);
+    };
+  }, [toast]);
 
   // Fetch current platform charge
   const fetchPlatformCharge = async () => {

@@ -15,6 +15,7 @@ import { Loader2, Plus, Edit, Trash2, AlertCircle, IndianRupee, Calendar, Clock 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { ProfileContext } from '@/context/profile-context';
+import socketService from '@/lib/socket';
 
 interface Coupon {
   id: string;
@@ -70,6 +71,75 @@ export function CouponManagement() {
   const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
   const isAgencyOwner = profile.role === 'agency_owner';
   const hasPermission = isAdmin || isAgencyOwner;
+
+  // Socket event listeners for real-time coupon updates
+  useEffect(() => {
+    const handleCouponCreated = (data: any) => {
+      console.log('🎟️ Coupon created via socket:', data);
+      const couponData = data.data;
+      
+      // Add to list if it's for current agency or if admin
+      if (isAdmin || (isAgencyOwner && couponData.agencyId === profile.agencyId)) {
+        setCoupons(prev => [couponData, ...prev]);
+        toast({
+          title: "New Coupon Created",
+          description: `Coupon ${couponData.code} has been created`,
+        });
+      }
+    };
+
+    const handleCouponUpdated = (data: any) => {
+      console.log('🎟️ Coupon updated via socket:', data);
+      const couponData = data.data;
+      
+      setCoupons(prev => prev.map(coupon => 
+        coupon.id === couponData.id ? couponData : coupon
+      ));
+      
+      toast({
+        title: "Coupon Updated",
+        description: `Coupon ${couponData.code} has been updated`,
+      });
+    };
+
+    const handleCouponStatusChanged = (data: any) => {
+      console.log('🎟️ Coupon status changed via socket:', data);
+      const couponData = data.data;
+      
+      setCoupons(prev => prev.map(coupon => 
+        coupon.id === couponData.id ? { ...coupon, isActive: couponData.isActive } : coupon
+      ));
+      
+      toast({
+        title: "Coupon Status Changed",
+        description: `Coupon ${couponData.code} is now ${couponData.isActive ? 'active' : 'inactive'}`,
+      });
+    };
+
+    const handleCouponDeleted = (data: any) => {
+      console.log('🎟️ Coupon deleted via socket:', data);
+      const couponData = data.data;
+      
+      setCoupons(prev => prev.filter(coupon => coupon.id !== couponData.id));
+      
+      toast({
+        title: "Coupon Deleted",
+        description: `Coupon ${couponData.code} has been deleted`,
+      });
+    };
+
+    socketService.onCouponCreated(handleCouponCreated);
+    socketService.onCouponUpdated(handleCouponUpdated);
+    socketService.onCouponStatusChanged(handleCouponStatusChanged);
+    socketService.onCouponDeleted(handleCouponDeleted);
+
+    return () => {
+      socketService.offCouponCreated(handleCouponCreated);
+      socketService.offCouponUpdated(handleCouponUpdated);
+      socketService.offCouponStatusChanged(handleCouponStatusChanged);
+      socketService.offCouponDeleted(handleCouponDeleted);
+    };
+  }, [isAdmin, isAgencyOwner, profile.agencyId, toast]);
 
   // Fetch all coupons
   const fetchCoupons = async () => {

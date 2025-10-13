@@ -22,7 +22,7 @@ interface SettingsContextType {
 }
 
 const defaultSettings: Settings = {
-  appName: 'lpg GasTrack',
+  appName: 'LEADWAY GAS',
   timezone: 'Asia/Kolkata',
   emailNotifications: true,
   pushNotifications: false,

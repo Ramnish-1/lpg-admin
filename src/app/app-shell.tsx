@@ -140,11 +140,11 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
     switch (profile.role) {
       case 'super_admin':
       case 'admin':
-        return 'GasTrack Super Admin';
+        return 'LEADWAY GAS Admin';
       case 'agency_owner':
-        return 'GasTrack Agency';
+        return 'LEADWAY GAS Agency';
       default:
-        return 'lpg GasTrack';
+        return 'LEADWAY GAS';
     }
   };
 
@@ -155,8 +155,8 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
           key={href}
           href={href}
           className={cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-            pathname === href && 'bg-muted text-primary'
+            'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-[#035db7]',
+            pathname === href && 'bg-[#035db7] text-[#fff]'
           )}
         >
           <Icon className="h-4 w-4" />
@@ -180,7 +180,7 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold">
-              <GasPump className="h-6 w-6 text-primary" />
+              <Image src="/leadIcon.png" alt="LEADWAY GAS" width={100} height={100} className="h-6 w-6"/>
               <span className="">{appNameToDisplay()}</span>
             </Link>
           </div>
@@ -201,7 +201,7 @@ export function AppShell({ children, onConfirmAndAssignFromNotification, orders 
             <SheetContent side="left" className="flex flex-col">
               <div className="flex h-14 items-center border-b mb-4">
                   <Link href="/" className="flex items-center gap-2 font-semibold">
-                    <GasPump className="h-6 w-6 text-primary" />
+                    <Image src="/leadIcon.png" alt="LEADWAY GAS" width={100} height={100} className="h-6 w-6"/>
                     <span className="">{appNameToDisplay()}</span>
                   </Link>
               </div>

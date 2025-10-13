@@ -17,6 +17,10 @@ import { cn } from '@/lib/utils';
 import { EditProductDialog } from '@/components/edit-product-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ImageViewerDialog } from '@/components/image-viewer-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -32,6 +36,11 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [isAgencyEditOpen, setIsAgencyEditOpen] = useState(false);
+  const [editingAgency, setEditingAgency] = useState<AgencyInventory | null>(null);
+  const [editingVariants, setEditingVariants] = useState<any[]>([]);
+  const [editingLowStockThreshold, setEditingLowStockThreshold] = useState(10);
+  const [editingIsActive, setEditingIsActive] = useState(true);
   const { toast } = useToast();
   const { token, handleApiError } = useAuth();
   const { profile } = useContext(ProfileContext);
@@ -169,6 +178,80 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to update inventory.' });
       return false;
     }
+  };
+
+  const handleAdminAgencyInventoryUpdate = async (agencyId: string, inventoryData: any): Promise<boolean> => {
+    if (!token || !isAdmin || !product) return false;
+
+    const payload = {
+      agencyVariants: inventoryData.agencyVariants,
+      lowStockThreshold: inventoryData.lowStockThreshold,
+      isActive: inventoryData.isActive,
+    };
+    
+    const url = `${API_BASE_URL}/api/products/${product.id}/inventory/agency/${agencyId}/admin-update`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast({ variant: 'destructive', title: 'Error', description: errorData.error || 'Failed to update agency inventory.' });
+        return false;
+      }
+      
+      const result = await response.json();
+      if (result.success) {
+        toast({ title: 'Agency Inventory Updated', description: `Agency inventory has been successfully updated.` });
+        fetchProduct();
+        return true;
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to update agency inventory.' });
+        return false;
+      }
+    } catch (e) {
+      console.error("Failed to update agency inventory:", e);
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update agency inventory.' });
+      return false;
+    }
+  };
+
+  const openAgencyEditDialog = (inventory: AgencyInventory) => {
+    setEditingAgency(inventory);
+    setEditingVariants([...inventory.agencyVariants]);
+    setEditingLowStockThreshold(inventory.lowStockThreshold);
+    setEditingIsActive(inventory.isActive);
+    setIsAgencyEditOpen(true);
+  };
+
+  const handleAgencyEditSave = async () => {
+    if (!editingAgency) return;
+
+    const inventoryData = {
+      agencyVariants: editingVariants,
+      lowStockThreshold: editingLowStockThreshold,
+      isActive: editingIsActive,
+    };
+
+    const success = await handleAdminAgencyInventoryUpdate(editingAgency.agencyId, inventoryData);
+    if (success) {
+      setIsAgencyEditOpen(false);
+      setEditingAgency(null);
+    }
+  };
+
+  const updateVariantStock = (index: number, value: number) => {
+    const updatedVariants = [...editingVariants];
+    updatedVariants[index] = { ...updatedVariants[index], stock: value };
+    setEditingVariants(updatedVariants);
   };
 
   const confirmDelete = async () => {
@@ -465,6 +548,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                     <TableHead>Status</TableHead>
                     <TableHead>Total Stock</TableHead>
                     <TableHead>Low Stock Threshold</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -503,6 +587,15 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                           </div>
                         </TableCell>
                         <TableCell>{inventory.lowStockThreshold}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openAgencyEditDialog(inventory)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -542,6 +635,87 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Agency Edit Dialog */}
+      <Dialog open={isAgencyEditOpen} onOpenChange={setIsAgencyEditOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Agency Inventory</DialogTitle>
+            <DialogDescription>
+              Update inventory details for {editingAgency?.Agency?.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Agency Variants */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Agency Variants</h3>
+              {editingVariants.map((variant, index) => (
+                <div key={index} className="grid grid-cols-3 gap-4 p-4 border rounded-lg">
+                  <div>
+                    <Label htmlFor={`variant-${index}-label`}>Variant</Label>
+                    <Input
+                      id={`variant-${index}-label`}
+                      value={variant.label}
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={`variant-${index}-price`}>Price (₹)</Label>
+                    <Input
+                      id={`variant-${index}-price`}
+                      type="number"
+                      value={variant.price}
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={`variant-${index}-stock`}>Stock</Label>
+                    <Input
+                      id={`variant-${index}-stock`}
+                      type="number"
+                      value={variant.stock}
+                      onChange={(e) => updateVariantStock(index, Number(e.target.value))}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Low Stock Threshold */}
+            <div className="space-y-2">
+              <Label htmlFor="lowStockThreshold">Low Stock Threshold</Label>
+              <Input
+                id="lowStockThreshold"
+                type="number"
+                value={editingLowStockThreshold}
+                onChange={(e) => setEditingLowStockThreshold(Number(e.target.value))}
+              />
+            </div>
+
+            {/* Active Status */}
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isActive"
+                checked={editingIsActive}
+                onCheckedChange={setEditingIsActive}
+              />
+              <Label htmlFor="isActive">Active</Label>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAgencyEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAgencyEditSave}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Image Viewer */}
       {selectedImageIndex !== null && product.images && (

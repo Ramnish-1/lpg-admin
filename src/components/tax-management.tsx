@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Trash2, Save, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
+import socketService from '@/lib/socket';
 
 interface TaxConfig {
   id: number | null;
@@ -31,6 +32,58 @@ export function TaxManagement() {
   const [percentage, setPercentage] = useState('');
   const [fixedAmount, setFixedAmount] = useState('');
   const { toast } = useToast();
+
+  // Socket event listeners for real-time updates
+  useEffect(() => {
+    const handleTaxUpdated = (data: any) => {
+      console.log('💰 Tax updated via socket:', data);
+      const taxData = data.data;
+      setTaxConfig({
+        id: taxData.id,
+        percentage: taxData.percentage || 0,
+        fixedAmount: taxData.fixedAmount || 0
+      });
+      
+      if (taxData.percentage > 0) {
+        setTaxType('percentage');
+        setPercentage(taxData.percentage.toString());
+        setFixedAmount('');
+      } else if (taxData.fixedAmount > 0) {
+        setTaxType('fixed');
+        setFixedAmount(taxData.fixedAmount.toString());
+        setPercentage('');
+      }
+      
+      toast({
+        title: "Tax Configuration Updated",
+        description: "Tax settings have been updated by another admin",
+      });
+    };
+
+    const handleTaxDeleted = (data: any) => {
+      console.log('💰 Tax deleted via socket:', data);
+      setTaxConfig({
+        id: null,
+        percentage: 0,
+        fixedAmount: 0
+      });
+      setPercentage('');
+      setFixedAmount('');
+      
+      toast({
+        title: "Tax Configuration Removed",
+        description: "Tax settings have been deleted by another admin",
+      });
+    };
+
+    socketService.onTaxUpdated(handleTaxUpdated);
+    socketService.onTaxDeleted(handleTaxDeleted);
+
+    return () => {
+      socketService.offTaxUpdated(handleTaxUpdated);
+      socketService.offTaxDeleted(handleTaxDeleted);
+    };
+  }, [toast]);
 
   // Fetch current tax configuration
   const fetchTaxConfig = async () => {
